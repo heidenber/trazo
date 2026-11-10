@@ -34,10 +34,25 @@ node dist/cli/main.js make diagram.json -o diagram.html
 CI runs these on Node 22 and 24 for every pull request. Run them before you push:
 
 ```sh
+npm run format:check
 npm run gen:check
 npm run typecheck
 npm test
 ```
+
+## Formatting
+
+[Prettier](https://prettier.io/) formats the code, with the settings in `.prettierrc.json`. Run `npm run format` before you commit, or let your editor format on save; it picks up the project settings. Markdown, JSON, generated files and snapshots are left as written (see `.prettierignore`). `.editorconfig` sets indentation and line endings for editors that do not use Prettier.
+
+The whole codebase is already formatted, so `npm run format` only changes the lines you wrote. CI fails if `npm run format:check` does.
+
+The commit that first formatted the codebase is listed in `.git-blame-ignore-revs`. To skip it in `git blame`, run once:
+
+```sh
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
+
+GitHub skips it automatically.
 
 ## Generated files
 
