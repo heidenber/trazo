@@ -1,0 +1,13 @@
+# Files written by scripts/gen-*.mjs; regenerate them with `npm run gen`.
+src/**/generated/
+skill/AGENTS.md
+THIRD_PARTY_NOTICES.md
+
+# Recorded output and fixtures compared byte for byte.
+test/__snapshots__/
+bench/results/
+
+# Prettier formats code only. Markdown tables and the compact example and
+# bench JSON are written by hand, and the examples are what `trazo example` prints.
+*.md
+*.json
