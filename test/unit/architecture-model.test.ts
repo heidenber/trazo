@@ -80,7 +80,12 @@ describe("architecture: valid input", () => {
       edges: ["api-gw->auth-svc: verify"],
     });
     expect(issues).toEqual([]);
-    expect((diagram as Architecture | undefined)?.edges[0]).toEqual({ from: "api-gw", to: "auth-svc", label: "verify", style: "sync" });
+    expect((diagram as Architecture | undefined)?.edges[0]).toEqual({
+      from: "api-gw",
+      to: "auth-svc",
+      label: "verify",
+      style: "sync",
+    });
   });
 
   it("accepts nested groups and edges that touch a group", () => {

@@ -6,7 +6,8 @@ import { join } from "node:path";
 import { emit, packageDir, packageInfo } from "./lib.mjs";
 
 const dir = join(packageDir("@fontsource/inter"), "files");
-const b64 = (weight) => readFileSync(join(dir, `inter-latin-${weight}-normal.woff2`)).toString("base64");
+const b64 = (weight) =>
+  readFileSync(join(dir, `inter-latin-${weight}-normal.woff2`)).toString("base64");
 const version = packageInfo("@fontsource/inter").version;
 
 const out = `// SPDX-License-Identifier: Apache-2.0

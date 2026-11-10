@@ -143,7 +143,8 @@ export function buildArchitecture(input: Parsed): { diagram?: Architecture; issu
     if (edge.label !== undefined) out.label = edge.label;
     const key = JSON.stringify([out.from, out.to, out.label ?? null, out.style]);
     const first = seen.get(key);
-    if (first !== undefined) issues.push(warning("edge/duplicate", `edges[${i}]`, `same as edges[${first}]`));
+    if (first !== undefined)
+      issues.push(warning("edge/duplicate", `edges[${i}]`, `same as edges[${first}]`));
     else seen.set(key, i);
     edges.push(out);
   });
@@ -167,7 +168,11 @@ export function buildArchitecture(input: Parsed): { diagram?: Architecture; issu
     theme: input.theme ?? "light",
     direction: input.direction ?? "right",
     nodes: input.nodes.map((node) => {
-      const out: ArchNode = { id: node.id, label: node.label ?? node.id, kind: node.kind ?? "service" };
+      const out: ArchNode = {
+        id: node.id,
+        label: node.label ?? node.id,
+        kind: node.kind ?? "service",
+      };
       if (node.note !== undefined) out.note = node.note;
       if (node.source !== undefined) out.source = node.source;
       return out;

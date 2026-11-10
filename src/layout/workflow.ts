@@ -4,8 +4,23 @@
 import type { Workflow } from "../model/workflow.js";
 import type { Box, Point, Scene, SceneEdge, SceneGroup, SceneNode, TextBlock } from "../scene.js";
 import { firstBaseline, lineHeight, textWidth, wrapText } from "../text/measure.js";
-import { LAYER_SPACING, NODE_SPACING, layoutElk, type LayoutBox, type LayoutEdge, type LayoutPort, type LayoutResult } from "./elk.js";
-import { BAND_PAD, assertStepsInLanes, buildBands, findBackEdges, headerWidth, planLanes } from "./lanes.js";
+import {
+  LAYER_SPACING,
+  NODE_SPACING,
+  layoutElk,
+  type LayoutBox,
+  type LayoutEdge,
+  type LayoutPort,
+  type LayoutResult,
+} from "./elk.js";
+import {
+  BAND_PAD,
+  assertStepsInLanes,
+  buildBands,
+  findBackEdges,
+  headerWidth,
+  planLanes,
+} from "./lanes.js";
 import { loopUnder, straighten } from "./route.js";
 import { ICON_TEXT_LEFT, clipToDiamond, sizeStep, type StepSize } from "./shapes.js";
 
@@ -65,7 +80,12 @@ function labelOnRoute(points: Point[], lines: string[]): Box | undefined {
   if (!best) return undefined;
   const w = Math.ceil(widest(lines, EDGE_LABEL_SIZE, 400)) + 2 * EDGE_LABEL_PAD;
   const h = Math.ceil(lines.length * lineHeight(EDGE_LABEL_SIZE)) + 2 * EDGE_LABEL_PAD;
-  return { x: half((best[0].x + best[1].x) / 2 - w / 2), y: half((best[0].y + best[1].y) / 2 - h / 2), w, h };
+  return {
+    x: half((best[0].x + best[1].x) / 2 - w / 2),
+    y: half((best[0].y + best[1].y) / 2 - h / 2),
+    w,
+    h,
+  };
 }
 
 function shift(layout: LayoutResult, dx: number): void {
@@ -94,7 +114,11 @@ export async function layoutWorkflow(w: Workflow): Promise<Scene> {
   // its dummy nodes push the steps of the cycle onto different rows.
   const laneOf = new Map(w.lanes.flatMap((l) => l.steps.map((id) => [id, l.id] as const)));
   const loops = new Set(
-    lanes ? [...findBackEdges(w)].filter((i) => laneOf.get(w.edges[i]!.from) === laneOf.get(w.edges[i]!.to)) : [],
+    lanes
+      ? [...findBackEdges(w)].filter(
+          (i) => laneOf.get(w.edges[i]!.from) === laneOf.get(w.edges[i]!.to),
+        )
+      : [],
   );
 
   const flow = lanes || w.direction === "right" ? "RIGHT" : "DOWN";
@@ -110,7 +134,10 @@ export async function layoutWorkflow(w: Workflow): Promise<Scene> {
   // With lanes the labels are placed after routing: ELK would put a label node
   // in the preset-free gap between layers and drag the edge with it. The gap
   // is widened instead, so a label fits between two columns.
-  const widestLabel = Math.max(0, ...edgeLabels.map((lines) => (lines ? labelBox(lines).width : 0)));
+  const widestLabel = Math.max(
+    0,
+    ...edgeLabels.map((lines) => (lines ? labelBox(lines).width : 0)),
+  );
   const layout = await layoutElk(
     boxes,
     w.edges.flatMap((e, i) => {
@@ -122,7 +149,9 @@ export async function layoutWorkflow(w: Workflow): Promise<Scene> {
       return [!lines || lanes ? edge : { ...edge, label: labelBox(lines) }];
     }),
     flow,
-    lanes ? { interactive: true, layerSpacing: Math.max(LAYER_SPACING, widestLabel + 2 * LABEL_MARGIN) } : {},
+    lanes
+      ? { interactive: true, layerSpacing: Math.max(LAYER_SPACING, widestLabel + 2 * LABEL_MARGIN) }
+      : {},
   );
 
   let width = layout.width;
@@ -136,7 +165,13 @@ export async function layoutWorkflow(w: Workflow): Promise<Scene> {
   const nodes: SceneNode[] = w.steps.map((s) => {
     const size = sizes.get(s.id)!;
     const box = layout.boxes.get(s.id)!;
-    const node: SceneNode = { id: s.id, kind: s.kind, shape: size.shape, ...box, label: stepLabel(size, box) };
+    const node: SceneNode = {
+      id: s.id,
+      kind: s.kind,
+      shape: size.shape,
+      ...box,
+      label: stepLabel(size, box),
+    };
     if (size.icon !== undefined) node.icon = size.icon;
     if (s.note !== undefined) node.note = s.note;
     if (s.source !== undefined) node.source = s.source;
@@ -156,7 +191,12 @@ export async function layoutWorkflow(w: Workflow): Promise<Scene> {
       const laneSteps = nodes.filter((n) => laneOf.get(n.id) === laneOf.get(e.from));
       points = loopUnder(from, to, laneSteps);
     } else if (lanes) {
-      points = straighten(points, from, to, nodes.filter((n) => n !== from && n !== to));
+      points = straighten(
+        points,
+        from,
+        to,
+        nodes.filter((n) => n !== from && n !== to),
+      );
     }
     if (from.shape === "diamond") clipToDiamond(points, "start", from);
     if (to.shape === "diamond") clipToDiamond(points, "end", to);
@@ -190,7 +230,10 @@ export async function layoutWorkflow(w: Workflow): Promise<Scene> {
     const reach = new Map<string, number>();
     for (const i of loops) {
       const e = edges[i]!;
-      const bottom = Math.max(...e.points.map((p) => p.y), e.label ? e.label.box.y + e.label.box.h : -Infinity);
+      const bottom = Math.max(
+        ...e.points.map((p) => p.y),
+        e.label ? e.label.box.y + e.label.box.h : -Infinity,
+      );
       const lane = laneOf.get(e.from)!;
       reach.set(lane, Math.max(reach.get(lane) ?? -Infinity, bottom));
     }
@@ -199,7 +242,16 @@ export async function layoutWorkflow(w: Workflow): Promise<Scene> {
     assertStepsInLanes(w.lanes, groups, layout.boxes);
   }
 
-  const scene: Scene = { type: w.type, title: w.title, theme: w.theme, width, height, groups, nodes, edges };
+  const scene: Scene = {
+    type: w.type,
+    title: w.title,
+    theme: w.theme,
+    width,
+    height,
+    groups,
+    nodes,
+    edges,
+  };
   if (w.description !== undefined) scene.description = w.description;
   return scene;
 }

@@ -98,14 +98,20 @@ export function edgeSchema<const S extends readonly [string, ...string[]]>(
 type ZodIssue = z.core.$ZodIssue;
 
 /** `base` prefixes every path, for schemas applied to a part of the document. */
-export function fromZod(error: z.ZodError, schema: z.ZodType, base: readonly PropertyKey[] = []): Issue[] {
+export function fromZod(
+  error: z.ZodError,
+  schema: z.ZodType,
+  base: readonly PropertyKey[] = [],
+): Issue[] {
   const issues: Issue[] = [];
   for (const issue of error.issues) {
     if (issue.code === "unrecognized_keys") {
       const allowed = keysAt(schema, issue.path);
       for (const key of issue.keys) {
         const hint = didYouMean(key, allowed) ?? `allowed: ${allowed.join(", ")}`;
-        issues.push(error_("schema/unknown-field", [...base, ...issue.path, key], "unknown field", hint));
+        issues.push(
+          error_("schema/unknown-field", [...base, ...issue.path, key], "unknown field", hint),
+        );
       }
       continue;
     }
@@ -144,7 +150,12 @@ function convert(issue: ZodIssue, base: readonly PropertyKey[]): Issue {
   }
 }
 
-export function error_(code: string, path: readonly PropertyKey[] | string, message: string, hint?: string): Issue {
+export function error_(
+  code: string,
+  path: readonly PropertyKey[] | string,
+  message: string,
+  hint?: string,
+): Issue {
   const issue: Issue = {
     severity: "error",
     code,
@@ -201,7 +212,8 @@ function unwrap(node: unknown): unknown {
   for (;;) {
     const def = defOf(node);
     if (!def) return node;
-    if (def.type === "optional" || def.type === "default" || def.type === "nullable") node = def.innerType;
+    if (def.type === "optional" || def.type === "default" || def.type === "nullable")
+      node = def.innerType;
     else if (def.type === "pipe") node = def.out;
     else return node;
   }

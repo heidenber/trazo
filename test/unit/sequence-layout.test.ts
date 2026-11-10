@@ -35,7 +35,10 @@ const checkout = () => ({
           {
             alt: [
               { when: "approved", messages: ["orders -> pg: save", "orders --> api: ok"] },
-              { when: "declined, ask for another card and keep the cart", messages: ["orders -> orders: audit the decline", "orders ~> mail: failed"] },
+              {
+                when: "declined, ask for another card and keep the cart",
+                messages: ["orders -> orders: audit the decline", "orders ~> mail: failed"],
+              },
             ],
           },
         ],
@@ -48,14 +51,20 @@ const checkout = () => ({
   ],
 });
 
-const overlaps = (a: Box, b: Box) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+const overlaps = (a: Box, b: Box) =>
+  a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 const inside = (inner: Box, outer: Box, pad = 0) =>
-  inner.x >= outer.x + pad && inner.y >= outer.y + pad && inner.x + inner.w <= outer.x + outer.w - pad && inner.y + inner.h <= outer.y + outer.h - pad;
+  inner.x >= outer.x + pad &&
+  inner.y >= outer.y + pad &&
+  inner.x + inner.w <= outer.x + outer.w - pad &&
+  inner.y + inner.h <= outer.y + outer.h - pad;
 
 const text = (e: SceneEdge) => e.label?.text.lines.join(" ");
-const edge = (s: Scene, label: string) => s.edges.find((e) => text(e) === label || text(e)?.startsWith(label))!;
+const edge = (s: Scene, label: string) =>
+  s.edges.find((e) => text(e) === label || text(e)?.startsWith(label))!;
 const node = (s: Scene, id: string) => s.nodes.find((n) => n.id === id)!;
-const frag = (s: Scene, tag: string) => s.groups.find((g) => g.variant === "fragment" && g.label.lines[0] === tag)!;
+const frag = (s: Scene, tag: string) =>
+  s.groups.find((g) => g.variant === "fragment" && g.label.lines[0] === tag)!;
 const lifeX = (s: Scene, id: string) => s.lifelines!.find((l) => l.id === id)!.x;
 const centre = (n: Box) => n.x + n.w / 2;
 const labelBoxes = (s: Scene) => s.edges.flatMap((e) => (e.label ? [e.label.box] : []));
@@ -76,7 +85,8 @@ describe("layoutSequence", () => {
     expect(hs.map((n) => n.id)).toEqual(participants.map((p) => p.id));
     const xs = hs.map(centre);
     expect(xs).toEqual([...xs].sort((a, b) => a - b));
-    for (let i = 1; i < hs.length; i++) expect(hs[i]!.x).toBeGreaterThanOrEqual(hs[i - 1]!.x + hs[i - 1]!.w + 24);
+    for (let i = 1; i < hs.length; i++)
+      expect(hs[i]!.x).toBeGreaterThanOrEqual(hs[i - 1]!.x + hs[i - 1]!.w + 24);
     expect(new Set(hs.map((n) => n.y)).size).toBe(1);
     expect(new Set(hs.map((n) => n.h)).size).toBe(1);
     hs.forEach((n) => expect(lifeX(s, n.id)).toBe(centre(n)));
@@ -129,7 +139,8 @@ describe("layoutSequence", () => {
     const boxes = labelBoxes(s);
     for (let i = 0; i < boxes.length; i++) {
       for (let j = i + 1; j < boxes.length; j++) expect(overlaps(boxes[i]!, boxes[j]!)).toBe(false);
-      for (const other of [...heads(s), ...notes(s)]) expect(overlaps(boxes[i]!, other)).toBe(false);
+      for (const other of [...heads(s), ...notes(s)])
+        expect(overlaps(boxes[i]!, other)).toBe(false);
     }
     // the long label wraps instead of widening the diagram without limit
     expect(edge(s, "POST").label!.text.lines.length).toBeGreaterThan(1);
@@ -160,7 +171,8 @@ describe("layoutSequence", () => {
       expect(inside(e.label!.box, loop)).toBe(true);
     }
     const outside = [edge(s, "POST"), edge(s, "receipt"), edge(s, "done")];
-    for (const e of outside) expect(e.points[0]!.y < loop.y || e.points[0]!.y > loop.y + loop.h).toBe(true);
+    for (const e of outside)
+      expect(e.points[0]!.y < loop.y || e.points[0]!.y > loop.y + loop.h).toBe(true);
     for (const n of notes(s)) expect(n.y >= loop.y + loop.h).toBe(true);
     const opt = frag(s, "opt");
     expect(inside(edge(s, "receipt").label!.box, opt)).toBe(true);
@@ -210,7 +222,11 @@ describe("layoutSequence", () => {
   it("spans lifelines from the header bottom past the last element, inside the canvas", async () => {
     const s = await layout(checkout());
     const bottom = heads(s)[0]!.y + heads(s)[0]!.h;
-    const last = Math.max(...s.edges.flatMap((e) => e.points.map((p) => p.y)), ...s.groups.map((g) => g.y + g.h), ...notes(s).map((n) => n.y + n.h));
+    const last = Math.max(
+      ...s.edges.flatMap((e) => e.points.map((p) => p.y)),
+      ...s.groups.map((g) => g.y + g.h),
+      ...notes(s).map((n) => n.y + n.h),
+    );
     for (const l of s.lifelines!) {
       expect(l.y1).toBe(bottom);
       expect(l.y2).toBeGreaterThan(last);
@@ -227,7 +243,10 @@ describe("layoutSequence", () => {
   });
 
   it("keeps a self-call on the last participant inside the canvas", async () => {
-    const s = await layout({ participants: [{ id: "a" }, { id: "b" }], messages: ["a -> b: go", "b -> b: think about it for a while"] });
+    const s = await layout({
+      participants: [{ id: "a" }, { id: "b" }],
+      messages: ["a -> b: go", "b -> b: think about it for a while"],
+    });
     const e = edge(s, "think about it for a while");
     expect(e.label!.box.x + e.label!.box.w).toBeLessThanOrEqual(s.width);
   });
@@ -237,7 +256,12 @@ describe("layoutSequence", () => {
   });
 
   it("still lays out the other diagram types", async () => {
-    const { diagram } = validateDiagram({ type: "architecture", title: "T", nodes: [{ id: "a" }, { id: "b" }], edges: ["a -> b"] });
+    const { diagram } = validateDiagram({
+      type: "architecture",
+      title: "T",
+      nodes: [{ id: "a" }, { id: "b" }],
+      edges: ["a -> b"],
+    });
     const s = await layoutDiagram(diagram!);
     expect(s.type).toBe("architecture");
     expect(s.lifelines).toBeUndefined();

@@ -4,7 +4,13 @@
 import type { Erd, ErdColumn, ErdRelation, ErdTable } from "../model/erd.js";
 import type { Box, Point, Scene, SceneEdge, SceneNode, SceneRow, TextBlock } from "../scene.js";
 import { firstBaseline, lineHeight, textWidth } from "../text/measure.js";
-import { ROOT_PADDING, layoutElk, type LayoutBox, type LayoutEdge, type LayoutPort } from "./elk.js";
+import {
+  ROOT_PADDING,
+  layoutElk,
+  type LayoutBox,
+  type LayoutEdge,
+  type LayoutPort,
+} from "./elk.js";
 
 const HEADER = 32;
 const ROW = 24;
@@ -54,7 +60,9 @@ function sizeTable(table: ErdTable): Sized {
   const widest = (values: number[]) => Math.max(0, ...values);
   const nameWidth = widest(columns.map((c) => textWidth(c.name, NAME_SIZE, c.key ? 600 : 400)));
   const typeWidth = widest(columns.map((c) => textWidth(c.type, TYPE_SIZE, 400)));
-  const marksWidth = widest(columns.map((c) => (c.marks ? textWidth(c.marks, MARKS_SIZE, 600) : 0)));
+  const marksWidth = widest(
+    columns.map((c) => (c.marks ? textWidth(c.marks, MARKS_SIZE, 600) : 0)),
+  );
   const body = nameWidth + GAP + typeWidth + (marksWidth > 0 ? GAP + marksWidth : 0);
   const title = textWidth(table.label, TITLE_SIZE, 600);
   const width = Math.max(MIN_W, Math.ceil(Math.max(body, title) + 2 * PAD));
@@ -154,7 +162,12 @@ export async function layoutErd(d: Erd): Promise<Scene> {
   // points the wrong way and is routed around everything. The second pass
   // keeps those columns and lets each edge leave on the side facing its target.
   const options = { edgeNodeSpacing: END_RUN, layerSpacing: COLUMN_GAP };
-  const first = await layoutElk(boxes(), linked.map((r) => edge(r, ["E", "W"])), "RIGHT", options);
+  const first = await layoutElk(
+    boxes(),
+    linked.map((r) => edge(r, ["E", "W"])),
+    "RIGHT",
+    options,
+  );
   const layout = await layoutElk(
     boxes(first.boxes),
     linked.map((r) => edge(r, sides(first.boxes.get(r.from)!, first.boxes.get(r.to)!))),
@@ -191,7 +204,12 @@ export async function layoutErd(d: Erd): Promise<Scene> {
     if (r.from === r.to) {
       const index = loops.get(r.from) ?? 0;
       loops.set(r.from, index + 1);
-      points = selfLoop(nodeOf.get(r.from)!, rowCentre(r.from, r.fromColumn), rowCentre(r.to, r.toColumn), index);
+      points = selfLoop(
+        nodeOf.get(r.from)!,
+        rowCentre(r.from, r.fromColumn),
+        rowCentre(r.to, r.toColumn),
+        index,
+      );
     } else {
       points = layout.edges.get(r.id)?.points ?? [];
     }
@@ -207,7 +225,16 @@ export async function layoutErd(d: Erd): Promise<Scene> {
 
   const reach = Math.max(0, ...edges.flatMap((e) => e.points.map((p) => p.x)));
   const width = half(Math.max(layout.width, reach + ROOT_PADDING));
-  const scene: Scene = { type: d.type, title: d.title, theme: d.theme, width, height: layout.height, groups: [], nodes, edges };
+  const scene: Scene = {
+    type: d.type,
+    title: d.title,
+    theme: d.theme,
+    width,
+    height: layout.height,
+    groups: [],
+    nodes,
+    edges,
+  };
   if (d.description !== undefined) scene.description = d.description;
   return scene;
 }

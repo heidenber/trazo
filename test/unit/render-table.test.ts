@@ -5,7 +5,14 @@ import { describe, expect, it } from "vitest";
 import { renderSvg } from "../../src/render/svg.js";
 import type { EdgeEnd, Scene, SceneEdge, SceneNode, SceneRow, TextBlock } from "../../src/scene.js";
 
-const block = (text: string, x: number, y: number, size = 13, weight: 400 | 600 = 400, anchor: "start" | "middle" = "start"): TextBlock => ({
+const block = (
+  text: string,
+  x: number,
+  y: number,
+  size = 13,
+  weight: 400 | 600 = 400,
+  anchor: "start" | "middle" = "start",
+): TextBlock => ({
   lines: [text],
   x,
   y,
@@ -51,7 +58,10 @@ const edge = (ends?: { from: EdgeEnd; to: EdgeEnd }): SceneEdge => ({
   ...(ends === undefined ? {} : { ends }),
 });
 
-const scene = (edges: SceneEdge[], nodes: SceneNode[] = [table("users", 20), table("orders", 300, "Customer orders")]): Scene => ({
+const scene = (
+  edges: SceneEdge[],
+  nodes: SceneNode[] = [table("users", 20), table("orders", 300, "Customer orders")],
+): Scene => ({
   type: "erd",
   title: "Shop",
   theme: "light",
@@ -87,7 +97,9 @@ describe("table render", () => {
   });
 
   it("puts the table note and source together in the table tooltip", () => {
-    const svg = renderSvg(scene([], [table("orders", 20, "Customer orders", "src/models/order.ts:8")]));
+    const svg = renderSvg(
+      scene([], [table("orders", 20, "Customer orders", "src/models/order.ts:8")]),
+    );
     const tip = /<desc>([^<]*)<\/desc>/.exec(svg.slice(svg.indexOf('data-id="orders"')))![1]!;
     expect(tip).toBe("Customer orders\nsrc/models/order.ts:8");
   });
@@ -116,9 +128,19 @@ describe("table render", () => {
   });
 
   it("keeps non-erd output free of table and marker rules", () => {
-    const plain: SceneNode = { id: "a", kind: "service", shape: "box", x: 0, y: 0, w: 100, h: 40, label: block("A", 50, 24, 13, 600, "middle") };
+    const plain: SceneNode = {
+      id: "a",
+      kind: "service",
+      shape: "box",
+      x: 0,
+      y: 0,
+      w: 100,
+      h: 40,
+      label: block("A", 50, 24, 13, 600, "middle"),
+    };
     const svg = renderSvg(scene([{ ...edge(), points: edge().points }], [plain]));
     expect(svg).toContain('marker-end="url(#t-arrowhead)"');
-    for (const s of ["t-table", "t-row", "t-col-", "t-end-", "t-edge-halo"]) expect(svg).not.toContain(s);
+    for (const s of ["t-table", "t-row", "t-col-", "t-end-", "t-edge-halo"])
+      expect(svg).not.toContain(s);
   });
 });

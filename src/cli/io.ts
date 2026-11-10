@@ -20,9 +20,13 @@ function decode(bytes: Buffer): string {
   if (bytes[0] === 0xff && bytes[1] === 0xfe) return bytes.subarray(2).toString("utf16le");
   if (bytes[0] === 0xfe && bytes[1] === 0xff) {
     const body = Buffer.from(bytes.subarray(2));
-    return body.subarray(0, body.length - (body.length % 2)).swap16().toString("utf16le");
+    return body
+      .subarray(0, body.length - (body.length % 2))
+      .swap16()
+      .toString("utf16le");
   }
-  if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) return bytes.subarray(3).toString("utf8");
+  if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf)
+    return bytes.subarray(3).toString("utf8");
   return bytes.toString("utf8");
 }
 

@@ -19,7 +19,13 @@ const refund = {
     { id: "reject", label: "Send rejection" },
     { id: "done", kind: "end" },
   ],
-  edges: ["begin -> request", "request -> review", "review -> done: yes", "review -> reject: no", "reject -> done"],
+  edges: [
+    "begin -> request",
+    "request -> review",
+    "review -> done: yes",
+    "review -> reject: no",
+    "reject -> done",
+  ],
 };
 
 const simple = {
@@ -69,12 +75,18 @@ describe("workflow: valid input", () => {
   });
 
   it("labels an unlabeled end step", () => {
-    const { diagram } = validateDiagram({ type: "workflow", title: "T", steps: [{ id: "x", kind: "end" }] });
+    const { diagram } = validateDiagram({
+      type: "workflow",
+      title: "T",
+      steps: [{ id: "x", kind: "end" }],
+    });
     expect(diagram?.type === "workflow" && diagram.steps[0]?.label).toBe("End");
   });
 
   it("accepts a workflow without edges and without start or end", () => {
-    expect(validateDiagram({ type: "workflow", title: "T", steps: [{ id: "a" }] }).issues).toEqual([]);
+    expect(validateDiagram({ type: "workflow", title: "T", steps: [{ id: "a" }] }).issues).toEqual(
+      [],
+    );
   });
 
   it("accepts every step kind", () => {
@@ -107,7 +119,10 @@ describe("workflow: valid input", () => {
 
   it("treats the shorthand and the object form the same way", () => {
     const short = validateDiagram({ ...simple, edges: ["a ~> b: later"] });
-    const long = validateDiagram({ ...simple, edges: [{ from: "a", to: "b", label: "later", style: "async" }] });
+    const long = validateDiagram({
+      ...simple,
+      edges: [{ from: "a", to: "b", label: "later", style: "async" }],
+    });
     expect(short).toEqual(long);
   });
 
@@ -115,7 +130,12 @@ describe("workflow: valid input", () => {
     const { issues } = validateDiagram({
       type: "workflow",
       title: "Retry",
-      steps: [{ id: "s", kind: "start" }, { id: "try" }, { id: "ok", kind: "decision" }, { id: "e", kind: "end" }],
+      steps: [
+        { id: "s", kind: "start" },
+        { id: "try" },
+        { id: "ok", kind: "decision" },
+        { id: "e", kind: "end" },
+      ],
       edges: ["s -> try", "try -> ok", "ok -> try: no", "ok -> e: yes"],
     });
     expect(issues).toEqual([]);
@@ -181,7 +201,10 @@ describe("workflow: schema", () => {
   });
 
   it("rejects unreadable shorthand", () => {
-    expect(only({ ...simple, edges: ["a b"] })).toMatchObject({ code: "edge/syntax", path: "edges[0]" });
+    expect(only({ ...simple, edges: ["a b"] })).toMatchObject({
+      code: "edge/syntax",
+      path: "edges[0]",
+    });
   });
 });
 
@@ -256,7 +279,12 @@ describe("workflow: lanes", () => {
   it("warns when direction down is combined with lanes", () => {
     const result = validateDiagram({ ...refund, direction: "down" });
     expect(result.issues).toEqual([
-      { severity: "warning", code: "workflow/lanes-direction", path: "direction", message: "lanes always flow right" },
+      {
+        severity: "warning",
+        code: "workflow/lanes-direction",
+        path: "direction",
+        message: "lanes always flow right",
+      },
     ]);
     expect(result.diagram?.type === "workflow" && result.diagram.direction).toBe("right");
   });
@@ -277,7 +305,9 @@ describe("workflow: rules", () => {
       path: "steps[0]",
       message: "decision needs at least 2 outgoing edges (has 1)",
     });
-    expect(only(decision(["a -> b"])).message).toBe("decision needs at least 2 outgoing edges (has 0)");
+    expect(only(decision(["a -> b"])).message).toBe(
+      "decision needs at least 2 outgoing edges (has 0)",
+    );
   });
 
   it("rejects incoming edges on a start step", () => {
@@ -328,12 +358,18 @@ describe("workflow: rules", () => {
   });
 
   it("does not check reachability without a start step", () => {
-    const raw = { ...simple, steps: [{ id: "a" }, { id: "b" }, { id: "c" }], edges: ["a -> b", "c -> b"] };
+    const raw = {
+      ...simple,
+      steps: [{ id: "a" }, { id: "b" }, { id: "c" }],
+      edges: ["a -> b", "c -> b"],
+    };
     expect(warnings(raw).map((w) => w.code)).toEqual(["workflow/dead-end"]);
   });
 
   it("warns about dead ends only when there are edges", () => {
-    expect(warnings({ type: "workflow", title: "T", steps: [{ id: "a" }, { id: "b" }] })).toEqual([]);
+    expect(warnings({ type: "workflow", title: "T", steps: [{ id: "a" }, { id: "b" }] })).toEqual(
+      [],
+    );
     expect(warnings(simple)).toEqual([
       {
         severity: "warning",
@@ -356,7 +392,9 @@ describe("workflow: rules", () => {
   });
 
   it("warns about duplicate edges", () => {
-    expect(warnings({ ...simple, edges: ["a -> b", "a -> b"] }).map((w) => [w.code, w.path, w.message])).toEqual([
+    expect(
+      warnings({ ...simple, edges: ["a -> b", "a -> b"] }).map((w) => [w.code, w.path, w.message]),
+    ).toEqual([
       ["edge/duplicate", "edges[1]", "same as edges[0]"],
       ["workflow/dead-end", "steps[1]", '"b" has no outgoing edges'],
     ]);

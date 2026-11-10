@@ -41,7 +41,10 @@ export function check(input: string | unknown): CheckResult {
   return { ok: !hasErrors(issues), issues };
 }
 
-export async function make(input: string | unknown, options: MakeOptions = {}): Promise<MakeResult> {
+export async function make(
+  input: string | unknown,
+  options: MakeOptions = {},
+): Promise<MakeResult> {
   const { diagram, issues } = validate(input);
   if (hasErrors(issues) || diagram === undefined) return { ok: false, issues };
   const scene = await layoutDiagram(diagram);

@@ -49,7 +49,10 @@ export function sizeHeaders(participants: SeqParticipant[]): Headers {
     const widest = Math.max(...ls.map((l) => textWidth(l, HEAD_SIZE, 600)));
     return Math.max(HEAD_MIN_W, Math.ceil(ICON_TEXT_LEFT + widest + HEAD_PAD_RIGHT));
   });
-  const height = Math.max(HEAD_MIN_H, ...lines.map((ls) => Math.ceil(ls.length * lineHeight(HEAD_SIZE) + 20)));
+  const height = Math.max(
+    HEAD_MIN_H,
+    ...lines.map((ls) => Math.ceil(ls.length * lineHeight(HEAD_SIZE) + 20)),
+  );
   return { widths, lines, height };
 }
 
@@ -90,7 +93,8 @@ export function solveColumns(seq: Sequence, widths: number[]): number[] {
         const box = sizeLabel(item.label).width + 2 * LABEL_PAD;
         // A self-call label sits right of its loop and must clear the next lifeline;
         // a span label is centred between its two lifelines.
-        if (a === b) rules.push({ lo: a, hi: a + 1, need: SELF_LOOP + LOOP_LABEL_GAP + box + LABEL_AIR });
+        if (a === b)
+          rules.push({ lo: a, hi: a + 1, need: SELF_LOOP + LOOP_LABEL_GAP + box + LABEL_AIR });
         else rules.push({ lo: Math.min(a, b), hi: Math.max(a, b), need: box + 2 * LABEL_AIR });
       } else if (item.over.length === 1) {
         const i = at.get(item.over[0]!)!;
@@ -100,7 +104,9 @@ export function solveColumns(seq: Sequence, widths: number[]): number[] {
   };
   visit(seq.items);
 
-  const ordered = rules.filter((r) => r.lo >= 0 && r.hi <= gaps.length).sort((x, y) => x.hi - x.lo - (y.hi - y.lo));
+  const ordered = rules
+    .filter((r) => r.lo >= 0 && r.hi <= gaps.length)
+    .sort((x, y) => x.hi - x.lo - (y.hi - y.lo));
   for (const { lo, hi, need } of ordered) {
     const have = gaps.slice(lo, hi).reduce((sum, g) => sum + g, 0);
     if (have >= need) continue;

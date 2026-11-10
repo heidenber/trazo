@@ -17,7 +17,13 @@ function diagram(raw: object): Architecture {
 const sample = diagram({
   nodes: [
     { id: "web", label: "Web App", kind: "client" },
-    { id: "api", label: "Orders API", kind: "service", note: "Handles checkout", source: "src/api.ts:12" },
+    {
+      id: "api",
+      label: "Orders API",
+      kind: "service",
+      note: "Handles checkout",
+      source: "src/api.ts:12",
+    },
     { id: "db", label: "PostgreSQL", kind: "database" },
     { id: "queue", label: "Events", kind: "queue" },
   ],
@@ -31,7 +37,8 @@ const inside = (inner: Box, outer: Box) =>
   inner.x + inner.w <= outer.x + outer.w &&
   inner.y + inner.h <= outer.y + outer.h;
 
-const overlaps = (a: Box, b: Box) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+const overlaps = (a: Box, b: Box) =>
+  a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
 const onBorder = (p: Point, b: Box) => {
   const withinX = p.x >= b.x - 1 && p.x <= b.x + b.w + 1;
@@ -45,7 +52,8 @@ function distanceToSegment(p: Point, a: Point, b: Point): number {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const length = dx * dx + dy * dy;
-  const t = length === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / length));
+  const t =
+    length === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / length));
   return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
 }
 
@@ -62,7 +70,8 @@ describe("layoutArchitecture", () => {
     expect(scene.nodes).toHaveLength(4);
     for (const node of scene.nodes) expect(inside(node, canvas), node.id).toBe(true);
     for (const a of scene.nodes)
-      for (const b of scene.nodes) if (a !== b) expect(overlaps(a, b), `${a.id}/${b.id}`).toBe(false);
+      for (const b of scene.nodes)
+        if (a !== b) expect(overlaps(a, b), `${a.id}/${b.id}`).toBe(false);
   });
 
   it("keeps group members inside their group, below its title", async () => {
@@ -115,7 +124,9 @@ describe("layoutArchitecture", () => {
       const cx = box.x + box.w / 2;
       const cy = box.y + box.h / 2;
       const distance = Math.min(
-        ...edge.points.slice(1).map((b, i) => distanceToSegment({ x: cx, y: cy }, edge.points[i]!, b)),
+        ...edge.points
+          .slice(1)
+          .map((b, i) => distanceToSegment({ x: cx, y: cy }, edge.points[i]!, b)),
       );
       expect(distance, edge.id).toBeLessThanOrEqual(box.h);
     }
@@ -145,7 +156,12 @@ describe("layoutArchitecture", () => {
 
   it("grows a node to fit a long label instead of overflowing", async () => {
     const scene = await layoutArchitecture(
-      diagram({ nodes: [{ id: "a", label: "Payment authorization and fraud screening service" }, { id: "b" }] }),
+      diagram({
+        nodes: [
+          { id: "a", label: "Payment authorization and fraud screening service" },
+          { id: "b" },
+        ],
+      }),
     );
     const a = boxOf(scene, "a");
     const node = scene.nodes.find((n) => n.id === "a")!;

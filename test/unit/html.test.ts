@@ -70,7 +70,9 @@ describe("stage", () => {
   });
 
   it("styles the dimming and the tooltip", () => {
-    expect(html).toContain(".t-dim :is(.t-node, .t-edge, .t-edge-halo, .t-edge-label, .t-lifeline):not(.t-near)");
+    expect(html).toContain(
+      ".t-dim :is(.t-node, .t-edge, .t-edge-halo, .t-edge-label, .t-lifeline):not(.t-near)",
+    );
     expect(html).toContain('role="tooltip"');
   });
 });
@@ -85,7 +87,10 @@ describe("credit", () => {
   });
 
   it("stays out of the diagram, so exported SVG and PNG carry no credit", () => {
-    const svg = html.slice(html.indexOf('<svg xmlns="http://www.w3.org/2000/svg" class="diagram'), html.indexOf("</main>"));
+    const svg = html.slice(
+      html.indexOf('<svg xmlns="http://www.w3.org/2000/svg" class="diagram'),
+      html.indexOf("</main>"),
+    );
     expect(svg).toMatch(/^<svg [\s\S]*<\/svg>\s*<\/div>\s*$/);
     expect(svg).not.toContain("Made with trazo");
   });

@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 Heidenber Palacio Garzón
 
-import { ADVANCES_400, ADVANCES_600, ASCENDER, DESCENDER, FIRST_CODE_POINT, UNITS_PER_EM } from "./generated/metrics.js";
+import {
+  ADVANCES_400,
+  ADVANCES_600,
+  ASCENDER,
+  DESCENDER,
+  FIRST_CODE_POINT,
+  UNITS_PER_EM,
+} from "./generated/metrics.js";
 
 export type Weight = 400 | 600;
 
@@ -17,7 +24,8 @@ const AVERAGE: Record<Weight, number> = { 400: average(ADVANCES_400), 600: avera
 // Characters the embedded font lacks fall back to a system font in the
 // browser. CJK and similar scripts are close to square; everything else is
 // estimated with the average lowercase width.
-const WIDE = /[\u1100-\u115f\u2e80-\ua4cf\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6]|[\u{1f300}-\u{1faff}]/u;
+const WIDE =
+  /[\u1100-\u115f\u2e80-\ua4cf\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6]|[\u{1f300}-\u{1faff}]/u;
 
 function advance(char: string, weight: Weight): number {
   const table = weight === 600 ? ADVANCES_600 : ADVANCES_400;
@@ -47,7 +55,12 @@ export function firstBaseline(fontSize: number): number {
 }
 
 /** Greedy word wrap; words wider than the line are split by character. */
-export function wrapText(text: string, maxWidth: number, fontSize: number, weight: Weight = 400): string[] {
+export function wrapText(
+  text: string,
+  maxWidth: number,
+  fontSize: number,
+  weight: Weight = 400,
+): string[] {
   const lines: string[] = [];
   for (const paragraph of text.split("\n")) {
     let line = "";

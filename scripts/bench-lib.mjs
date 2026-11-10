@@ -3,7 +3,18 @@
 
 // Pure helpers for scripts/bench.mjs: no I/O, no clock, no randomness.
 
-const NODE_KINDS = ["client", "user", "gateway", "service", "function", "database", "cache", "queue", "storage", "external"];
+const NODE_KINDS = [
+  "client",
+  "user",
+  "gateway",
+  "service",
+  "function",
+  "database",
+  "cache",
+  "queue",
+  "storage",
+  "external",
+];
 
 export function estimateTokens(text) {
   return Math.ceil(text.length / 4);
@@ -43,8 +54,17 @@ export function synthArchitecture(n = 50) {
   }
   for (let k = 0; k < 4; k++) add(size * k + size - 1, size * (k + 1));
   for (let i = 0; i < n; i += 4) add(i, (7 * i + 3) % n);
-  const edges = pairs.map(([from, to], idx) => (idx % 5 === 0 ? `n${from} -> n${to}: call ${idx}` : `n${from} -> n${to}`));
-  return { type: "architecture", title: `Synthetic architecture, ${n} nodes`, theme: "light", nodes, groups, edges };
+  const edges = pairs.map(([from, to], idx) =>
+    idx % 5 === 0 ? `n${from} -> n${to}: call ${idx}` : `n${from} -> n${to}`,
+  );
+  return {
+    type: "architecture",
+    title: `Synthetic architecture, ${n} nodes`,
+    theme: "light",
+    nodes,
+    groups,
+    edges,
+  };
 }
 
 /** Groups agent runs by condition and reduces each group to its headline numbers. */
@@ -60,7 +80,9 @@ export function summarize(runs) {
       medianRepairs: median(list.map((r) => r.repairs)),
       medianInputTokens: median(list.map((r) => r.inputTokens)),
       // Uncached input is tiny with prompt caching; the total is what the run actually read.
-      medianTotalInputTokens: median(list.map((r) => r.inputTokens + (r.cacheCreationTokens ?? 0) + (r.cacheReadTokens ?? 0))),
+      medianTotalInputTokens: median(
+        list.map((r) => r.inputTokens + (r.cacheCreationTokens ?? 0) + (r.cacheReadTokens ?? 0)),
+      ),
       medianOutputTokens: median(list.map((r) => r.outputTokens)),
       medianSeconds: median(list.map((r) => r.seconds)),
     };

@@ -46,7 +46,8 @@ const SHAPES: Record<StepKind, NodeShape> = {
 
 export const ICON_TEXT_LEFT = ICON_PAD + ICON_SIZE + ICON_GAP;
 
-const widest = (lines: string[], size: number) => Math.max(0, ...lines.map((l) => textWidth(l, size, 600)));
+const widest = (lines: string[], size: number) =>
+  Math.max(0, ...lines.map((l) => textWidth(l, size, 600)));
 
 export function sizeStep(step: WorkflowStep): StepSize {
   const shape = SHAPES[step.kind];
@@ -63,7 +64,13 @@ export function sizeStep(step: WorkflowStep): StepSize {
     const q = (lines.length * lineHeight(DIAMOND_SIZE) + 2 * DIAMOND_PAD_Y) / 2;
     const a = p + q * DIAMOND_K;
     const b = q + p / DIAMOND_K;
-    return { width: Math.ceil(2 * a), height: Math.ceil(2 * b), lines, shape, fontSize: DIAMOND_SIZE };
+    return {
+      width: Math.ceil(2 * a),
+      height: Math.ceil(2 * b),
+      lines,
+      shape,
+      fontSize: DIAMOND_SIZE,
+    };
   }
   const lines = wrapText(step.label, BOX_WRAP, BOX_SIZE, 600);
   const icon = step.kind === "wait" ? "clock" : undefined;
@@ -72,7 +79,10 @@ export function sizeStep(step: WorkflowStep): StepSize {
     icon === undefined
       ? Math.max(BOX_MIN_W, Math.ceil(textWidthPx + 2 * BOX_PAD_X))
       : Math.max(BOX_MIN_W, Math.ceil(ICON_TEXT_LEFT + textWidthPx + RIGHT_PAD));
-  const height = Math.max(BOX_MIN_H, Math.ceil(lines.length * lineHeight(BOX_SIZE) + 2 * BOX_PAD_Y));
+  const height = Math.max(
+    BOX_MIN_H,
+    Math.ceil(lines.length * lineHeight(BOX_SIZE) + 2 * BOX_PAD_Y),
+  );
   const size: StepSize = { width, height, lines, shape, fontSize: BOX_SIZE };
   if (icon !== undefined) size.icon = icon;
   return size;
@@ -82,7 +92,11 @@ export function sizeStep(step: WorkflowStep): StepSize {
  * ELK ends edges on the rectangle around a diamond. Slide the endpoint along
  * its own segment, in either direction, onto the rhombus border.
  */
-export function clipToDiamond(points: Point[], end: "start" | "end", box: { x: number; y: number; w: number; h: number }): void {
+export function clipToDiamond(
+  points: Point[],
+  end: "start" | "end",
+  box: { x: number; y: number; w: number; h: number },
+): void {
   if (points.length < 2) return;
   const i = end === "start" ? 0 : points.length - 1;
   const p = points[i]!;

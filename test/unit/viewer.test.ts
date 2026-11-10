@@ -54,7 +54,12 @@ describe("zoomAt", () => {
 
 describe("panBy", () => {
   it("moves the origin and keeps the size", () => {
-    expect(panBy({ x: 10, y: 20, w: 300, h: 100 }, 5, -7)).toEqual({ x: 15, y: 13, w: 300, h: 100 });
+    expect(panBy({ x: 10, y: 20, w: 300, h: 100 }, 5, -7)).toEqual({
+      x: 15,
+      y: 13,
+      w: 300,
+      h: 100,
+    });
   });
 });
 

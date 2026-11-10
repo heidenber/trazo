@@ -43,7 +43,8 @@ const write = flag("--no-write") === -1;
 const distIndex = join(root, "dist", "index.js");
 const distCli = join(root, "dist", "cli", "main.js");
 const distReference = join(root, "dist", "cli", "reference.js");
-if (!existsSync(distIndex) || !existsSync(distCli) || !existsSync(distReference)) fail("dist/ not found; run npm run build");
+if (!existsSync(distIndex) || !existsSync(distCli) || !existsSync(distReference))
+  fail("dist/ not found; run npm run build");
 
 const { make, VERSION } = await import(pathToFileURL(distIndex).href);
 const { REFERENCE } = await import(pathToFileURL(distReference).href);
@@ -87,12 +88,22 @@ for (let i = 0; i < runs + 1; i++) {
 const cli = [];
 for (let i = 0; i < runs + 1; i++) {
   const t = performance.now();
-  const r = spawnSync(process.execPath, [distCli, "make", "-", "-o", "-"], { input: synth, maxBuffer: 64 * 1024 * 1024, encoding: "utf8" });
+  const r = spawnSync(process.execPath, [distCli, "make", "-", "-o", "-"], {
+    input: synth,
+    maxBuffer: 64 * 1024 * 1024,
+    encoding: "utf8",
+  });
   if (r.status !== 0) fail(`CLI make failed: ${r.stderr}`);
   if (i > 0) cli.push(performance.now() - t);
 }
 
-const make50 = { nodes: 50, runs, inProcessMs: stats(inProcess.map(round)), cliMs: stats(cli.map(round)), htmlBytes: htmlBytes.synthetic };
+const make50 = {
+  nodes: 50,
+  runs,
+  inProcessMs: stats(inProcess.map(round)),
+  cliMs: stats(cli.map(round)),
+  htmlBytes: htmlBytes.synthetic,
+};
 const date = new Date().toISOString().slice(0, 10);
 const result = {
   kind: "deterministic",
@@ -116,12 +127,18 @@ const result = {
 
 const kb = (n) => (n / 1024).toFixed(1);
 const pad = (s, n) => String(s).padEnd(n);
-const lines = [`${pad("type", 14)}${pad("schema", 8)}${pad("example", 9)}${pad("+skill", 8)}${pad("html KB", 9)}deterministic`];
+const lines = [
+  `${pad("type", 14)}${pad("schema", 8)}${pad("example", 9)}${pad("+skill", 8)}${pad("html KB", 9)}deterministic`,
+];
 for (const type of TYPES) {
   const r = reading[type];
-  lines.push(`${pad(type, 14)}${pad(r.schemaTokens, 8)}${pad(r.exampleTokens, 9)}${pad(r.totalWithSkill, 8)}${pad(kb(htmlBytes[type]), 9)}${deterministic[type]}`);
+  lines.push(
+    `${pad(type, 14)}${pad(r.schemaTokens, 8)}${pad(r.exampleTokens, 9)}${pad(r.totalWithSkill, 8)}${pad(kb(htmlBytes[type]), 9)}${deterministic[type]}`,
+  );
 }
-lines.push(`make 50 nodes  in-process ${make50.inProcessMs.median} ms   cli ${make50.cliMs.median} ms   html ${kb(htmlBytes.synthetic)} KB   (in-process target ${MAKE_MS} ms: ${result.pass.makeMs ? "pass" : "over"})`);
+lines.push(
+  `make 50 nodes  in-process ${make50.inProcessMs.median} ms   cli ${make50.cliMs.median} ms   html ${kb(htmlBytes.synthetic)} KB   (in-process target ${MAKE_MS} ms: ${result.pass.makeMs ? "pass" : "over"})`,
+);
 console.log(lines.join("\n"));
 
 if (write) {

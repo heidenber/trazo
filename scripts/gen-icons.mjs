@@ -4,8 +4,26 @@
 import { readPackageFile, packageInfo, emit } from "./lib.mjs";
 
 const NAMES = [
-  "monitor", "user", "network", "server", "zap", "database", "layers", "inbox", "hard-drive", "globe",
-  "sun", "moon", "maximize", "minimize", "clock", "zoom-in", "zoom-out", "focus", "file-code", "file-image",
+  "monitor",
+  "user",
+  "network",
+  "server",
+  "zap",
+  "database",
+  "layers",
+  "inbox",
+  "hard-drive",
+  "globe",
+  "sun",
+  "moon",
+  "maximize",
+  "minimize",
+  "clock",
+  "zoom-in",
+  "zoom-out",
+  "focus",
+  "file-code",
+  "file-image",
 ];
 
 // Names that Lucide lists as derived from Feather in its LICENSE file.
@@ -18,7 +36,11 @@ const inner = (name) => {
   const svg = readPackageFile("lucide-static", `icons/${name}.svg`);
   const match = /<svg\b[^>]*>([\s\S]*)<\/svg>/.exec(svg);
   if (!match) throw new Error(`unexpected markup in icon ${name}`);
-  return match[1].split("\n").map((l) => l.trim()).filter(Boolean).join("");
+  return match[1]
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .join("");
 };
 
 const version = packageInfo("lucide-static").version;

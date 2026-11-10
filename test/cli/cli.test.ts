@@ -2,7 +2,15 @@
 // Copyright 2026 Heidenber Palacio Garzón
 
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -41,7 +49,10 @@ function run(args: string[], input?: string | Buffer) {
 
 function write(name: string, value: unknown): string {
   const path = join(dir, name);
-  writeFileSync(path, typeof value === "string" || Buffer.isBuffer(value) ? value : JSON.stringify(value));
+  writeFileSync(
+    path,
+    typeof value === "string" || Buffer.isBuffer(value) ? value : JSON.stringify(value),
+  );
   return path;
 }
 
@@ -106,7 +117,11 @@ describe("make", () => {
     // mkdir under a regular file fails with EEXIST on Windows and ENOTDIR elsewhere
     const cause = /\((E[A-Z]+)\)/.exec(r.stderr)?.[1];
     expect(["EEXIST", "ENOTDIR"]).toContain(cause);
-    expect(r).toEqual({ code: 2, stdout: "", stderr: usageError(`cannot write "blocker/x.html" (${cause})`) });
+    expect(r).toEqual({
+      code: 2,
+      stdout: "",
+      stderr: usageError(`cannot write "blocker/x.html" (${cause})`),
+    });
     expect(readdirSync(dir).filter((f) => f.includes(".tmp-"))).toEqual([]);
   });
 
@@ -176,7 +191,14 @@ describe("make", () => {
     expect(r.stdout.endsWith("\n")).toBe(true);
     expect(JSON.parse(r.stdout)).toEqual({
       ok: false,
-      issues: [{ severity: "error", code: "ref/unknown-node", path: "edges[0].to", message: 'unknown node "zz"' }],
+      issues: [
+        {
+          severity: "error",
+          code: "ref/unknown-node",
+          path: "edges[0].to",
+          message: 'unknown node "zz"',
+        },
+      ],
     });
     expect(existsSync(join(dir, "d.html"))).toBe(false);
   });
@@ -191,10 +213,12 @@ describe("make", () => {
   });
 });
 
-const utf16le = (text: string) => Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(text, "utf16le")]);
+const utf16le = (text: string) =>
+  Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(text, "utf16le")]);
 const utf16be = (text: string) =>
   Buffer.concat([Buffer.from([0xfe, 0xff]), Buffer.from(text, "utf16le").swap16()]);
-const utf8bom = (text: string) => Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(text, "utf8")]);
+const utf8bom = (text: string) =>
+  Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(text, "utf8")]);
 
 describe("check", () => {
   const ok = { code: 0, stdout: "ok\n", stderr: "" };
@@ -228,7 +252,11 @@ describe("check", () => {
   });
 
   it("reads stdin", () => {
-    expect(run(["check", "-"], JSON.stringify(valid))).toEqual({ code: 0, stdout: "ok\n", stderr: "" });
+    expect(run(["check", "-"], JSON.stringify(valid))).toEqual({
+      code: 0,
+      stdout: "ok\n",
+      stderr: "",
+    });
   });
 
   it("prints warnings to stderr", () => {
@@ -272,7 +300,6 @@ describe("usage errors", () => {
   it("reports a missing input", () => {
     expect(run(["make"])).toEqual({ code: 2, stdout: "", stderr: usageError("missing <input>") });
     expect(run([])).toEqual({ code: 2, stdout: "", stderr: usageError("missing command") });
- 
   });
 
   it("reports an unknown option", () => {
@@ -327,12 +354,18 @@ describe("--help and --version", () => {
       for (const word of ["trazo make", "trazo check", "--out", "--theme", "--json", "--version"]) {
         expect(r.stdout).toContain(word);
       }
-      expect(r.stdout.endsWith("\nFind trazo useful? Star it on GitHub: https://github.com/heidenber/trazo\n")).toBe(true);
+      expect(
+        r.stdout.endsWith(
+          "\nFind trazo useful? Star it on GitHub: https://github.com/heidenber/trazo\n",
+        ),
+      ).toBe(true);
     }
   });
 
   it("prints the version from package.json", () => {
-    const { version } = JSON.parse(readFileSync(resolve("package.json"), "utf8")) as { version: string };
+    const { version } = JSON.parse(readFileSync(resolve("package.json"), "utf8")) as {
+      version: string;
+    };
     for (const flag of ["--version", "-v"]) {
       expect(run([flag])).toEqual({ code: 0, stdout: `${version}\n`, stderr: "" });
     }
@@ -343,7 +376,11 @@ describe("workflow diagrams", () => {
   const flow = {
     type: "workflow",
     title: "Tiny flow",
-    steps: [{ id: "a", kind: "start" }, { id: "b", label: "Ok?", kind: "decision" }, { id: "c", kind: "end" }],
+    steps: [
+      { id: "a", kind: "start" },
+      { id: "b", label: "Ok?", kind: "decision" },
+      { id: "c", kind: "end" },
+    ],
     edges: ["a -> b", "b -> c: yes"],
   };
 
@@ -401,13 +438,17 @@ describe("erd diagrams", () => {
   it("rejects an fk to an unknown column with a suggestion", () => {
     write("s.json", {
       ...schema,
-      tables: [schema.tables[0], { id: "orders", columns: ["id uuid pk", "user_id uuid fk users.idd"] }],
+      tables: [
+        schema.tables[0],
+        { id: "orders", columns: ["id uuid pk", "user_id uuid fk users.idd"] },
+      ],
     });
     const r = run(["make", "s.json"]);
     expect(r).toEqual({
       code: 1,
       stdout: "",
-      stderr: 'error  tables[1].columns[1]: unknown column "users.idd" → did you mean "users.id"?\n',
+      stderr:
+        'error  tables[1].columns[1]: unknown column "users.idd" → did you mean "users.id"?\n',
     });
     expect(existsSync(join(dir, "s.html"))).toBe(false);
   });
@@ -489,14 +530,24 @@ describe("example", () => {
     const help = run(["--help"]).stdout;
     expect(help).toContain("  trazo schema <type>\n");
     expect(help).toContain("  trazo example <type>\n");
-    expect(run(["schem"])).toEqual({ code: 2, stdout: "", stderr: usageError('unknown command "schem" (did you mean "schema"?)') });
-    expect(run(["mkae", "x"]).stderr).toBe(usageError('unknown command "mkae" (did you mean "make"?)'));
+    expect(run(["schem"])).toEqual({
+      code: 2,
+      stdout: "",
+      stderr: usageError('unknown command "schem" (did you mean "schema"?)'),
+    });
+    expect(run(["mkae", "x"]).stderr).toBe(
+      usageError('unknown command "mkae" (did you mean "make"?)'),
+    );
   });
 
   it("keeps check behavior unchanged", () => {
     write("w.json", withWarning);
     expect(run(["check", "w.json", "--json"]).stdout.startsWith('{"ok":true')).toBe(true);
-    expect(run(["check", "w.json", "--out", "x"])).toEqual({ code: 2, stdout: "", stderr: usageError('option "--out" only applies to make') });
+    expect(run(["check", "w.json", "--out", "x"])).toEqual({
+      code: 2,
+      stdout: "",
+      stderr: usageError('option "--out" only applies to make'),
+    });
     expect(run(["check"])).toEqual({ code: 2, stdout: "", stderr: usageError("missing <input>") });
   });
 });
