@@ -22,6 +22,7 @@ export interface ErdTable {
   id: string;
   label: string;
   note?: string;
+  source?:string;
   columns: ErdColumn[];
 }
 
@@ -206,6 +207,7 @@ export const erdSchema = z.strictObject({
         id: idSchema,
         label: textSchema.optional(),
         note: textSchema.optional(),
+        source: textSchema.optional(),
         columns: z.array(columnSchema).min(1),
       }),
     )
@@ -360,6 +362,7 @@ export function buildErd(input: Parsed): { diagram?: Erd; issues: Issue[] } {
         }),
       };
       if (table.note !== undefined) out.note = table.note;
+      if (table.source !== undefined) out.source = table.source;
       return out;
     }),
     relations,

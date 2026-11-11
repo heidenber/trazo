@@ -101,6 +101,7 @@ table
   id            unique; letters, digits, _ . -; may contain dots (public.users)
   label?        shown text; defaults to id
   note?         hover text
+  source?       "path/file.ts:line", shown on hover
   columns       column[], at least 1
 
 column, short form (a string)

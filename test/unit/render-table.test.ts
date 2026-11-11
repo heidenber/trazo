@@ -24,7 +24,7 @@ const row = (i: number, name: string, type: string, marks?: string, note?: strin
   key: marks !== undefined,
 });
 
-const table = (id: string, x: number, note?: string): SceneNode => ({
+const table = (id: string, x: number, note?: string, source?: string): SceneNode => ({
   id,
   kind: "table",
   shape: "table",
@@ -35,6 +35,7 @@ const table = (id: string, x: number, note?: string): SceneNode => ({
   header: 32,
   label: block(id, x + 12, 40, 14, 600),
   ...(note === undefined ? {} : { note }),
+  ...(source === undefined ? {} : { source }),
   rows: [row(0, "id", "uuid", "PK"), row(1, "email", "text?", undefined, "Login address")],
 });
 
@@ -83,6 +84,17 @@ describe("table render", () => {
     expect(svg).toContain("<desc>Login address</desc>");
     expect(svg).toContain("<desc>Customer orders</desc>");
     expect(svg.match(/<title/g)).toHaveLength(1);
+  });
+
+  it("puts the table note and source together in the table tooltip", () => {
+    const svg = renderSvg(scene([], [table("orders", 20, "Customer orders", "src/models/order.ts:8")]));
+    const tip = /<desc>([^<]*)<\/desc>/.exec(svg.slice(svg.indexOf('data-id="orders"')))![1]!;
+    expect(tip).toBe("Customer orders\nsrc/models/order.ts:8");
+  });
+
+  it("shows a table source even without a note", () => {
+    const svg = renderSvg(scene([], [table("orders", 20, undefined, "src/models/order.ts:8")]));
+    expect(svg).toContain("<desc>src/models/order.ts:8</desc>");
   });
 
   it("uses the end marker that matches each side of the edge", () => {

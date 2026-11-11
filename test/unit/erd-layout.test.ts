@@ -60,6 +60,19 @@ describe("erd layout", () => {
     expect(scene.nodes.every((n) => n.shape === "table")).toBe(true);
   });
 
+  it("keeps note and source on the table node", async () => {
+    const scene = await layoutDiagram(
+      erd({
+        tables: [
+          { id: "users", note: "people", source: "db/migrations/001_users.sql:1", columns: ["id uuid pk"] },
+          { id: "orders", columns: ["id uuid pk"] },
+        ],
+      }),
+    );
+    expect(byId(scene, "users")).toMatchObject({ note: "people", source: "db/migrations/001_users.sql:1" });
+    expect("source" in byId(scene, "orders")).toBe(false);
+  });
+
   it("builds one row per column with type, nullable mark and key marks", async () => {
     const scene = await layoutDiagram(shop());
     const users = byId(scene, "users");

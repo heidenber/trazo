@@ -9,6 +9,7 @@ All notable changes to trazo are listed here. The format follows [Keep a Changel
 ### Added
 
 - `docs/issue-codes.md` lists every validation and geometry issue code with its severity and meaning, linked from both READMEs. Thanks to @jeelthacker1 for the first outside contribution (#32).
+- ERD tables take an optional `source` ("path/file.ts:line"), shown on hover after the note, the same as architecture nodes, workflow steps and sequence participants. `trazo schema erd`, the example and the skill now include it.
 
 ### Changed
 

@@ -6,6 +6,7 @@
     {
       "id": "customers",
       "note": "One row per account, guests included.",
+       "source": "db/migrations/001_customers.sql:1",
       "columns": [
         "id uuid pk",
         "email text unique",
@@ -48,6 +49,7 @@
     },
     {
       "id": "payments",
+       "source": "db/migrations/004_payments.sql:1",
       "columns": [
         "id uuid pk",
         "order_id uuid fk orders.id unique",

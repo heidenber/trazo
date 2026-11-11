@@ -176,6 +176,7 @@ export async function layoutErd(d: Erd): Promise<Scene> {
       rows: buildRows(s, box),
     };
     if (t.note !== undefined) node.note = t.note;
+    if (t.source !== undefined) node.source = t.source;
     return node;
   });
   const nodeOf = new Map(nodes.map((n) => [n.id, n]));

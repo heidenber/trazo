@@ -38,6 +38,20 @@ function onlyWarning(raw: unknown): Issue {
 }
 
 describe("erd model", () => {
+  it("keeps an optional table source and leaves it out when absent", () => {
+    const raw = (table: object) => ({ type: "erd", title: "T", tables: [{ id: "u", columns: ["id int pk"], ...table }] });
+    const withSource = validateDiagram(raw({ source: "prisma/schema.prisma:12" }));
+    expect(withSource.issues).toEqual([]);
+    expect((withSource.diagram as Erd).tables[0]!.source).toBe("prisma/schema.prisma:12");
+    const without = (validateDiagram(raw({})).diagram as Erd).tables[0]!;
+    expect("source" in without).toBe(false);
+  });
+
+  it("rejects an empty table source", () => {
+    const { issues } = validateDiagram({ type: "erd", title: "T", tables: [{ id: "u", source: "", columns: ["id int pk"] }] });
+    expect(issues.some((i) => i.severity === "error" && i.path === "tables[0].source")).toBe(true);
+  });
+
   it("accepts the shop example without issues", () => {
     const result = validateDiagram(shop);
     expect(result.issues).toEqual([]);
