@@ -2,7 +2,15 @@
 // Copyright 2026 Heidenber Palacio Garzón
 
 import { spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -30,19 +38,38 @@ const root = resolve(__dirname, "../..");
 const tasks = ["arch-shop", "wf-expenses"];
 const line = (o: unknown) => JSON.stringify(o);
 const bash = (id: string, command: string) =>
-  line({ type: "assistant", message: { content: [{ type: "tool_use", id, name: "Bash", input: { command } }] } });
+  line({
+    type: "assistant",
+    message: { content: [{ type: "tool_use", id, name: "Bash", input: { command } }] },
+  });
 const write = (id: string, file: string) =>
-  line({ type: "assistant", message: { content: [{ type: "tool_use", id, name: "Write", input: { file_path: file, content: "{}" } }] } });
+  line({
+    type: "assistant",
+    message: {
+      content: [{ type: "tool_use", id, name: "Write", input: { file_path: file, content: "{}" } }],
+    },
+  });
 const edit = (id: string, file: string) =>
-  line({ type: "assistant", message: { content: [{ type: "tool_use", id, name: "Edit", input: { file_path: file } }] } });
+  line({
+    type: "assistant",
+    message: { content: [{ type: "tool_use", id, name: "Edit", input: { file_path: file } }] },
+  });
 const res = (id: string, content: string, isError = false) =>
-  line({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: id, content, is_error: isError }] } });
+  line({
+    type: "user",
+    message: { content: [{ type: "tool_result", tool_use_id: id, content, is_error: isError }] },
+  });
 const result = (extra: object = {}) =>
   line({
     type: "result",
     subtype: "success",
     is_error: false,
-    usage: { input_tokens: 120, output_tokens: 45, cache_creation_input_tokens: 300, cache_read_input_tokens: 700 },
+    usage: {
+      input_tokens: 120,
+      output_tokens: 45,
+      cache_creation_input_tokens: 300,
+      cache_read_input_tokens: 700,
+    },
     ...extra,
   });
 
@@ -176,7 +203,13 @@ describe("parseStream", () => {
   });
 
   it("does not count json edits before the first failure", () => {
-    const text = [write("a", "d.json"), edit("b", "d.json"), bash("c", "trazo make d.json"), res("c", "ok"), result()].join("\n");
+    const text = [
+      write("a", "d.json"),
+      edit("b", "d.json"),
+      bash("c", "trazo make d.json"),
+      res("c", "ok"),
+      result(),
+    ].join("\n");
     expect(parseStream(text).repairs).toBe(0);
   });
 
@@ -211,24 +244,62 @@ describe("parseArgs", () => {
       dryRun: false,
       resume: false,
     });
-    expect(o.out.replace(/\\/g, "/")).toMatch(/bench\/results\/2026-11-01-agent-claude-code\.json$/);
+    expect(o.out.replace(/\\/g, "/")).toMatch(
+      /bench\/results\/2026-11-01-agent-claude-code\.json$/,
+    );
   });
 
   it("reads every option", () => {
     const o = parseArgs(
-      ["--model", "m", "--task", "wf-expenses", "--task", "arch-shop", "--condition", "skill", "--runs", "1", "--out", "x.json", "--agent-cmd", "fake", "--timeout", "5", "--dry-run", "--resume"],
+      [
+        "--model",
+        "m",
+        "--task",
+        "wf-expenses",
+        "--task",
+        "arch-shop",
+        "--condition",
+        "skill",
+        "--runs",
+        "1",
+        "--out",
+        "x.json",
+        "--agent-cmd",
+        "fake",
+        "--timeout",
+        "5",
+        "--dry-run",
+        "--resume",
+      ],
       tasks,
       "2026-11-01",
     );
-    expect(o).toMatchObject({ tasks: ["wf-expenses", "arch-shop"], conditions: ["skill"], runs: 1, out: "x.json", agentCmd: "fake", timeout: 5, dryRun: true, resume: true });
+    expect(o).toMatchObject({
+      tasks: ["wf-expenses", "arch-shop"],
+      conditions: ["skill"],
+      runs: 1,
+      out: "x.json",
+      agentCmd: "fake",
+      timeout: 5,
+      dryRun: true,
+      resume: true,
+    });
   });
 
   it("rejects bad input with a clear message", () => {
     expect(() => parseArgs([], tasks, "d")).toThrow("--model is required");
-    expect(() => parseArgs(["--model", "m", "--task", "nope"], tasks, "d")).toThrow("unknown task: nope");
-    expect(() => parseArgs(["--model", "m", "--condition", "x"], tasks, "d")).toThrow("--condition must be skill, no-skill or both");
-    expect(() => parseArgs(["--model", "m", "--runs", "0"], tasks, "d")).toThrow("--runs needs a positive integer");
-    expect(() => parseArgs(["--model", "m", "--bogus"], tasks, "d")).toThrow("unknown option: --bogus");
+    expect(() => parseArgs(["--model", "m", "--task", "nope"], tasks, "d")).toThrow(
+      "unknown task: nope",
+    );
+    expect(() => parseArgs(["--model", "m", "--condition", "x"], tasks, "d")).toThrow(
+      "--condition must be skill, no-skill or both",
+    );
+    expect(() => parseArgs(["--model", "m", "--runs", "0"], tasks, "d")).toThrow(
+      "--runs needs a positive integer",
+    );
+    expect(() => parseArgs(["--model", "m", "--bogus"], tasks, "d")).toThrow(
+      "unknown option: --bogus",
+    );
     expect(() => parseArgs(["--model"], tasks, "d")).toThrow("--model needs a value");
   });
 });
@@ -248,9 +319,21 @@ describe("plan and command", () => {
     expect(prompt).toContain("`trazo`");
     expect(prompt.toLowerCase()).not.toContain("skill");
     expect(buildAgentArgs("P", "m1")).toEqual([
-      "-p", "P", "--model", "m1", "--setting-sources", "project", "--strict-mcp-config",
-      "--allowedTools", "Read", "Write", "Edit", "Bash(trazo:*)",
-      "--output-format", "stream-json", "--verbose",
+      "-p",
+      "P",
+      "--model",
+      "m1",
+      "--setting-sources",
+      "project",
+      "--strict-mcp-config",
+      "--allowedTools",
+      "Read",
+      "Write",
+      "Edit",
+      "Bash(trazo:*)",
+      "--output-format",
+      "stream-json",
+      "--verbose",
     ]);
   });
 
@@ -285,9 +368,18 @@ describe("plan and command", () => {
 });
 
 // OpenCode events, shaped like the JSONL of `opencode run --format json` (v2.1.3), trimmed.
-const ocTokens = (input: number, output: number, reasoning = 0, read = 0, write = 0) => ({ input, output, reasoning, cache: { read, write } });
+const ocTokens = (input: number, output: number, reasoning = 0, read = 0, write = 0) => ({
+  input,
+  output,
+  reasoning,
+  cache: { read, write },
+});
 const ocStart = () => line({ type: "step_start", part: { type: "step-start", snapshot: "abc" } });
-const ocFinish = (reason: string, tokens?: object) => line({ type: "step_finish", part: { type: "step-finish", reason, cost: 0, ...(tokens ? { tokens } : {}) } });
+const ocFinish = (reason: string, tokens?: object) =>
+  line({
+    type: "step_finish",
+    part: { type: "step-finish", reason, cost: 0, ...(tokens ? { tokens } : {}) },
+  });
 const ocText = (text: string) => line({ type: "text", part: { type: "text", text } });
 const ocShell = (command: string, exit: number) =>
   line({
@@ -295,13 +387,41 @@ const ocShell = (command: string, exit: number) =>
     part: {
       type: "tool",
       tool: "shell",
-      state: { status: "completed", input: { command, workdir: "/s" }, output: exit ? "error: bad\n" : "ok\n", metadata: { metadata: { status: "completed", exit } } },
+      state: {
+        status: "completed",
+        input: { command, workdir: "/s" },
+        output: exit ? "error: bad\n" : "ok\n",
+        metadata: { metadata: { status: "completed", exit } },
+      },
     },
   });
 const ocDenied = (command: string, tool = "shell") =>
-  line({ type: "tool_use", part: { type: "tool", tool, state: { status: "error", input: { command, workdir: "/s" }, error: `Permission denied: ${tool}` } } });
+  line({
+    type: "tool_use",
+    part: {
+      type: "tool",
+      tool,
+      state: {
+        status: "error",
+        input: { command, workdir: "/s" },
+        error: `Permission denied: ${tool}`,
+      },
+    },
+  });
 const ocFile = (tool: "write" | "edit", path: string) =>
-  line({ type: "tool_use", part: { type: "tool", tool, state: { status: "completed", input: { path, content: "{}" }, output: "Created file successfully", metadata: { metadata: {} } } } });
+  line({
+    type: "tool_use",
+    part: {
+      type: "tool",
+      tool,
+      state: {
+        status: "completed",
+        input: { path, content: "{}" },
+        output: "Created file successfully",
+        metadata: { metadata: {} },
+      },
+    },
+  });
 
 describe("parseOpencodeStream", () => {
   it("counts a clean first try and sums tokens over the steps", () => {
@@ -349,7 +469,12 @@ describe("parseOpencodeStream", () => {
   });
 
   it("reads check and make chained in one call, and a chained failure is not a first-try make", () => {
-    const ok = parseOpencodeStream([ocShell("trazo check shop.json && trazo make shop.json -o diagram.html", 0), ocText("done")].join("\n"));
+    const ok = parseOpencodeStream(
+      [
+        ocShell("trazo check shop.json && trazo make shop.json -o diagram.html", 0),
+        ocText("done"),
+      ].join("\n"),
+    );
     expect(ok.firstTryOk).toBe(true);
     expect(ok.failedCommands).toBe(0);
     expect(ok.lastMakeInput).toBe("shop.json");
@@ -383,7 +508,13 @@ describe("parseOpencodeStream", () => {
   });
 
   it("treats a make that fails first as not first try and ignores other failing commands", () => {
-    const text = [ocShell("trazo make d.json -o d.html", 2), ocFile("write", "d.json"), ocShell("trazo make d.json -o d.html", 0), ocShell("ls", 2), ocText("done")].join("\n");
+    const text = [
+      ocShell("trazo make d.json -o d.html", 2),
+      ocFile("write", "d.json"),
+      ocShell("trazo make d.json -o d.html", 0),
+      ocShell("ls", 2),
+      ocText("done"),
+    ].join("\n");
     const stats = parseOpencodeStream(text);
     expect(stats.firstTryOk).toBe(false);
     expect(stats.failedCommands).toBe(1);
@@ -391,7 +522,14 @@ describe("parseOpencodeStream", () => {
   });
 
   it("has no result when the run was cut off, and ignores bad lines", () => {
-    const text = ["not json", ocStart(), ocText("let me check"), ocShell("trazo check d.json", 0), ocStart(), "{broken"].join("\n");
+    const text = [
+      "not json",
+      ocStart(),
+      ocText("let me check"),
+      ocShell("trazo check d.json", 0),
+      ocStart(),
+      "{broken",
+    ].join("\n");
     expect(parseOpencodeStream(text)).toEqual({
       inputTokens: 0,
       outputTokens: 0,
@@ -414,7 +552,10 @@ describe("parseOpencodeStream", () => {
   });
 
   it("reports an error event as an errored result", () => {
-    const err = line({ type: "error", error: { type: "provider.no-route", message: "Model unavailable: x/y" } });
+    const err = line({
+      type: "error",
+      error: { type: "provider.no-route", message: "Model unavailable: x/y" },
+    });
     const stats = parseOpencodeStream(err);
     expect(stats.hasResult).toBe(true);
     expect(stats.resultIsError).toBe(true);
@@ -423,7 +564,15 @@ describe("parseOpencodeStream", () => {
 
 describe("opencode adapter helpers", () => {
   it("builds the opencode arguments and leaves the claude ones as they were", () => {
-    expect(buildAgentArgs("P", "opencode/m", "opencode")).toEqual(["run", "--standalone", "-m", "opencode/m", "--format", "json", "P"]);
+    expect(buildAgentArgs("P", "opencode/m", "opencode")).toEqual([
+      "run",
+      "--standalone",
+      "-m",
+      "opencode/m",
+      "--format",
+      "json",
+      "P",
+    ]);
     expect(buildAgentArgs("P", "m1", "claude-code")).toEqual(buildAgentArgs("P", "m1"));
   });
 
@@ -433,8 +582,12 @@ describe("opencode adapter helpers", () => {
   });
 
   it("picks the default sandbox root per agent: opencode outside the repository", () => {
-    expect(defaultSandboxRoot("claude-code", "vendor/m.1", "/repo", "/tmp")).toBe(join("/repo", "tmp", "bench-runs", "vendor-m.1"));
-    expect(defaultSandboxRoot("opencode", "opencode/m.1", "/repo", "/tmp")).toBe(join("/tmp", "trazo-bench-runs", "opencode-m.1"));
+    expect(defaultSandboxRoot("claude-code", "vendor/m.1", "/repo", "/tmp")).toBe(
+      join("/repo", "tmp", "bench-runs", "vendor-m.1"),
+    );
+    expect(defaultSandboxRoot("opencode", "opencode/m.1", "/repo", "/tmp")).toBe(
+      join("/tmp", "trazo-bench-runs", "opencode-m.1"),
+    );
   });
 
   it("writes an opencode.json that allows read, edit and trazo only", () => {
@@ -458,7 +611,14 @@ describe("opencode adapter helpers", () => {
   });
 
   it("points OpenCode config, data and home into the state folder and drops OPENCODE_* from the user's env", () => {
-    const base = { Path: "C:\\bin", HOME: "/h", USERPROFILE: "C:\\u", OPENCODE_CONFIG: "x", OPENCODE_PERMISSION: "{}", KEEP: "1" };
+    const base = {
+      Path: "C:\\bin",
+      HOME: "/h",
+      USERPROFILE: "C:\\u",
+      OPENCODE_CONFIG: "x",
+      OPENCODE_PERMISSION: "{}",
+      KEEP: "1",
+    };
     const state = join("/w", "_opencode");
     const env = opencodeEnv(base, "C:\\shim", state, "win32");
     expect(env).toEqual({
@@ -492,7 +652,9 @@ describe("shimExePath", () => {
   ].join("\r\n");
   it("derives the real exe from an npm shim, relative to the shim folder", () => {
     const dir = resolve("some", "npm");
-    expect(shimExePath(npmShim, dir)).toBe(resolve(dir, "node_modules", "@opencode", "cli", "bin", "opencode.exe"));
+    expect(shimExePath(npmShim, dir)).toBe(
+      resolve(dir, "node_modules", "@opencode", "cli", "bin", "opencode.exe"),
+    );
   });
   it("accepts the %~dp0 spelling", () => {
     const dir = resolve("x");
@@ -517,12 +679,27 @@ describe("shellCommandLine", () => {
 const script = join(root, "bench", "run-agent.mjs");
 const work = mkdtempSync(join(tmpdir(), "trazo-run-agent-"));
 afterAll(() => rmSync(work, { recursive: true, force: true }));
-const run = (args: string[]) => spawnSync(process.execPath, [script, ...args], { cwd: root, encoding: "utf8", timeout: 120000 });
+const run = (args: string[]) =>
+  spawnSync(process.execPath, [script, ...args], { cwd: root, encoding: "utf8", timeout: 120000 });
 
 describe("run-agent.mjs", () => {
   it("dry-run prints the plan and the command lines and runs nothing", () => {
     const out = join(work, "dry.json");
-    const r = run(["--model", "m1", "--task", "arch-shop", "--condition", "skill", "--runs", "1", "--dry-run", "--out", out, "--sandbox-root", join(work, "sb-dry")]);
+    const r = run([
+      "--model",
+      "m1",
+      "--task",
+      "arch-shop",
+      "--condition",
+      "skill",
+      "--runs",
+      "1",
+      "--dry-run",
+      "--out",
+      out,
+      "--sandbox-root",
+      join(work, "sb-dry"),
+    ]);
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("arch-shop-skill-1");
     expect(r.stdout).toContain("claude -p");
@@ -536,20 +713,46 @@ describe("run-agent.mjs", () => {
 
   it("dry-run defaults the sandbox root to a per-model folder", () => {
     const out = join(work, "dry-default.json");
-    const r = run(["--model", "vendor/m.1", "--task", "arch-shop", "--condition", "skill", "--runs", "1", "--dry-run", "--out", out]);
+    const r = run([
+      "--model",
+      "vendor/m.1",
+      "--task",
+      "arch-shop",
+      "--condition",
+      "skill",
+      "--runs",
+      "1",
+      "--dry-run",
+      "--out",
+      out,
+    ]);
     expect(r.status).toBe(0);
-    expect(r.stdout).toContain(`cwd: ${join(root, "tmp", "bench-runs", "vendor-m.1", "arch-shop-skill-1")}`);
+    expect(r.stdout).toContain(
+      `cwd: ${join(root, "tmp", "bench-runs", "vendor-m.1", "arch-shop-skill-1")}`,
+    );
     expect(r.stdout).toContain("1 run(s) planned");
     expect(existsSync(out)).toBe(false);
     expect(existsSync(join(root, "tmp", "bench-runs", "vendor-m.1"))).toBe(false);
   });
 
   it("keeps the claude-code defaults when --agent is claude-code or absent", () => {
-    const common = ["--model", "vendor/m.1", "--task", "arch-shop", "--condition", "skill", "--runs", "1", "--dry-run"];
+    const common = [
+      "--model",
+      "vendor/m.1",
+      "--task",
+      "arch-shop",
+      "--condition",
+      "skill",
+      "--runs",
+      "1",
+      "--dry-run",
+    ];
     for (const extra of [[], ["--agent", "claude-code"]]) {
       const r = run([...common, ...extra]);
       expect(r.status).toBe(0);
-      expect(r.stdout).toContain(`cwd: ${join(root, "tmp", "bench-runs", "vendor-m.1", "arch-shop-skill-1")}`);
+      expect(r.stdout).toContain(
+        `cwd: ${join(root, "tmp", "bench-runs", "vendor-m.1", "arch-shop-skill-1")}`,
+      );
       expect(r.stdout).toContain("claude -p");
       expect(r.stdout).toContain("--setting-sources project");
     }
@@ -560,13 +763,43 @@ describe("run-agent.mjs", () => {
 
   it("dry-run for opencode prints the opencode command and a sandbox outside the repository", () => {
     const out = join(work, "dry-oc.json");
-    const r = run(["--agent", "opencode", "--model", "opencode/deepseek-v4.1-flash-free", "--task", "arch-shop", "--condition", "skill", "--runs", "1", "--dry-run", "--out", out]);
+    const r = run([
+      "--agent",
+      "opencode",
+      "--model",
+      "opencode/deepseek-v4.1-flash-free",
+      "--task",
+      "arch-shop",
+      "--condition",
+      "skill",
+      "--runs",
+      "1",
+      "--dry-run",
+      "--out",
+      out,
+    ]);
     expect(r.status).toBe(0);
-    expect(r.stdout).toContain("opencode run --standalone -m opencode/deepseek-v4.1-flash-free --format json");
-    expect(r.stdout).toContain(`cwd: ${join(tmpdir(), "trazo-bench-runs", "opencode-deepseek-v4.1-flash-free", "arch-shop-skill-1")}`);
+    expect(r.stdout).toContain(
+      "opencode run --standalone -m opencode/deepseek-v4.1-flash-free --format json",
+    );
+    expect(r.stdout).toContain(
+      `cwd: ${join(tmpdir(), "trazo-bench-runs", "opencode-deepseek-v4.1-flash-free", "arch-shop-skill-1")}`,
+    );
     expect(r.stdout).toContain("1 run(s) planned");
     expect(existsSync(out)).toBe(false);
-    const explicit = run(["--agent", "opencode", "--model", "m", "--task", "arch-shop", "--runs", "1", "--dry-run", "--sandbox-root", join(work, "sb-oc")]);
+    const explicit = run([
+      "--agent",
+      "opencode",
+      "--model",
+      "m",
+      "--task",
+      "arch-shop",
+      "--runs",
+      "1",
+      "--dry-run",
+      "--sandbox-root",
+      join(work, "sb-oc"),
+    ]);
     expect(explicit.stdout).toContain(`cwd: ${join(work, "sb-oc", "arch-shop-skill-1")}`);
   });
 
@@ -606,25 +839,56 @@ describe("run-agent.mjs", () => {
       );
       const out = join(work, "e2e.json");
       const sb = join(work, "sb");
-      const args = ["--model", "m1", "--task", "arch-shop", "--runs", "1", "--agent-cmd", fake, "--out", out, "--sandbox-root", sb];
+      const args = [
+        "--model",
+        "m1",
+        "--task",
+        "arch-shop",
+        "--runs",
+        "1",
+        "--agent-cmd",
+        fake,
+        "--out",
+        out,
+        "--sandbox-root",
+        sb,
+      ];
       const r = run(args);
       expect(r.status, r.stderr).toBe(0);
 
       const data = JSON.parse(readFileSync(out, "utf8"));
-      expect(data).toMatchObject({ kind: "agent", agent: "claude-code", model: "m1", runsPerTask: 1 });
+      expect(data).toMatchObject({
+        kind: "agent",
+        agent: "claude-code",
+        model: "m1",
+        runsPerTask: 1,
+      });
       expect(data.runs).toHaveLength(2);
       const by = Object.fromEntries(data.runs.map((x: { condition: string }) => [x.condition, x]));
-      expect(by.skill).toMatchObject({ task: "arch-shop", run: 1, inputTokens: 10, outputTokens: 5, failedCommands: 0, repairs: 0, firstTryOk: true, finalOk: true });
+      expect(by.skill).toMatchObject({
+        task: "arch-shop",
+        run: 1,
+        inputTokens: 10,
+        outputTokens: 5,
+        failedCommands: 0,
+        repairs: 0,
+        firstTryOk: true,
+        finalOk: true,
+      });
       expect(by["no-skill"]).toMatchObject({ firstTryOk: true, finalOk: true });
       expect(typeof by.skill.seconds).toBe("number");
 
-      expect(existsSync(join(sb, "arch-shop-skill-1", ".claude", "skills", "trazo", "SKILL.md"))).toBe(true);
+      expect(
+        existsSync(join(sb, "arch-shop-skill-1", ".claude", "skills", "trazo", "SKILL.md")),
+      ).toBe(true);
       expect(existsSync(join(sb, "arch-shop-no-skill-1", ".claude"))).toBe(false);
       expect(existsSync(join(sb, "arch-shop-skill-1", "diagram.html"))).toBe(true);
       const stream = readFileSync(join(sb, "arch-shop-skill-1", "stream.jsonl"), "utf8");
       expect(stream).toContain("skill=true");
       expect(stream).toContain("--setting-sources|project");
-      expect(readFileSync(join(sb, "arch-shop-no-skill-1", "stream.jsonl"), "utf8")).toContain("skill=false");
+      expect(readFileSync(join(sb, "arch-shop-no-skill-1", "stream.jsonl"), "utf8")).toContain(
+        "skill=false",
+      );
       expect(r.stdout).toContain("firstTryRate");
 
       const again = run([...args, "--resume"]);
@@ -661,14 +925,43 @@ describe("run-agent.mjs", () => {
       );
       const out = join(work, "e2e-oc.json");
       const sb = join(work, "sb-oc-e2e");
-      const args = ["--agent", "opencode", "--model", "opencode/m1", "--task", "arch-shop", "--runs", "1", "--agent-cmd", fake, "--out", out, "--sandbox-root", sb];
+      const args = [
+        "--agent",
+        "opencode",
+        "--model",
+        "opencode/m1",
+        "--task",
+        "arch-shop",
+        "--runs",
+        "1",
+        "--agent-cmd",
+        fake,
+        "--out",
+        out,
+        "--sandbox-root",
+        sb,
+      ];
       const r = run(args);
       expect(r.status, r.stderr).toBe(0);
 
       const data = JSON.parse(readFileSync(out, "utf8"));
-      expect(data).toMatchObject({ kind: "agent", agent: "opencode", agentVersion: "opencode v9.9.9", model: "opencode/m1", runsPerTask: 1 });
+      expect(data).toMatchObject({
+        kind: "agent",
+        agent: "opencode",
+        agentVersion: "opencode v9.9.9",
+        model: "opencode/m1",
+        runsPerTask: 1,
+      });
       const by = Object.fromEntries(data.runs.map((x: { condition: string }) => [x.condition, x]));
-      expect(by.skill).toMatchObject({ inputTokens: 10, outputTokens: 7, cacheCreationTokens: 7, cacheReadTokens: 100, failedCommands: 0, firstTryOk: true, finalOk: true });
+      expect(by.skill).toMatchObject({
+        inputTokens: 10,
+        outputTokens: 7,
+        cacheCreationTokens: 7,
+        cacheReadTokens: 100,
+        failedCommands: 0,
+        firstTryOk: true,
+        finalOk: true,
+      });
       expect(by["no-skill"]).toMatchObject({ firstTryOk: true, finalOk: true });
 
       const skillSandbox = join(sb, "arch-shop-skill-1");
@@ -677,17 +970,37 @@ describe("run-agent.mjs", () => {
       expect(existsSync(join(sb, "arch-shop-no-skill-1", ".opencode"))).toBe(false);
       const cfg = JSON.parse(readFileSync(join(skillSandbox, "opencode.json"), "utf8"));
       expect(cfg.permission.shell).toEqual({ "*": "deny", "trazo *": "allow" });
-      expect(JSON.parse(readFileSync(join(sb, "arch-shop-no-skill-1", "opencode.json"), "utf8")).permission.skill).toBe("deny");
+      expect(
+        JSON.parse(readFileSync(join(sb, "arch-shop-no-skill-1", "opencode.json"), "utf8"))
+          .permission.skill,
+      ).toBe("deny");
       const stream = readFileSync(join(skillSandbox, "stream.jsonl"), "utf8");
       expect(stream).toContain("skill=true");
       // PWD would otherwise stay on the launching shell's folder and OpenCode would work (and write) there.
       expect(stream).toContain(JSON.stringify(`pwd=${skillSandbox} xdg=`).slice(1, -1));
-      expect(stream).toContain(JSON.stringify(`xdg=${join(sb, "_opencode", "config")}`).slice(1, -1));
+      expect(stream).toContain(
+        JSON.stringify(`xdg=${join(sb, "_opencode", "config")}`).slice(1, -1),
+      );
       expect(stream).toContain("args=run|--standalone|-m|opencode/m1|--format|json|");
-      expect(readFileSync(join(sb, "arch-shop-no-skill-1", "stream.jsonl"), "utf8")).toContain("skill=false");
+      expect(readFileSync(join(sb, "arch-shop-no-skill-1", "stream.jsonl"), "utf8")).toContain(
+        "skill=false",
+      );
 
       // The output file belongs to one agent: a different agent must not append to it.
-      const mismatch = run(["--model", "opencode/m1", "--task", "arch-shop", "--runs", "1", "--agent-cmd", fake, "--out", out, "--sandbox-root", join(work, "sb-mismatch")]);
+      const mismatch = run([
+        "--model",
+        "opencode/m1",
+        "--task",
+        "arch-shop",
+        "--runs",
+        "1",
+        "--agent-cmd",
+        fake,
+        "--out",
+        out,
+        "--sandbox-root",
+        join(work, "sb-mismatch"),
+      ]);
       expect(mismatch.status).toBe(1);
       expect(mismatch.stderr).toContain("holds agent opencode, not claude-code");
     },
@@ -707,11 +1020,30 @@ describe("run-agent.mjs", () => {
       ].join("\n"),
     );
     const out = join(work, "argv-out.json");
-    const r = run(["--agent", "opencode", "--model", "opencode/m1", "--task", "arch-shop", "--condition", "skill", "--runs", "1", "--agent-cmd", fake, "--out", out, "--sandbox-root", join(work, "sb-argv")]);
+    const r = run([
+      "--agent",
+      "opencode",
+      "--model",
+      "opencode/m1",
+      "--task",
+      "arch-shop",
+      "--condition",
+      "skill",
+      "--runs",
+      "1",
+      "--agent-cmd",
+      fake,
+      "--out",
+      out,
+      "--sandbox-root",
+      join(work, "sb-argv"),
+    ]);
     expect(r.status, r.stderr).toBe(0);
     const argv = JSON.parse(readFileSync(argvFile, "utf8")) as string[];
     const last = argv[argv.length - 1];
-    const taskPrompt = JSON.parse(readFileSync(join(root, "bench", "tasks.json"), "utf8")).tasks.find((t: { id: string }) => t.id === "arch-shop").prompt;
+    const taskPrompt = JSON.parse(
+      readFileSync(join(root, "bench", "tasks.json"), "utf8"),
+    ).tasks.find((t: { id: string }) => t.id === "arch-shop").prompt;
     expect(last).toBe(buildPrompt(taskPrompt));
     expect(last).toContain("\n\n");
     expect(last).toContain("diagram.html");
@@ -719,23 +1051,59 @@ describe("run-agent.mjs", () => {
     expect(r.stdout).toContain(fake);
   });
 
-  it.runIf(process.platform === "win32")("resolves a .cmd shim to its exe, never through cmd.exe, and delivers the prompt", () => {
-    const dir = join(work, "shim");
-    const bin = join(dir, "node_modules", "pkg", "bin");
-    mkdirSync(bin, { recursive: true });
-    // A copy of node.exe stands in for the real binary; the shim's exe line is the npm one.
-    copyFileSync(process.execPath, join(bin, "agent.exe"));
-    const cmd = join(dir, "agent.cmd");
-    writeFileSync(cmd, '@ECHO off\r\nSET "dp0=%~dp0"\r\n"%dp0%\\node_modules\\pkg\\bin\\agent.exe"   %*\r\n');
-    const r = run(["--agent", "opencode", "--model", "opencode/m1", "--task", "arch-shop", "--runs", "1", "--agent-cmd", cmd, "--out", join(work, "shim-out.json"), "--sandbox-root", join(work, "sb-shim")]);
-    expect(r.stdout).toContain(`agent binary: ${join(bin, "agent.exe")}`);
-  });
+  it.runIf(process.platform === "win32")(
+    "resolves a .cmd shim to its exe, never through cmd.exe, and delivers the prompt",
+    () => {
+      const dir = join(work, "shim");
+      const bin = join(dir, "node_modules", "pkg", "bin");
+      mkdirSync(bin, { recursive: true });
+      // A copy of node.exe stands in for the real binary; the shim's exe line is the npm one.
+      copyFileSync(process.execPath, join(bin, "agent.exe"));
+      const cmd = join(dir, "agent.cmd");
+      writeFileSync(
+        cmd,
+        '@ECHO off\r\nSET "dp0=%~dp0"\r\n"%dp0%\\node_modules\\pkg\\bin\\agent.exe"   %*\r\n',
+      );
+      const r = run([
+        "--agent",
+        "opencode",
+        "--model",
+        "opencode/m1",
+        "--task",
+        "arch-shop",
+        "--runs",
+        "1",
+        "--agent-cmd",
+        cmd,
+        "--out",
+        join(work, "shim-out.json"),
+        "--sandbox-root",
+        join(work, "sb-shim"),
+      ]);
+      expect(r.stdout).toContain(`agent binary: ${join(bin, "agent.exe")}`);
+    },
+  );
 
   it("records a failed run when the agent produces nothing", () => {
     const fake = join(work, "silent.mjs");
     writeFileSync(fake, "process.exit(0);\n");
     const out = join(work, "silent.json");
-    const r = run(["--model", "m1", "--task", "arch-shop", "--condition", "no-skill", "--runs", "1", "--agent-cmd", fake, "--out", out, "--sandbox-root", join(work, "sb2")]);
+    const r = run([
+      "--model",
+      "m1",
+      "--task",
+      "arch-shop",
+      "--condition",
+      "no-skill",
+      "--runs",
+      "1",
+      "--agent-cmd",
+      fake,
+      "--out",
+      out,
+      "--sandbox-root",
+      join(work, "sb2"),
+    ]);
     expect(r.status).toBe(0);
     const rec = JSON.parse(readFileSync(out, "utf8")).runs[0];
     expect(rec).toMatchObject({ finalOk: false, firstTryOk: false, inputTokens: 0 });

@@ -9,13 +9,15 @@ const bundled = [
   {
     name: "lucide-static",
     title: "Lucide icons",
-    usage: "Icon outlines are embedded in src/render/generated/icons.ts and in every generated HTML file.",
+    usage:
+      "Icon outlines are embedded in src/render/generated/icons.ts and in every generated HTML file.",
     licenseFile: "LICENSE",
   },
   {
     name: "@fontsource/inter",
     title: "Inter typeface",
-    usage: "Glyph metrics are embedded in src/text/generated/metrics.ts; the font itself is embedded in every generated HTML file.",
+    usage:
+      "Glyph metrics are embedded in src/text/generated/metrics.ts; the font itself is embedded in every generated HTML file.",
     licenseFile: "LICENSE",
   },
 ];

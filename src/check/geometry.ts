@@ -17,7 +17,10 @@ function warning(code: string, message: string, hint: string): Issue {
 }
 
 function overlap(a: Box, b: Box): boolean {
-  return Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > EPS && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > EPS;
+  return (
+    Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > EPS &&
+    Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > EPS
+  );
 }
 
 function within(inner: Box, outer: Box): boolean {
@@ -72,7 +75,13 @@ export function checkGeometry(scene: Scene): Issue[] {
     for (let j = i + 1; j < nodes.length; j++) {
       if (!overlap(nodes[i]!, nodes[j]!)) continue;
       const [a, b] = byIds(nodes[i]!.id, nodes[j]!.id);
-      issues.push(warning("node-overlap", `node "${a}" overlaps node "${b}"`, "split the diagram or group related nodes"));
+      issues.push(
+        warning(
+          "node-overlap",
+          `node "${a}" overlaps node "${b}"`,
+          "split the diagram or group related nodes",
+        ),
+      );
     }
   }
 
@@ -80,7 +89,14 @@ export function checkGeometry(scene: Scene): Issue[] {
   for (const e of labelled) {
     const box = e.label!.box;
     for (const n of nodes) {
-      if (overlap(box, n)) issues.push(warning("label-overlap", `label of ${name(e)} overlaps node "${n.id}"`, "shorten the label"));
+      if (overlap(box, n))
+        issues.push(
+          warning(
+            "label-overlap",
+            `label of ${name(e)} overlaps node "${n.id}"`,
+            "shorten the label",
+          ),
+        );
     }
   }
   for (let i = 0; i < labelled.length; i++) {
@@ -95,30 +111,53 @@ export function checkGeometry(scene: Scene): Issue[] {
     for (const n of nodes) {
       if (n.id === e.from || n.id === e.to) continue;
       const hit = e.points.some((p, k) => k > 0 && segmentEntersBox(e.points[k - 1]!, p, n));
-      if (hit) issues.push(warning("edge-through-node", `edge ${name(e)} crosses node "${n.id}"`, "try another direction or group related nodes"));
+      if (hit)
+        issues.push(
+          warning(
+            "edge-through-node",
+            `edge ${name(e)} crosses node "${n.id}"`,
+            "try another direction or group related nodes",
+          ),
+        );
     }
   }
 
   for (const n of nodes) {
-    if (!within(n, canvas)) issues.push(warning("outside-canvas", `node "${n.id}" is outside the canvas`, REPORT));
+    if (!within(n, canvas))
+      issues.push(warning("outside-canvas", `node "${n.id}" is outside the canvas`, REPORT));
   }
   for (const g of scene.groups) {
-    if (!within(g, canvas)) issues.push(warning("outside-canvas", `group "${g.id}" is outside the canvas`, REPORT));
+    if (!within(g, canvas))
+      issues.push(warning("outside-canvas", `group "${g.id}" is outside the canvas`, REPORT));
   }
   for (const e of labelled) {
-    if (!within(e.label!.box, canvas)) issues.push(warning("outside-canvas", `label of ${name(e)} is outside the canvas`, REPORT));
+    if (!within(e.label!.box, canvas))
+      issues.push(warning("outside-canvas", `label of ${name(e)} is outside the canvas`, REPORT));
   }
 
   const groups = new Map(scene.groups.map((g) => [g.id, g]));
   for (const n of nodes) {
     const group = n.parent === undefined ? undefined : groups.get(n.parent);
-    if (group && !within(n, group)) issues.push(warning("outside-group", `node "${n.id}" is outside group "${group.id}"`, REPORT));
+    if (group && !within(n, group))
+      issues.push(
+        warning("outside-group", `node "${n.id}" is outside group "${group.id}"`, REPORT),
+      );
   }
 
   for (const n of nodes) {
     if (n.shape === "table") continue;
-    const widest = Math.max(0, ...n.label.lines.map((line) => textWidth(line, n.label.size, n.label.weight)));
-    if (widest > n.w - TEXT_PAD) issues.push(warning("text-overflow", `label of node "${n.id}" is wider than its box`, "shorten the label"));
+    const widest = Math.max(
+      0,
+      ...n.label.lines.map((line) => textWidth(line, n.label.size, n.label.weight)),
+    );
+    if (widest > n.w - TEXT_PAD)
+      issues.push(
+        warning(
+          "text-overflow",
+          `label of node "${n.id}" is wider than its box`,
+          "shorten the label",
+        ),
+      );
   }
 
   return unique(issues).sort((a, b) => compare(a.code, b.code) || compare(a.message, b.message));

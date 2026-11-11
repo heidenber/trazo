@@ -24,16 +24,22 @@ export function validateDiagram(raw: unknown): ValidationResult {
   const type = (raw as { type?: unknown }).type;
   const types: readonly string[] = DIAGRAM_TYPES;
   if (type === undefined) {
-    return { issues: [error_("schema/required", "type", "missing", `use one of: ${types.join(", ")}`)] };
+    return {
+      issues: [error_("schema/required", "type", "missing", `use one of: ${types.join(", ")}`)],
+    };
   }
   if (typeof type !== "string" || !types.includes(type)) {
-    const hint = (typeof type === "string" && didYouMean(type, types)) || `use one of: ${types.join(", ")}`;
-    return { issues: [error_("schema/enum", "type", `unknown value ${JSON.stringify(type)}`, hint)] };
+    const hint =
+      (typeof type === "string" && didYouMean(type, types)) || `use one of: ${types.join(", ")}`;
+    return {
+      issues: [error_("schema/enum", "type", `unknown value ${JSON.stringify(type)}`, hint)],
+    };
   }
 
   if (type === "sequence") {
     const parsed = sequenceSchema.safeParse(raw, { reportInput: true });
-    if (!parsed.success) return { issues: withStartHint(fromZod(parsed.error, sequenceSchema), type) };
+    if (!parsed.success)
+      return { issues: withStartHint(fromZod(parsed.error, sequenceSchema), type) };
     return buildSequence(parsed.data);
   }
   if (type === "erd") {
@@ -43,11 +49,13 @@ export function validateDiagram(raw: unknown): ValidationResult {
   }
   if (type === "workflow") {
     const parsed = workflowSchema.safeParse(raw, { reportInput: true });
-    if (!parsed.success) return { issues: withStartHint(fromZod(parsed.error, workflowSchema), type) };
+    if (!parsed.success)
+      return { issues: withStartHint(fromZod(parsed.error, workflowSchema), type) };
     return buildWorkflow(parsed.data);
   }
   const parsed = architectureSchema.safeParse(raw, { reportInput: true });
-  if (!parsed.success) return { issues: withStartHint(fromZod(parsed.error, architectureSchema), type) };
+  if (!parsed.success)
+    return { issues: withStartHint(fromZod(parsed.error, architectureSchema), type) };
   return buildArchitecture(parsed.data);
 }
 

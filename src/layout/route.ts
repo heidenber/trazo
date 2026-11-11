@@ -20,7 +20,10 @@ function hits(a: Point, b: Point, box: Box): boolean {
   const y0 = Math.min(a.y, b.y);
   const y1 = Math.max(a.y, b.y);
   return (
-    x0 < box.x + box.w + CLEARANCE && x1 > box.x - CLEARANCE && y0 < box.y + box.h + CLEARANCE && y1 > box.y - CLEARANCE
+    x0 < box.x + box.w + CLEARANCE &&
+    x1 > box.x - CLEARANCE &&
+    y0 < box.y + box.h + CLEARANCE &&
+    y1 > box.y - CLEARANCE
   );
 }
 
@@ -46,8 +49,10 @@ export function straighten(
 
   const candidates: Point[][] = [];
   // Decisions own fixed vertices, so only a box end may slide along its side.
-  if (from.shape !== "diamond" && e.y > from.y && e.y < from.y + from.h) candidates.push([{ x: s.x, y: e.y }, e]);
-  if (to.shape !== "diamond" && s.y > to.y && s.y < to.y + to.h) candidates.push([s, { x: e.x, y: s.y }]);
+  if (from.shape !== "diamond" && e.y > from.y && e.y < from.y + from.h)
+    candidates.push([{ x: s.x, y: e.y }, e]);
+  if (to.shape !== "diamond" && s.y > to.y && s.y < to.y + to.h)
+    candidates.push([s, { x: e.x, y: s.y }]);
   if (points.length > 4) {
     for (let i = 1; i + 2 < points.length; i++) {
       const x = points[i]!.x;

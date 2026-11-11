@@ -38,11 +38,18 @@ describe("formatIssues", () => {
   };
 
   it("renders one line per issue with severity, path, message and hint", () => {
-    expect(formatIssues([error])).toBe('error  edges[2]: unknown node "quee" → did you mean "queue"?');
+    expect(formatIssues([error])).toBe(
+      'error  edges[2]: unknown node "quee" → did you mean "queue"?',
+    );
   });
 
   it("renders warnings without a hint", () => {
-    const warning: Issue = { severity: "warning", code: "size/large", path: "nodes", message: "84 nodes" };
+    const warning: Issue = {
+      severity: "warning",
+      code: "size/large",
+      path: "nodes",
+      message: "84 nodes",
+    };
     expect(formatIssues([warning])).toBe("warn   nodes: 84 nodes");
   });
 

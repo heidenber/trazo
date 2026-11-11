@@ -1,7 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 Heidenber Palacio Garzón
 
-import type { Box, EdgeEnd, Scene, SceneLifeline, SceneEdge, SceneGroup, SceneNode, SceneRow, TextBlock } from "../scene.js";
+import type {
+  Box,
+  EdgeEnd,
+  Scene,
+  SceneLifeline,
+  SceneEdge,
+  SceneGroup,
+  SceneNode,
+  SceneRow,
+  TextBlock,
+} from "../scene.js";
 import { lineHeight } from "../text/measure.js";
 import { ICONS } from "./generated/icons.js";
 import { laneMarkup, num, rect, shapeMarkup } from "./shapes.js";
@@ -22,7 +32,10 @@ export function escapeXml(text: string): string {
 function text(block: TextBlock, cls: string): string {
   const step = lineHeight(block.size);
   const spans = block.lines
-    .map((line, i) => `<tspan x="${num(block.x)}" dy="${i === 0 ? 0 : num(step)}">${escapeXml(line)}</tspan>`)
+    .map(
+      (line, i) =>
+        `<tspan x="${num(block.x)}" dy="${i === 0 ? 0 : num(step)}">${escapeXml(line)}</tspan>`,
+    )
     .join("");
   const anchor = block.anchor === "middle" ? ' text-anchor="middle"' : "";
   return `<text class="t-text ${cls}" x="${num(block.x)}" y="${num(block.y)}" font-size="${block.size}" font-weight="${block.weight}"${anchor}>${spans}</text>`;
@@ -50,7 +63,10 @@ function fragment(g: SceneGroup): string {
   const tag = text(g.label, "t-frag-tag");
   const guard = g.guard ? text(bracket(g.guard), "t-frag-guard") : "";
   const dividers = (g.dividers ?? [])
-    .map((d) => `<line class="t-frag-divider" x1="${num(g.x)}" y1="${num(d.y)}" x2="${num(g.x + g.w)}" y2="${num(d.y)}"/>${text(bracket(d.guard), "t-frag-guard")}`)
+    .map(
+      (d) =>
+        `<line class="t-frag-divider" x1="${num(g.x)}" y1="${num(d.y)}" x2="${num(g.x + g.w)}" y2="${num(d.y)}"/>${text(bracket(d.guard), "t-frag-guard")}`,
+    )
     .join("");
   return `<g class="t-fragment" data-id="${escapeXml(g.id)}">${rect(g, "t-frag", 4)}${dividers}${tab}${tag}${guard}</g>`;
 }
@@ -68,7 +84,8 @@ function edge(e: SceneEdge, seq: boolean): string {
   const d = e.points.map((p, i) => `${i === 0 ? "M" : "L"}${num(p.x)} ${num(p.y)}`).join(" ");
   const id = `data-edge="${escapeXml(e.id)}"`;
   const attrs = `class="t-edge t-edge-${e.style}" data-from="${escapeXml(e.from)}" data-to="${escapeXml(e.to)}" d="${d}"`;
-  if (!e.ends) return `<path ${attrs} marker-end="url(#${seq && OPEN_STYLES.includes(e.style) ? "t-arrowhead-open" : "t-arrowhead"})" ${id}/>`;
+  if (!e.ends)
+    return `<path ${attrs} marker-end="url(#${seq && OPEN_STYLES.includes(e.style) ? "t-arrowhead-open" : "t-arrowhead"})" ${id}/>`;
   const halo = EDGE_HALO ? `<path class="t-edge-halo" d="${d}" ${id}/>` : "";
   return `${halo}<path ${attrs} marker-start="url(#t-end-${e.ends.from})" marker-end="url(#t-end-${e.ends.to})" ${id}/>`;
 }
@@ -105,7 +122,9 @@ function lanes(groups: SceneGroup[]): string[] {
   let i = 0;
   return groups
     .filter((g) => g.variant === "lane")
-    .map((g) => laneMarkup({ ...g, id: escapeXml(g.id) }, i++ % 2 === 1, text(g.label, "t-lane-title")));
+    .map((g) =>
+      laneMarkup({ ...g, id: escapeXml(g.id) }, i++ % 2 === 1, text(g.label, "t-lane-title")),
+    );
 }
 
 function tableBody(n: SceneNode): string {
@@ -132,7 +151,8 @@ function node(n: SceneNode): string {
 const needsShapeCss = (scene: Scene) =>
   scene.nodes.some((n) => n.shape !== "box") || scene.groups.some((g) => g.variant === "lane");
 
-const needsTableCss = (scene: Scene) => scene.nodes.some((n) => n.shape === "table") || scene.edges.some((e) => e.ends);
+const needsTableCss = (scene: Scene) =>
+  scene.nodes.some((n) => n.shape === "table") || scene.edges.some((e) => e.ends);
 
 export function renderSvg(scene: Scene): string {
   const desc = scene.description ? `<desc id="t-desc">${escapeXml(scene.description)}</desc>` : "";
@@ -148,8 +168,13 @@ export function renderSvg(scene: Scene): string {
     : "";
   // Outside sequences the filled head is dropped only when every edge has its own ends.
   const dropFilled = !needsFilled && (seq || ends);
-  const arrow = dropFilled ? "" : `<marker id="t-arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow" d="M0 1L10 5L0 9z"/></marker>`;
-  const css = (needsShapeCss(scene) ? SVG_CSS + SHAPE_CSS : SVG_CSS) + (needsTableCss(scene) ? TABLE_CSS : "") + (seq ? SEQUENCE_CSS : "");
+  const arrow = dropFilled
+    ? ""
+    : `<marker id="t-arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow" d="M0 1L10 5L0 9z"/></marker>`;
+  const css =
+    (needsShapeCss(scene) ? SVG_CSS + SHAPE_CSS : SVG_CSS) +
+    (needsTableCss(scene) ? TABLE_CSS : "") +
+    (seq ? SEQUENCE_CSS : "");
   const parts = [
     `<svg xmlns="http://www.w3.org/2000/svg" class="${seq ? "diagram t-seq" : "diagram"}" viewBox="0 0 ${num(scene.width)} ${num(scene.height)}" role="img" aria-labelledby="${labelled}">`,
     `<title id="t-title">${escapeXml(scene.title)}</title>`,
@@ -167,4 +192,3 @@ export function renderSvg(scene: Scene): string {
   ];
   return parts.filter(Boolean).join("\n");
 }
-

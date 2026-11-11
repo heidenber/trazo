@@ -40,7 +40,9 @@ export function parseArgs(argv, knownTasks, today) {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     switch (a) {
-      case "--model": opts.model = valueOf(i++); break;
+      case "--model":
+        opts.model = valueOf(i++);
+        break;
       case "--task": {
         const id = valueOf(i++);
         if (!knownTasks.includes(id)) throw new Error(`unknown task: ${id}`);
@@ -49,24 +51,40 @@ export function parseArgs(argv, knownTasks, today) {
       }
       case "--condition": {
         const c = valueOf(i++);
-        if (c !== "both" && !CONDITIONS.includes(c)) throw new Error("--condition must be skill, no-skill or both");
+        if (c !== "both" && !CONDITIONS.includes(c))
+          throw new Error("--condition must be skill, no-skill or both");
         opts.conditions = c === "both" ? [...CONDITIONS] : [c];
         break;
       }
-      case "--runs": opts.runs = positive("--runs", valueOf(i++)); break;
-      case "--timeout": opts.timeout = positive("--timeout", valueOf(i++)); break;
+      case "--runs":
+        opts.runs = positive("--runs", valueOf(i++));
+        break;
+      case "--timeout":
+        opts.timeout = positive("--timeout", valueOf(i++));
+        break;
       case "--agent": {
         const a = valueOf(i++);
         if (!AGENTS.includes(a)) throw new Error("--agent must be claude-code or opencode");
         opts.agent = a;
         break;
       }
-      case "--out": opts.out = valueOf(i++); break;
-      case "--agent-cmd": opts.agentCmd = valueOf(i++); break;
-      case "--sandbox-root": opts.sandboxRoot = valueOf(i++); break;
-      case "--dry-run": opts.dryRun = true; break;
-      case "--resume": opts.resume = true; break;
-      default: throw new Error(`unknown option: ${a}`);
+      case "--out":
+        opts.out = valueOf(i++);
+        break;
+      case "--agent-cmd":
+        opts.agentCmd = valueOf(i++);
+        break;
+      case "--sandbox-root":
+        opts.sandboxRoot = valueOf(i++);
+        break;
+      case "--dry-run":
+        opts.dryRun = true;
+        break;
+      case "--resume":
+        opts.resume = true;
+        break;
+      default:
+        throw new Error(`unknown option: ${a}`);
     }
   }
   if (!opts.model) throw new Error("--model is required");
@@ -85,15 +103,29 @@ export function buildAgentArgs(prompt, model, agent = "claude-code") {
   // --standalone: a private server per run, so the env overrides apply and no shared service is reused.
   if (agent === "opencode") return ["run", "--standalone", "-m", model, "--format", "json", prompt];
   return [
-    "-p", prompt, "--model", model, "--setting-sources", "project", "--strict-mcp-config",
-    "--allowedTools", "Read", "Write", "Edit", "Bash(trazo:*)",
-    "--output-format", "stream-json", "--verbose",
+    "-p",
+    prompt,
+    "--model",
+    model,
+    "--setting-sources",
+    "project",
+    "--strict-mcp-config",
+    "--allowedTools",
+    "Read",
+    "Write",
+    "Edit",
+    "Bash(trazo:*)",
+    "--output-format",
+    "stream-json",
+    "--verbose",
   ];
 }
 
 export function planRuns(taskIds, conditions, runs) {
   const plan = [];
-  for (const task of taskIds) for (const condition of conditions) for (let run = 1; run <= runs; run++) plan.push({ task, condition, run });
+  for (const task of taskIds)
+    for (const condition of conditions)
+      for (let run = 1; run <= runs; run++) plan.push({ task, condition, run });
   return plan;
 }
 
@@ -115,7 +147,9 @@ export function skillSegments(agent) {
 // OpenCode sees the git repository around its working directory (its snapshots hold the
 // repo tree), so its sandboxes default to the OS temp dir, outside this checkout.
 export function defaultSandboxRoot(agent, model, repoRoot, tmpDir) {
-  return agent === "opencode" ? join(tmpDir, "trazo-bench-runs", modelDir(model)) : join(repoRoot, "tmp", "bench-runs", modelDir(model));
+  return agent === "opencode"
+    ? join(tmpDir, "trazo-bench-runs", modelDir(model))
+    : join(repoRoot, "tmp", "bench-runs", modelDir(model));
 }
 
 /**
@@ -145,7 +179,8 @@ export function opencodeConfig(condition) {
  */
 export function opencodeEnv(baseEnv, binDir, stateDir, platform) {
   const env = {};
-  for (const [k, v] of Object.entries(baseEnv)) if (!k.toUpperCase().startsWith("OPENCODE_")) env[k] = v;
+  for (const [k, v] of Object.entries(baseEnv))
+    if (!k.toUpperCase().startsWith("OPENCODE_")) env[k] = v;
   const pathKey = Object.keys(env).find((k) => k.toLowerCase() === "path") ?? "PATH";
   env[pathKey] = `${binDir}${platform === "win32" ? ";" : ":"}${env[pathKey] ?? ""}`;
   env.HOME = join(stateDir, "home");
@@ -178,7 +213,9 @@ export function formatCommandLine(cmd, args) {
 /** Like formatCommandLine, for a shell spawn: cmd.exe cuts the line at the first newline, so refuse instead of truncating. */
 export function shellCommandLine(cmd, args) {
   if ([cmd, ...args].some((a) => a.includes("\n") || a.includes("\r"))) {
-    throw new Error("refusing to pass an argument with a newline through a shell: cmd.exe would truncate the prompt; use the real executable (--agent-cmd <path to the .exe>)");
+    throw new Error(
+      "refusing to pass an argument with a newline through a shell: cmd.exe would truncate the prompt; use the real executable (--agent-cmd <path to the .exe>)",
+    );
   }
   return formatCommandLine(cmd, args);
 }
@@ -195,8 +232,17 @@ export function shimExePath(text, shimDir) {
 
 export function shimFiles(nodePath, distCli, platform) {
   const files = [];
-  if (platform === "win32") files.push({ name: "trazo.cmd", content: `@echo off\r\n"${nodePath}" "${distCli}" %*\r\n`, executable: false });
-  files.push({ name: "trazo", content: `#!/bin/sh\nexec "${nodePath}" "${distCli}" "$@"\n`, executable: true });
+  if (platform === "win32")
+    files.push({
+      name: "trazo.cmd",
+      content: `@echo off\r\n"${nodePath}" "${distCli}" %*\r\n`,
+      executable: false,
+    });
+  files.push({
+    name: "trazo",
+    content: `#!/bin/sh\nexec "${nodePath}" "${distCli}" "$@"\n`,
+    executable: true,
+  });
   return files;
 }
 
@@ -216,14 +262,19 @@ export function agentEnv(baseEnv, binDir, platform) {
 
 // Agents often chain `trazo check x && trazo make x`; each segment is read on its own.
 const segments = (cmd) => cmd.split(/&&|\|\||;|\n/).map((s) => s.trim());
-const trazoVerbs = (cmd) => segments(cmd).map((s) => /^trazo\s+(check|make)\b/.exec(s)?.[1]).filter(Boolean);
+const trazoVerbs = (cmd) =>
+  segments(cmd)
+    .map((s) => /^trazo\s+(check|make)\b/.exec(s)?.[1])
+    .filter(Boolean);
 // A command that ran and failed reports "Exit code N". An error without it is the sandbox
 // refusing the whole call (a heredoc or an `rm` next to trazo), so trazo never ran.
-const denied = (block) => block.is_error === true && !/^Exit code \d/.test(resultText(block.content));
+const denied = (block) =>
+  block.is_error === true && !/^Exit code \d/.test(resultText(block.content));
 
 function resultText(content) {
   if (typeof content === "string") return content;
-  if (Array.isArray(content)) return content.map((c) => (typeof c === "string" ? c : (c?.text ?? ""))).join("\n");
+  if (Array.isArray(content))
+    return content.map((c) => (typeof c === "string" ? c : (c?.text ?? ""))).join("\n");
   return "";
 }
 
@@ -275,7 +326,13 @@ export function parseStream(text) {
       if (b?.type === "tool_use") {
         uses.set(b.id, b);
         const file = b.input?.file_path;
-        if ((b.name === "Write" || b.name === "Edit") && typeof file === "string" && file.endsWith(".json") && failedSeen) stats.repairs++;
+        if (
+          (b.name === "Write" || b.name === "Edit") &&
+          typeof file === "string" &&
+          file.endsWith(".json") &&
+          failedSeen
+        )
+          stats.repairs++;
         const cmd = b.input?.command;
         if (b.name === "Bash" && typeof cmd === "string") {
           for (const seg of segments(cmd)) {

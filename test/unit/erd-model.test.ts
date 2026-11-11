@@ -11,9 +11,18 @@ const shop = {
   title: "Shop",
   tables: [
     { id: "users", columns: ["id uuid pk", "email text unique", "name text"] },
-    { id: "orders", columns: ["id uuid pk", "user_id uuid fk users.id", "created_at timestamp with time zone"] },
-    { id: "payments", columns: ["id uuid pk", "order_id uuid fk orders.id unique", "amount numeric(10, 2)"] },
-    { id: "categories", columns: ["id int pk", "parent_id int fk categories.id null", "name text"] },
+    {
+      id: "orders",
+      columns: ["id uuid pk", "user_id uuid fk users.id", "created_at timestamp with time zone"],
+    },
+    {
+      id: "payments",
+      columns: ["id uuid pk", "order_id uuid fk orders.id unique", "amount numeric(10, 2)"],
+    },
+    {
+      id: "categories",
+      columns: ["id int pk", "parent_id int fk categories.id null", "name text"],
+    },
   ],
 };
 
@@ -39,7 +48,11 @@ function onlyWarning(raw: unknown): Issue {
 
 describe("erd model", () => {
   it("keeps an optional table source and leaves it out when absent", () => {
-    const raw = (table: object) => ({ type: "erd", title: "T", tables: [{ id: "u", columns: ["id int pk"], ...table }] });
+    const raw = (table: object) => ({
+      type: "erd",
+      title: "T",
+      tables: [{ id: "u", columns: ["id int pk"], ...table }],
+    });
     const withSource = validateDiagram(raw({ source: "prisma/schema.prisma:12" }));
     expect(withSource.issues).toEqual([]);
     expect((withSource.diagram as Erd).tables[0]!.source).toBe("prisma/schema.prisma:12");
@@ -48,7 +61,11 @@ describe("erd model", () => {
   });
 
   it("rejects an empty table source", () => {
-    const { issues } = validateDiagram({ type: "erd", title: "T", tables: [{ id: "u", source: "", columns: ["id int pk"] }] });
+    const { issues } = validateDiagram({
+      type: "erd",
+      title: "T",
+      tables: [{ id: "u", source: "", columns: ["id int pk"] }],
+    });
     expect(issues.some((i) => i.severity === "error" && i.path === "tables[0].source")).toBe(true);
   });
 
@@ -73,9 +90,33 @@ describe("erd model", () => {
   it("derives one relation per fk, with ends from the marks", () => {
     const erd = validateDiagram(shop).diagram as Erd;
     expect(erd.relations).toEqual([
-      { id: "orders.user_id", from: "orders", fromColumn: "user_id", to: "users", toColumn: "id", fromEnd: "zero-or-many", toEnd: "one" },
-      { id: "payments.order_id", from: "payments", fromColumn: "order_id", to: "orders", toColumn: "id", fromEnd: "zero-or-one", toEnd: "one" },
-      { id: "categories.parent_id", from: "categories", fromColumn: "parent_id", to: "categories", toColumn: "id", fromEnd: "zero-or-many", toEnd: "zero-or-one" },
+      {
+        id: "orders.user_id",
+        from: "orders",
+        fromColumn: "user_id",
+        to: "users",
+        toColumn: "id",
+        fromEnd: "zero-or-many",
+        toEnd: "one",
+      },
+      {
+        id: "payments.order_id",
+        from: "payments",
+        fromColumn: "order_id",
+        to: "orders",
+        toColumn: "id",
+        fromEnd: "zero-or-one",
+        toEnd: "one",
+      },
+      {
+        id: "categories.parent_id",
+        from: "categories",
+        fromColumn: "parent_id",
+        to: "categories",
+        toColumn: "id",
+        fromEnd: "zero-or-many",
+        toEnd: "zero-or-one",
+      },
     ]);
   });
 
@@ -85,7 +126,10 @@ describe("erd model", () => {
     ["fk a.id unique", "zero-or-one", "one"],
     ["fk a.id unique null", "zero-or-one", "zero-or-one"],
   ])("cardinality of %s", (marks, fromEnd, toEnd) => {
-    const raw = tables({ id: "a", columns: ["id int pk"] }, { id: "b", columns: ["id int pk", `a_id int ${marks}`] });
+    const raw = tables(
+      { id: "a", columns: ["id int pk"] },
+      { id: "b", columns: ["id int pk", `a_id int ${marks}`] },
+    );
     const result = validateDiagram(raw);
     expect(result.issues).toEqual([]);
     const relation = (result.diagram as Erd).relations[0]!;
@@ -120,7 +164,14 @@ describe("erd model", () => {
       title: "T",
       description: "d",
       theme: "dark",
-      tables: [{ id: "u", label: "Users", note: "people", columns: [{ name: "id", type: "int", pk: true, note: "key" }] }],
+      tables: [
+        {
+          id: "u",
+          label: "Users",
+          note: "people",
+          columns: [{ name: "id", type: "int", pk: true, note: "key" }],
+        },
+      ],
     };
     const erd = validateDiagram(raw).diagram as Erd;
     expect(erd.description).toBe("d");
@@ -144,7 +195,10 @@ describe("erd model", () => {
   });
 
   it("rejects an fk to an unknown table, with a suggestion", () => {
-    const raw = tables({ id: "users", columns: ["id int pk"] }, { id: "o", columns: ["id int pk", "u int fk usrs.id"] });
+    const raw = tables(
+      { id: "users", columns: ["id int pk"] },
+      { id: "o", columns: ["id int pk", "u int fk usrs.id"] },
+    );
     expect(only(raw)).toEqual({
       severity: "error",
       code: "ref/unknown-table",
@@ -155,7 +209,10 @@ describe("erd model", () => {
   });
 
   it("rejects an fk to an unknown column, with a suggestion", () => {
-    const raw = tables({ id: "users", columns: ["id int pk"] }, { id: "o", columns: ["id int pk", "u int fk users.idd"] });
+    const raw = tables(
+      { id: "users", columns: ["id int pk"] },
+      { id: "o", columns: ["id int pk", "u int fk users.idd"] },
+    );
     expect(only(raw)).toEqual({
       severity: "error",
       code: "ref/unknown-column",
@@ -166,7 +223,9 @@ describe("erd model", () => {
   });
 
   it("rejects duplicate table ids", () => {
-    expect(only(tables({ id: "a", columns: ["id int pk"] }, { id: "a", columns: ["id int pk"] }))).toEqual({
+    expect(
+      only(tables({ id: "a", columns: ["id int pk"] }, { id: "a", columns: ["id int pk"] })),
+    ).toEqual({
       severity: "error",
       code: "ref/duplicate-id",
       path: "tables[1].id",
@@ -186,7 +245,9 @@ describe("erd model", () => {
   });
 
   it("allows the same column name in different tables", () => {
-    expect(errors(tables({ id: "a", columns: ["id int pk"] }, { id: "b", columns: ["id int pk"] }))).toEqual([]);
+    expect(
+      errors(tables({ id: "a", columns: ["id int pk"] }, { id: "b", columns: ["id int pk"] })),
+    ).toEqual([]);
   });
 
   it("rejects a table without columns", () => {
@@ -222,7 +283,9 @@ describe("erd model", () => {
   });
 
   it("rejects unknown fields in the object form", () => {
-    expect(only(tables({ id: "a", columns: [{ name: "x", type: "int", nullabel: true }] }))).toMatchObject({
+    expect(
+      only(tables({ id: "a", columns: [{ name: "x", type: "int", nullabel: true }] })),
+    ).toMatchObject({
       code: "schema/unknown-field",
       path: "tables[0].columns[0].nullabel",
       hint: 'did you mean "nullable"?',
@@ -230,7 +293,10 @@ describe("erd model", () => {
   });
 
   it("warns when an fk targets a column that is neither pk nor unique", () => {
-    const raw = tables({ id: "u", columns: ["id int pk", "name text"] }, { id: "o", columns: ["id int pk", "n text fk u.name"] });
+    const raw = tables(
+      { id: "u", columns: ["id int pk", "name text"] },
+      { id: "o", columns: ["id int pk", "n text fk u.name"] },
+    );
     expect(onlyWarning(raw)).toEqual({
       severity: "warning",
       code: "fk/target-not-key",
@@ -241,12 +307,18 @@ describe("erd model", () => {
   });
 
   it("does not warn when the fk targets a unique column", () => {
-    const raw = tables({ id: "u", columns: ["id int pk", "code text unique"] }, { id: "o", columns: ["id int pk", "c text fk u.code"] });
+    const raw = tables(
+      { id: "u", columns: ["id int pk", "code text unique"] },
+      { id: "o", columns: ["id int pk", "c text fk u.code"] },
+    );
     expect(warnings(raw)).toEqual([]);
   });
 
   it("warns when the fk type differs from the referenced type", () => {
-    const raw = tables({ id: "u", columns: ["id int pk"] }, { id: "o", columns: ["id int pk", "u uuid fk u.id"] });
+    const raw = tables(
+      { id: "u", columns: ["id int pk"] },
+      { id: "o", columns: ["id int pk", "u uuid fk u.id"] },
+    );
     expect(onlyWarning(raw)).toEqual({
       severity: "warning",
       code: "fk/type-mismatch",
@@ -264,12 +336,18 @@ describe("erd model", () => {
     ["int2", "smallserial"],
     ["Timestamp  With Time Zone", "timestamp with time zone"],
   ])("treats %s and %s as the same type", (parent, child) => {
-    const raw = tables({ id: "u", columns: [`id ${parent} pk`] }, { id: "o", columns: ["id int pk", `u ${child} fk u.id`] });
+    const raw = tables(
+      { id: "u", columns: [`id ${parent} pk`] },
+      { id: "o", columns: ["id int pk", `u ${child} fk u.id`] },
+    );
     expect(warnings(raw).filter((w) => w.code === "fk/type-mismatch")).toEqual([]);
   });
 
   it("still warns for int against bigint", () => {
-    const raw = tables({ id: "u", columns: ["id bigint pk"] }, { id: "o", columns: ["id int pk", "u int fk u.id"] });
+    const raw = tables(
+      { id: "u", columns: ["id bigint pk"] },
+      { id: "o", columns: ["id int pk", "u int fk u.id"] },
+    );
     expect(onlyWarning(raw).code).toBe("fk/type-mismatch");
   });
 

@@ -167,4 +167,9 @@ rules
   texts must not be empty
 `;
 
-export const REFERENCE: Record<(typeof DIAGRAM_TYPES)[number], string> = { architecture, workflow, erd, sequence };
+export const REFERENCE: Record<(typeof DIAGRAM_TYPES)[number], string> = {
+  architecture,
+  workflow,
+  erd,
+  sequence,
+};

@@ -22,7 +22,7 @@ export interface ErdTable {
   id: string;
   label: string;
   note?: string;
-  source?:string;
+  source?: string;
   columns: ErdColumn[];
 }
 
@@ -102,7 +102,10 @@ export function parseColumn(text: string): ColumnResult {
     return { error };
   };
   const quoted = JSON.stringify(text);
-  const words = text.trim().split(/\s+/).filter((word) => word !== "");
+  const words = text
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word !== "");
   if (words.length === 0) return fail("column/syntax", `cannot read ${quoted}`, SHAPE_HINT);
 
   const name = words[0]!;
@@ -113,19 +116,36 @@ export function parseColumn(text: string): ColumnResult {
   // A typo'd mark right after the type ("text uniq") would otherwise be
   // swallowed as part of the type. The first type word is never checked.
   for (const word of typeWords.slice(1)) {
-    if (nearMark(word)) return fail("column/unknown-mark", `unknown mark "${word}" in ${quoted}`, markHint(word));
+    if (nearMark(word))
+      return fail("column/unknown-mark", `unknown mark "${word}" in ${quoted}`, markHint(word));
   }
   if (typeWords.length === 0) {
-    return fail("column/no-type", `column ${quoted} has no type`, 'write the type after the name, e.g. "id uuid pk"');
+    return fail(
+      "column/no-type",
+      `column ${quoted} has no type`,
+      'write the type after the name, e.g. "id uuid pk"',
+    );
   }
 
-  const column: ParsedColumn = { name, type: typeWords.join(" "), pk: false, unique: false, nullable: false };
+  const column: ParsedColumn = {
+    name,
+    type: typeWords.join(" "),
+    pk: false,
+    unique: false,
+    nullable: false,
+  };
   const seen = new Set<Mark>();
   while (i < words.length) {
     const word = words[i++]!;
     const mark = word.toLowerCase();
-    if (!isMark(mark)) return fail("column/unknown-mark", `unknown mark "${word}" in ${quoted}`, markHint(word));
-    if (seen.has(mark)) return fail("column/repeated-mark", `mark "${mark}" is repeated in ${quoted}`, `use "${mark}" once`);
+    if (!isMark(mark))
+      return fail("column/unknown-mark", `unknown mark "${word}" in ${quoted}`, markHint(word));
+    if (seen.has(mark))
+      return fail(
+        "column/repeated-mark",
+        `mark "${mark}" is repeated in ${quoted}`,
+        `use "${mark}" once`,
+      );
     seen.add(mark);
     if (mark === "pk") column.pk = true;
     else if (mark === "unique") column.unique = true;
@@ -133,12 +153,20 @@ export function parseColumn(text: string): ColumnResult {
     else {
       const target = words[i];
       if (target === undefined || isMark(target.toLowerCase())) {
-        return fail("column/fk-target", `fk needs a target in ${quoted}`, 'write "fk table.column"');
+        return fail(
+          "column/fk-target",
+          `fk needs a target in ${quoted}`,
+          'write "fk table.column"',
+        );
       }
       i++;
       const ref = splitRef(target);
       if (ref === undefined) {
-        return fail("column/fk-target", `"${target}" is not a table.column reference in ${quoted}`, 'write "fk table.column"');
+        return fail(
+          "column/fk-target",
+          `"${target}" is not a table.column reference in ${quoted}`,
+          'write "fk table.column"',
+        );
       }
       column.fk = ref;
     }
@@ -271,12 +299,22 @@ export function buildErd(input: Parsed): { diagram?: Erd; issues: Issue[] } {
       const target = tables.get(ref.table)!;
       const targetColumn = target.columns.find((other) => other.name === ref.column);
       if (targetColumn === undefined) {
-        const hint = didYouMean(column.fk, target.columns.map((other) => `${ref.table}.${other.name}`));
+        const hint = didYouMean(
+          column.fk,
+          target.columns.map((other) => `${ref.table}.${other.name}`),
+        );
         issues.push(error_("ref/unknown-column", path, `unknown column "${column.fk}"`, hint));
         return;
       }
       if (ref.table === table.id && ref.column === column.name) {
-        issues.push(error_("column/self-reference", path, `"${column.fk}" cannot reference itself`, "point it at another column"));
+        issues.push(
+          error_(
+            "column/self-reference",
+            path,
+            `"${column.fk}" cannot reference itself`,
+            "point it at another column",
+          ),
+        );
         return;
       }
       const here = `${table.id}.${column.name}`;
@@ -313,7 +351,14 @@ export function buildErd(input: Parsed): { diagram?: Erd; issues: Issue[] } {
     });
 
     if (!table.columns.some((column) => column.pk)) {
-      issues.push(warning("table/no-pk", `tables[${t}]`, `"${table.id}" has no primary key`, 'mark a column "pk"'));
+      issues.push(
+        warning(
+          "table/no-pk",
+          `tables[${t}]`,
+          `"${table.id}" has no primary key`,
+          'mark a column "pk"',
+        ),
+      );
     }
     if (table.columns.length > MAX_COLUMNS) {
       issues.push(
@@ -370,4 +415,3 @@ export function buildErd(input: Parsed): { diagram?: Erd; issues: Issue[] } {
   if (input.description !== undefined) diagram.description = input.description;
   return { diagram, issues };
 }
-

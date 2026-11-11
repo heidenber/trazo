@@ -6,7 +6,13 @@ import { renderSvg } from "../../src/render/svg.js";
 import { SEQUENCE_CSS } from "../../src/render/theme.js";
 import type { Scene, SceneEdge, SceneNode, TextBlock } from "../../src/scene.js";
 
-const block = (text: string, x: number, y: number, size = 13, weight: 400 | 600 = 400): TextBlock => ({
+const block = (
+  text: string,
+  x: number,
+  y: number,
+  size = 13,
+  weight: 400 | 600 = 400,
+): TextBlock => ({
   lines: [text],
   x,
   y,
@@ -74,7 +80,9 @@ describe("sequence render", () => {
   it("draws lifelines before nodes and edges", () => {
     const svg = renderSvg(scene([msg("#m0", "sync", 100)]));
     expect(svg).toContain('class="diagram t-seq"');
-    expect(svg).toContain('<line class="t-lifeline" data-id="a" x1="84" y1="64" x2="84" y2="260"/>');
+    expect(svg).toContain(
+      '<line class="t-lifeline" data-id="a" x1="84" y1="64" x2="84" y2="260"/>',
+    );
     const life = svg.indexOf("t-lifeline");
     expect(life).toBeGreaterThan(-1);
     expect(life).toBeLessThan(svg.indexOf('class="t-edge'));
@@ -109,7 +117,9 @@ describe("sequence render", () => {
     };
     const svg = renderSvg(scene([], { nodes: [head("a", 24), note] }));
     expect(svg).toContain("t-shape-note");
-    expect(svg).toContain('<polygon class="t-node-box t-note" points="60,120 230,120 240,130 240,150 60,150"/>');
+    expect(svg).toContain(
+      '<polygon class="t-node-box t-note" points="60,120 230,120 240,130 240,150 60,150"/>',
+    );
     expect(svg).toContain('<path class="t-note-fold" d="M230 120V130H240"/>');
   });
 
@@ -124,7 +134,9 @@ describe("sequence render", () => {
 
   it("draws async with an open arrowhead and a solid line", () => {
     const svg = renderSvg(scene([msg("#m0", "async", 100), msg("#m1", "sync", 120)]));
-    expect(svg).toContain('class="t-edge t-edge-async" data-from="a" data-to="b" d="M84 100 L304 100" marker-end="url(#t-arrowhead-open)"');
+    expect(svg).toContain(
+      'class="t-edge t-edge-async" data-from="a" data-to="b" d="M84 100 L304 100" marker-end="url(#t-arrowhead-open)"',
+    );
     expect(svg).toContain(".t-seq .t-edge-async { stroke-dasharray: none; }");
     expect(svg).toContain('d="M84 120 L304 120" marker-end="url(#t-arrowhead)"');
     expect(svg).toContain('<marker id="t-arrowhead"');
@@ -139,7 +151,15 @@ describe("sequence render", () => {
       height: 100,
       groups: [],
       nodes: [head("a", 24), head("b", 160)],
-      edges: [{ ...msg("e1", "async", 50), points: [{ x: 144, y: 50 }, { x: 160, y: 50 }] }],
+      edges: [
+        {
+          ...msg("e1", "async", 50),
+          points: [
+            { x: 144, y: 50 },
+            { x: 160, y: 50 },
+          ],
+        },
+      ],
     };
     const svg = renderSvg(plain);
     expect(svg).toContain('class="diagram"');

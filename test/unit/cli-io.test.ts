@@ -17,7 +17,9 @@ describe("writeError", () => {
   });
 
   it("keeps a Node programming error with a code but no syscall as an internal error", () => {
-    const bug = Object.assign(new TypeError('The "path" argument must be of type string'), { code: "ERR_INVALID_ARG_TYPE" });
+    const bug = Object.assign(new TypeError('The "path" argument must be of type string'), {
+      code: "ERR_INVALID_ARG_TYPE",
+    });
     expect(writeError(bug, "out.html")).toBe(bug);
   });
 

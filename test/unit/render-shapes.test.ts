@@ -56,13 +56,16 @@ const shapes: NodeShape[] = ["pill", "end", "diamond", "subprocess"];
 describe("node shapes", () => {
   it("emits exactly one t-shape group per non-box shape", () => {
     const svg = renderSvg(scene(shapes.map((s) => node(s, s))));
-    for (const s of shapes) expect(count(svg, new RegExp(`class="t-node t-shape-${s}"`, "g"))).toBe(1);
+    for (const s of shapes)
+      expect(count(svg, new RegExp(`class="t-node t-shape-${s}"`, "g"))).toBe(1);
   });
 
   it("keeps the plain t-node group for box", () => {
     const svg = renderSvg(scene([node("b", "box")]));
     expect(count(svg, /class="t-node"/g)).toBe(1);
-    expect(svg).toContain('<rect class="t-node-box" x="10" y="20" width="120" height="40" rx="8"/>');
+    expect(svg).toContain(
+      '<rect class="t-node-box" x="10" y="20" width="120" height="40" rx="8"/>',
+    );
   });
 
   it("draws the diamond through the edge midpoints", () => {
@@ -78,7 +81,9 @@ describe("node shapes", () => {
   it("draws end as two outlines", () => {
     const svg = renderSvg(scene([node("e", "end")]));
     expect(svg).toContain('x="10" y="20" width="120" height="40" rx="20"/>');
-    expect(svg).toContain('class="t-node-box t-node-inner" x="13" y="23" width="114" height="34" rx="17"/>');
+    expect(svg).toContain(
+      'class="t-node-box t-node-inner" x="13" y="23" width="114" height="34" rx="17"/>',
+    );
   });
 
   it("draws subprocess with two inner vertical lines", () => {
@@ -89,7 +94,9 @@ describe("node shapes", () => {
   });
 
   it("supports centred and start anchored node text", () => {
-    const svg = renderSvg(scene([node("p", "pill"), node("b", "box", { label: label(20, 44, "start") })]));
+    const svg = renderSvg(
+      scene([node("p", "pill"), node("b", "box", { label: label(20, 44, "start") })]),
+    );
     expect(count(svg, /text-anchor="middle"/g)).toBe(1);
   });
 
@@ -116,7 +123,7 @@ describe("lanes", () => {
   });
 
   it("renders lanes before the first node and without group chrome", () => {
-    expect(svg.lastIndexOf("t-lane\"")).toBeLessThan(svg.indexOf('class="t-node'));
+    expect(svg.lastIndexOf('t-lane"')).toBeLessThan(svg.indexOf('class="t-node'));
     expect(svg).not.toContain('class="t-group-box"');
   });
 

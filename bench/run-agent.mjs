@@ -13,14 +13,38 @@
 // Never run in CI: a real run spends model quota.
 
 import { spawn, spawnSync } from "node:child_process";
-import { chmodSync, copyFileSync, createWriteStream, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  copyFileSync,
+  createWriteStream,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { summarize } from "../scripts/bench-lib.mjs";
 import { tmpdir } from "node:os";
 import {
-  agentEnv, buildAgentArgs, buildPrompt, defaultSandboxRoot, formatCommandLine, opencodeConfig, opencodeEnv, opencodeRunEnv, parseArgs,
-  parseOpencodeStream, parseStream, planRuns, runName, shellCommandLine, shimExePath, shimFiles, skillSegments,
+  agentEnv,
+  buildAgentArgs,
+  buildPrompt,
+  defaultSandboxRoot,
+  formatCommandLine,
+  opencodeConfig,
+  opencodeEnv,
+  opencodeRunEnv,
+  parseArgs,
+  parseOpencodeStream,
+  parseStream,
+  planRuns,
+  runName,
+  shellCommandLine,
+  shimExePath,
+  shimFiles,
+  skillSegments,
 } from "./run-agent-lib.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -37,12 +61,18 @@ const today = new Date().toISOString().slice(0, 10);
 
 let opts;
 try {
-  opts = parseArgs(process.argv.slice(2), tasksFile.tasks.map((t) => t.id), today);
+  opts = parseArgs(
+    process.argv.slice(2),
+    tasksFile.tasks.map((t) => t.id),
+    today,
+  );
 } catch (e) {
   fail(e.message, 2);
 }
 const outFile = resolve(root, opts.out);
-const sandboxRoot = opts.sandboxRoot ? resolve(opts.sandboxRoot) : defaultSandboxRoot(opts.agent, opts.model, root, tmpdir());
+const sandboxRoot = opts.sandboxRoot
+  ? resolve(opts.sandboxRoot)
+  : defaultSandboxRoot(opts.agent, opts.model, root, tmpdir());
 const isOpencode = opts.agent === "opencode";
 const parseOutput = isOpencode ? parseOpencodeStream : parseStream;
 const plan = planRuns(opts.tasks, opts.conditions, opts.runs);
@@ -62,7 +92,8 @@ function exeBehindShim(shim) {
  * .cmd/.bat is replaced by the .exe it launches, and a wrapper that does not reference one is skipped.
  */
 function resolveAgentOnce(cmd) {
-  if (/\.(mjs|cjs|js)$/.test(cmd)) return { file: process.execPath, prefix: [resolve(cmd)], shell: false, bin: resolve(cmd) };
+  if (/\.(mjs|cjs|js)$/.test(cmd))
+    return { file: process.execPath, prefix: [resolve(cmd)], shell: false, bin: resolve(cmd) };
   if (process.platform !== "win32") return { file: cmd, prefix: [], shell: false, bin: cmd };
   const hint = `pass --agent-cmd <path to ${opts.agent === "opencode" ? "opencode" : "the agent"}.exe>`;
   if (/[\\/]/.test(cmd) || /\.\w+$/.test(cmd)) {
@@ -73,12 +104,18 @@ function resolveAgentOnce(cmd) {
     }
     return { file: cmd, prefix: [], shell: false, bin: cmd };
   }
-  const found = spawnSync("where", [cmd], { encoding: "utf8" }).stdout?.split(/\r?\n/).map((f) => f.trim()).filter(Boolean) ?? [];
+  const found =
+    spawnSync("where", [cmd], { encoding: "utf8" })
+      .stdout?.split(/\r?\n/)
+      .map((f) => f.trim())
+      .filter(Boolean) ?? [];
   for (const f of found) {
     const exe = /\.exe$/i.test(f) ? f : /\.(cmd|bat)$/i.test(f) ? exeBehindShim(f) : null;
     if (exe) return { file: exe, prefix: [], shell: false, bin: exe };
   }
-  return fail(`could not find an executable for "${cmd}" (wrappers and .cmd files that do not launch an .exe are skipped); ${hint}`);
+  return fail(
+    `could not find an executable for "${cmd}" (wrappers and .cmd files that do not launch an .exe are skipped); ${hint}`,
+  );
 }
 let resolvedAgent;
 const resolveAgent = (cmd) => (resolvedAgent ??= resolveAgentOnce(cmd));
@@ -88,7 +125,9 @@ if (opts.dryRun) {
     const prompt = buildPrompt(taskById.get(p.task).prompt);
     console.log(`${runName(p)}  (${p.condition})`);
     console.log(`  cwd: ${join(sandboxRoot, runName(p))}`);
-    console.log(`  ${formatCommandLine(opts.agentCmd, buildAgentArgs(prompt, opts.model, opts.agent))}`);
+    console.log(
+      `  ${formatCommandLine(opts.agentCmd, buildAgentArgs(prompt, opts.model, opts.agent))}`,
+    );
   }
   console.log(`${plan.length} run(s) planned, timeout ${opts.timeout} s each. Nothing was run.`);
   process.exit(0);
@@ -103,11 +142,21 @@ const VERSION = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).ver
 let record;
 if (existsSync(outFile)) {
   record = JSON.parse(readFileSync(outFile, "utf8"));
-  if ((record.agent ?? "claude-code") !== opts.agent) fail(`${opts.out} holds agent ${record.agent}, not ${opts.agent}`);
-  if (record.model !== opts.model) fail(`${opts.out} holds model ${record.model}, not ${opts.model}`);
+  if ((record.agent ?? "claude-code") !== opts.agent)
+    fail(`${opts.out} holds agent ${record.agent}, not ${opts.agent}`);
+  if (record.model !== opts.model)
+    fail(`${opts.out} holds model ${record.model}, not ${opts.model}`);
   record.runsPerTask = opts.runs;
 } else {
-  record = { kind: "agent", date: today, trazoVersion: VERSION, agent: opts.agent, model: opts.model, runsPerTask: opts.runs, runs: [] };
+  record = {
+    kind: "agent",
+    date: today,
+    trazoVersion: VERSION,
+    agent: opts.agent,
+    model: opts.model,
+    runsPerTask: opts.runs,
+    runs: [],
+  };
 }
 record.agentBin = agentBin;
 const save = () => {
@@ -124,15 +173,27 @@ for (const f of shimFiles(process.execPath, distCli, process.platform)) {
   if (f.executable) chmodSync(path, 0o755);
 }
 const opencodeDir = join(sandboxRoot, "_opencode");
-const baseEnv = isOpencode ? opencodeEnv(process.env, binDir, opencodeDir, process.platform) : agentEnv(process.env, binDir, process.platform);
+const baseEnv = isOpencode
+  ? opencodeEnv(process.env, binDir, opencodeDir, process.platform)
+  : agentEnv(process.env, binDir, process.platform);
 if (isOpencode) {
-  for (const d of ["home", "config", "data", "state", "cache"]) mkdirSync(join(opencodeDir, d), { recursive: true });
+  for (const d of ["home", "config", "data", "state", "cache"])
+    mkdirSync(join(opencodeDir, d), { recursive: true });
   // Same isolated env as the runs, so the version check cannot touch the user's OpenCode state.
   const agent = resolveAgent(opts.agentCmd);
   const argv = [...agent.prefix, "--version"];
   const v = agent.shell
-    ? spawnSync(shellCommandLine(agent.file, argv), { cwd: sandboxRoot, env: opencodeRunEnv(baseEnv, sandboxRoot), shell: true, encoding: "utf8" })
-    : spawnSync(agent.file, argv, { cwd: sandboxRoot, env: opencodeRunEnv(baseEnv, sandboxRoot), encoding: "utf8" });
+    ? spawnSync(shellCommandLine(agent.file, argv), {
+        cwd: sandboxRoot,
+        env: opencodeRunEnv(baseEnv, sandboxRoot),
+        shell: true,
+        encoding: "utf8",
+      })
+    : spawnSync(agent.file, argv, {
+        cwd: sandboxRoot,
+        env: opencodeRunEnv(baseEnv, sandboxRoot),
+        encoding: "utf8",
+      });
   const version = v.status === 0 ? v.stdout.trim() : "";
   if (!version) fail(`could not read the version from ${opts.agentCmd} --version`);
   record.agentVersion = version;
@@ -140,7 +201,8 @@ if (isOpencode) {
 }
 
 function killTree(child) {
-  if (process.platform === "win32" && child.pid) spawnSync("taskkill", ["/PID", String(child.pid), "/T", "/F"]);
+  if (process.platform === "win32" && child.pid)
+    spawnSync("taskkill", ["/PID", String(child.pid), "/T", "/F"]);
   else child.kill("SIGKILL");
 }
 
@@ -162,7 +224,12 @@ function runAgent(sandbox, args) {
     const argv = [...agent.prefix, ...args];
     const env = isOpencode ? opencodeRunEnv(baseEnv, sandbox) : baseEnv;
     const child = agent.shell
-      ? spawn(shellCommandLine(agent.file, argv), { cwd: sandbox, env, shell: true, stdio: ["ignore", "pipe", "pipe"] })
+      ? spawn(shellCommandLine(agent.file, argv), {
+          cwd: sandbox,
+          env,
+          shell: true,
+          stdio: ["ignore", "pipe", "pipe"],
+        })
       : spawn(agent.file, argv, { cwd: sandbox, env, stdio: ["ignore", "pipe", "pipe"] });
     const timer = setTimeout(() => {
       timedOut = true;
@@ -178,7 +245,9 @@ function runAgent(sandbox, args) {
 function finalCheck(sandbox, stats) {
   if (!existsSync(join(sandbox, "diagram.html"))) return false;
   const named = stats.lastMakeInput?.replace(/^["']|["']$/g, "");
-  const candidates = [named, "diagram.json"].filter(Boolean).map((f) => (isAbsolute(f) ? f : join(sandbox, f)));
+  const candidates = [named, "diagram.json"]
+    .filter(Boolean)
+    .map((f) => (isAbsolute(f) ? f : join(sandbox, f)));
   const input = candidates.find((f) => existsSync(f));
   if (!input) return false;
   return spawnSync(process.execPath, [distCli, "check", input], { cwd: sandbox }).status === 0;
@@ -188,7 +257,10 @@ let skipped = 0;
 let done = 0;
 for (const p of plan) {
   const name = runName(p);
-  if (opts.resume && record.runs.some((r) => r.task === p.task && r.condition === p.condition && r.run === p.run)) {
+  if (
+    opts.resume &&
+    record.runs.some((r) => r.task === p.task && r.condition === p.condition && r.run === p.run)
+  ) {
     skipped++;
     console.log(`${name}: skipped (already recorded)`);
     continue;
@@ -196,7 +268,11 @@ for (const p of plan) {
   const sandbox = join(sandboxRoot, name);
   rmSync(sandbox, { recursive: true, force: true });
   mkdirSync(sandbox, { recursive: true });
-  if (isOpencode) writeFileSync(join(sandbox, "opencode.json"), `${JSON.stringify(opencodeConfig(p.condition), null, 2)}\n`);
+  if (isOpencode)
+    writeFileSync(
+      join(sandbox, "opencode.json"),
+      `${JSON.stringify(opencodeConfig(p.condition), null, 2)}\n`,
+    );
   if (p.condition === "skill") {
     const dest = join(sandbox, ...skillSegments(opts.agent));
     mkdirSync(dest, { recursive: true });
@@ -206,7 +282,9 @@ for (const p of plan) {
   const started = Date.now();
   const outcome = await runAgent(sandbox, buildAgentArgs(prompt, opts.model, opts.agent));
   const seconds = Math.round((Date.now() - started) / 100) / 10;
-  const streamText = existsSync(join(sandbox, "stream.jsonl")) ? readFileSync(join(sandbox, "stream.jsonl"), "utf8") : "";
+  const streamText = existsSync(join(sandbox, "stream.jsonl"))
+    ? readFileSync(join(sandbox, "stream.jsonl"), "utf8")
+    : "";
   const stats = parseOutput(streamText);
   const notes = [];
   if (outcome.timedOut) notes.push(`timeout after ${opts.timeout} s`);
@@ -233,7 +311,9 @@ for (const p of plan) {
   record.runs.push(entry);
   save();
   done++;
-  console.log(`${name}: finalOk=${finalOk} firstTryOk=${stats.firstTryOk} failed=${stats.failedCommands} repairs=${stats.repairs} tokens=${stats.inputTokens}/${stats.outputTokens} ${seconds}s${notes.length ? `  [${notes.join("; ")}]` : ""}`);
+  console.log(
+    `${name}: finalOk=${finalOk} firstTryOk=${stats.firstTryOk} failed=${stats.failedCommands} repairs=${stats.repairs} tokens=${stats.inputTokens}/${stats.outputTokens} ${seconds}s${notes.length ? `  [${notes.join("; ")}]` : ""}`,
+  );
 }
 
 console.log(`\n${done} run(s) done, ${skipped} skipped. Results: ${outFile}`);

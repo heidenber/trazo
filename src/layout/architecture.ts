@@ -42,8 +42,14 @@ const widest = (lines: string[], size: number, weight: 400 | 600) =>
 function sizeNode(node: ArchNode): { width: number; height: number; lines: string[] } {
   const lines = wrapText(node.label, NODE_WRAP, NODE_LABEL_SIZE, 600);
   const textLeft = ICON_PAD + ICON_SIZE + ICON_GAP;
-  const width = Math.max(NODE_MIN_W, Math.ceil(textLeft + widest(lines, NODE_LABEL_SIZE, 600) + RIGHT_PAD));
-  const height = Math.max(NODE_MIN_H, Math.ceil(lines.length * lineHeight(NODE_LABEL_SIZE) + 2 * NODE_PAD_Y));
+  const width = Math.max(
+    NODE_MIN_W,
+    Math.ceil(textLeft + widest(lines, NODE_LABEL_SIZE, 600) + RIGHT_PAD),
+  );
+  const height = Math.max(
+    NODE_MIN_H,
+    Math.ceil(lines.length * lineHeight(NODE_LABEL_SIZE) + 2 * NODE_PAD_Y),
+  );
   return { width, height, lines };
 }
 
@@ -61,7 +67,9 @@ export async function layoutArchitecture(d: Architecture): Promise<Scene> {
     const size = sizes.get(id)!;
     return { id, width: size.width, height: size.height };
   };
-  const roots = [...d.nodes.map((n) => n.id), ...d.groups.map((g) => g.id)].filter((id) => !nested.has(id));
+  const roots = [...d.nodes.map((n) => n.id), ...d.groups.map((g) => g.id)].filter(
+    (id) => !nested.has(id),
+  );
 
   const edgeLabels = d.edges.map((e) =>
     e.label === undefined ? undefined : wrapText(e.label, EDGE_WRAP, EDGE_LABEL_SIZE, 400),
@@ -98,7 +106,14 @@ export async function layoutArchitecture(d: Architecture): Promise<Scene> {
       weight: 600,
       anchor: "start",
     };
-    const out: SceneNode = { id: n.id, kind: n.kind, icon: ICONS[n.kind], shape: "box", ...box, label };
+    const out: SceneNode = {
+      id: n.id,
+      kind: n.kind,
+      icon: ICONS[n.kind],
+      shape: "box",
+      ...box,
+      label,
+    };
     if (n.note !== undefined) out.note = n.note;
     if (n.source !== undefined) out.source = n.source;
     const parent = parentOf.get(n.id);
@@ -137,7 +152,13 @@ export async function layoutArchitecture(d: Architecture): Promise<Scene> {
   const edges: SceneEdge[] = d.edges.map((e, i) => {
     const id = `e${i}`;
     const routed = layout.edges.get(id);
-    const out: SceneEdge = { id, from: e.from, to: e.to, points: routed?.points ?? [], style: e.style };
+    const out: SceneEdge = {
+      id,
+      from: e.from,
+      to: e.to,
+      points: routed?.points ?? [],
+      style: e.style,
+    };
     const lines = edgeLabels[i];
     if (lines && routed?.label) {
       const box = routed.label;

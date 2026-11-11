@@ -24,27 +24,49 @@ export function shapeMarkup(shape: NodeShape, b: Box): string {
     case "pill":
       return rect(b, cls, b.h / 2);
     case "end": {
-      const inner: Box = { x: b.x + END_INSET, y: b.y + END_INSET, w: b.w - 2 * END_INSET, h: b.h - 2 * END_INSET };
+      const inner: Box = {
+        x: b.x + END_INSET,
+        y: b.y + END_INSET,
+        w: b.w - 2 * END_INSET,
+        h: b.h - 2 * END_INSET,
+      };
       return rect(b, cls, b.h / 2) + rect(inner, `${cls} t-node-inner`, inner.h / 2);
     }
     case "diamond": {
       const cx = b.x + b.w / 2;
       const cy = b.y + b.h / 2;
-      const pts = [`${num(cx)},${num(b.y)}`, `${num(b.x + b.w)},${num(cy)}`, `${num(cx)},${num(b.y + b.h)}`, `${num(b.x)},${num(cy)}`];
+      const pts = [
+        `${num(cx)},${num(b.y)}`,
+        `${num(b.x + b.w)},${num(cy)}`,
+        `${num(cx)},${num(b.y + b.h)}`,
+        `${num(b.x)},${num(cy)}`,
+      ];
       return `<polygon class="${cls}" points="${pts.join(" ")}"/>`;
     }
     case "table":
       return rect(b, "t-table");
     case "note": {
       const r = b.x + b.w;
-      const pts = [`${num(b.x)},${num(b.y)}`, `${num(r - NOTE_FOLD)},${num(b.y)}`, `${num(r)},${num(b.y + NOTE_FOLD)}`, `${num(r)},${num(b.y + b.h)}`, `${num(b.x)},${num(b.y + b.h)}`];
+      const pts = [
+        `${num(b.x)},${num(b.y)}`,
+        `${num(r - NOTE_FOLD)},${num(b.y)}`,
+        `${num(r)},${num(b.y + NOTE_FOLD)}`,
+        `${num(r)},${num(b.y + b.h)}`,
+        `${num(b.x)},${num(b.y + b.h)}`,
+      ];
       return `<polygon class="${cls} t-note" points="${pts.join(" ")}"/><path class="t-note-fold" d="M${num(r - NOTE_FOLD)} ${num(b.y)}V${num(b.y + NOTE_FOLD)}H${num(r)}"/>`;
     }
     case "subprocess":
       return (
         rect(b, cls) +
         line(b.x + SUBPROCESS_INSET, b.y, b.x + SUBPROCESS_INSET, b.y + b.h, "t-node-rule") +
-        line(b.x + b.w - SUBPROCESS_INSET, b.y, b.x + b.w - SUBPROCESS_INSET, b.y + b.h, "t-node-rule")
+        line(
+          b.x + b.w - SUBPROCESS_INSET,
+          b.y,
+          b.x + b.w - SUBPROCESS_INSET,
+          b.y + b.h,
+          "t-node-rule",
+        )
       );
   }
 }

@@ -6,7 +6,11 @@ import { validateDiagram } from "../../src/model/index.js";
 import type { Sequence } from "../../src/model/sequence.js";
 import type { Issue } from "../../src/validate/issues.js";
 
-const participants = [{ id: "client", kind: "actor" }, { id: "api" }, { id: "pg", label: "PostgreSQL", kind: "database" }];
+const participants = [
+  { id: "client", kind: "actor" },
+  { id: "api" },
+  { id: "pg", label: "PostgreSQL", kind: "database" },
+];
 
 function seq(messages: unknown[], list: unknown[] = participants) {
   return { type: "sequence", title: "T", participants: list, messages };
@@ -39,7 +43,10 @@ describe("sequence model: valid input", () => {
       {
         alt: [
           { when: "hit", messages: ["api --> client: 200 cached"] },
-          { when: "miss", messages: ["api -> pg: SELECT", "pg --> api: row", "api -> api: serialize"] },
+          {
+            when: "miss",
+            messages: ["api -> pg: SELECT", "pg --> api: row", "api -> api: serialize"],
+          },
         ],
       },
       { loop: { when: "per retry", messages: ["api ~> pg: ping"] } },
@@ -59,19 +66,36 @@ describe("sequence model: valid input", () => {
       { id: "pg", label: "PostgreSQL", kind: "database" },
     ]);
     expect(diagram.items).toHaveLength(5);
-    expect(diagram.items[0]).toEqual({ type: "message", from: "client", to: "api", label: "GET /product/42", style: "sync" });
+    expect(diagram.items[0]).toEqual({
+      type: "message",
+      from: "client",
+      to: "api",
+      label: "GET /product/42",
+      style: "sync",
+    });
     expect(diagram.items[1]).toEqual({ type: "note", text: "TTL 60 s", over: ["api", "pg"] });
     expect(diagram.items[2]).toMatchObject({ type: "fragment", op: "alt" });
     expect(diagram.items[3]).toEqual({
       type: "fragment",
       op: "loop",
-      branches: [{ when: "per retry", items: [{ type: "message", from: "api", to: "pg", label: "ping", style: "async" }] }],
+      branches: [
+        {
+          when: "per retry",
+          items: [{ type: "message", from: "api", to: "pg", label: "ping", style: "async" }],
+        },
+      ],
     });
   });
 
   it("maps the three arrows to sync, async and reply", () => {
-    const diagram = validateDiagram(seq(["client -> api: a", "client ~> api: b", "api --> client: c"])).diagram as Sequence;
-    expect(diagram.items.map((item) => (item as { style: string }).style)).toEqual(["sync", "async", "reply"]);
+    const diagram = validateDiagram(
+      seq(["client -> api: a", "client ~> api: b", "api --> client: c"]),
+    ).diagram as Sequence;
+    expect(diagram.items.map((item) => (item as { style: string }).style)).toEqual([
+      "sync",
+      "async",
+      "reply",
+    ]);
   });
 
   it("treats the short form and the object form alike", () => {
@@ -90,14 +114,20 @@ describe("sequence model: valid input", () => {
 
   it("accepts opt and loop with a single branch", () => {
     const result = validateDiagram(
-      seq(["client -> api", { opt: { when: "logged in", messages: ["api -> pg"] } }, { loop: { when: "retry", messages: ["api -> api"] } }]),
+      seq([
+        "client -> api",
+        { opt: { when: "logged in", messages: ["api -> pg"] } },
+        { loop: { when: "retry", messages: ["api -> api"] } },
+      ]),
     );
     expect(result.issues).toEqual([]);
   });
 
   it("accepts two levels of fragments", () => {
     const inner = { opt: { when: "b", messages: ["api -> pg"] } };
-    const result = validateDiagram(seq(["client -> api", { loop: { when: "a", messages: [inner, "api -> pg"] } }]));
+    const result = validateDiagram(
+      seq(["client -> api", { loop: { when: "a", messages: [inner, "api -> pg"] } }]),
+    );
     expect(result.issues).toEqual([]);
   });
 });
@@ -136,7 +166,9 @@ describe("sequence model: structure", () => {
   });
 
   it("reports duplicate participant ids", () => {
-    expect(only(seq(["client -> api"], [{ id: "client" }, { id: "api" }, { id: "client" }]))).toEqual({
+    expect(
+      only(seq(["client -> api"], [{ id: "client" }, { id: "api" }, { id: "client" }])),
+    ).toEqual({
       severity: "error",
       code: "ref/duplicate-id",
       path: "participants[2].id",
@@ -254,7 +286,11 @@ describe("sequence model: notes", () => {
   it("accepts a single id string for over", () => {
     const result = validateDiagram(seq(["client -> api", "api -> pg", { note: "x", over: "api" }]));
     expect(result.issues).toEqual([]);
-    expect((result.diagram as Sequence).items[2]).toEqual({ type: "note", text: "x", over: ["api"] });
+    expect((result.diagram as Sequence).items[2]).toEqual({
+      type: "note",
+      text: "x",
+      over: ["api"],
+    });
   });
 
   it("points an unknown id in the string form of over at over", () => {
@@ -296,11 +332,17 @@ describe("sequence model: notes", () => {
   });
 
   it("points an invalid id in the string form of over at over", () => {
-    expect(only(seq([{ note: "x", over: "Bad Id!" }]))).toMatchObject({ code: "schema/id", path: "messages[0].over" });
+    expect(only(seq([{ note: "x", over: "Bad Id!" }]))).toMatchObject({
+      code: "schema/id",
+      path: "messages[0].over",
+    });
   });
 
   it("requires a non-empty over", () => {
-    expect(only(seq([{ note: "x", over: [] }]))).toMatchObject({ code: "schema/empty", path: "messages[0].over" });
+    expect(only(seq([{ note: "x", over: [] }]))).toMatchObject({
+      code: "schema/empty",
+      path: "messages[0].over",
+    });
   });
 
   it("rejects more than two participants", () => {
@@ -336,12 +378,22 @@ describe("sequence model: fragments", () => {
   });
 
   it("reports an empty alt as empty", () => {
-    expect(only(seq([{ alt: [] }]))).toMatchObject({ code: "schema/empty", path: "messages[0].alt" });
+    expect(only(seq([{ alt: [] }]))).toMatchObject({
+      code: "schema/empty",
+      path: "messages[0].alt",
+    });
   });
 
   it("requires when on every branch", () => {
-    const raw = seq([{ alt: [{ when: "a", messages: ["api -> pg"] }, { messages: ["api -> pg"] }] }]);
-    expect(only(raw)).toEqual({ severity: "error", code: "schema/required", path: "messages[0].alt[1].when", message: "missing" });
+    const raw = seq([
+      { alt: [{ when: "a", messages: ["api -> pg"] }, { messages: ["api -> pg"] }] },
+    ]);
+    expect(only(raw)).toEqual({
+      severity: "error",
+      code: "schema/required",
+      path: "messages[0].alt[1].when",
+      message: "missing",
+    });
   });
 
   it("rejects a branch without messages", () => {
@@ -425,7 +477,11 @@ describe("sequence model: warnings", () => {
   });
 
   it("counts a request inside an earlier branch", () => {
-    const raw = seq(["client -> api", { opt: { when: "x", messages: ["api -> pg"] } }, "pg --> api"]);
+    const raw = seq([
+      "client -> api",
+      { opt: { when: "x", messages: ["api -> pg"] } },
+      "pg --> api",
+    ]);
     expect(validateDiagram(raw).issues).toEqual([]);
   });
 
@@ -470,7 +526,9 @@ describe("sequence model: warnings", () => {
 
   it("warns about labels over 80 characters", () => {
     const label = "x".repeat(95);
-    expect(onlyWarning(seq(["client -> api", `api -> pg: ${label}`, { note: "n", over: ["pg"] }]))).toEqual({
+    expect(
+      onlyWarning(seq(["client -> api", `api -> pg: ${label}`, { note: "n", over: ["pg"] }])),
+    ).toEqual({
       severity: "warning",
       code: "sequence/long-label",
       path: "messages[1]",
@@ -481,8 +539,18 @@ describe("sequence model: warnings", () => {
 });
 
 describe("sequence model: other diagram types keep their behavior", () => {
-  const arch = { type: "architecture", title: "T", nodes: [{ id: "a" }, { id: "b" }], edges: ["a --> b"] };
-  const flow = { type: "workflow", title: "T", steps: [{ id: "a" }, { id: "b" }], edges: ["a --> b"] };
+  const arch = {
+    type: "architecture",
+    title: "T",
+    nodes: [{ id: "a" }, { id: "b" }],
+    edges: ["a --> b"],
+  };
+  const flow = {
+    type: "workflow",
+    title: "T",
+    steps: [{ id: "a" }, { id: "b" }],
+    edges: ["a --> b"],
+  };
 
   it("architecture still rejects the reply arrow", () => {
     expect(only(arch)).toEqual({
@@ -511,7 +579,13 @@ describe("sequence model: other diagram types keep their behavior", () => {
   });
 
   it("lists the four types for an unknown type", () => {
-    expect(only({ type: "sequnce", title: "T" })).toMatchObject({ code: "schema/enum", path: "type", hint: 'did you mean "sequence"?' });
-    expect(only({ type: "zzzzzz", title: "T" }).hint).toBe("use one of: architecture, workflow, erd, sequence");
+    expect(only({ type: "sequnce", title: "T" })).toMatchObject({
+      code: "schema/enum",
+      path: "type",
+      hint: 'did you mean "sequence"?',
+    });
+    expect(only({ type: "zzzzzz", title: "T" }).hint).toBe(
+      "use one of: architecture, workflow, erd, sequence",
+    );
   });
 });

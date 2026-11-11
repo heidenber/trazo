@@ -22,7 +22,8 @@ export function findBackEdges(w: Workflow): Set<number> {
   w.edges.forEach((e, i) => out.set(e.from, [...(out.get(e.from) ?? []), i]));
   const hasIncoming = new Set(w.edges.map((e) => e.to));
   const starts = w.steps.filter((s) => s.kind === "start").map((s) => s.id);
-  const entries = starts.length > 0 ? starts : w.steps.filter((s) => !hasIncoming.has(s.id)).map((s) => s.id);
+  const entries =
+    starts.length > 0 ? starts : w.steps.filter((s) => !hasIncoming.has(s.id)).map((s) => s.id);
 
   const back = new Set<number>();
   const state = new Map<string, "open" | "done">();
@@ -63,7 +64,12 @@ export interface LanePlan {
   positions: Map<string, { x: number; y: number }>;
 }
 
-export function planLanes(w: Workflow, sizes: ReadonlyMap<string, { width: number; height: number }>, columnGap: number, rowGap: number): LanePlan {
+export function planLanes(
+  w: Workflow,
+  sizes: ReadonlyMap<string, { width: number; height: number }>,
+  columnGap: number,
+  rowGap: number,
+): LanePlan {
   const rank = rankSteps(w, findBackEdges(w));
   const maxW = Math.max(...[...sizes.values()].map((s) => s.width));
   const maxH = Math.max(...[...sizes.values()].map((s) => s.height));
@@ -115,7 +121,11 @@ export function buildBands(
     const bottom = Math.max(reach.get(lane.id) ?? -Infinity, ...bs.map((b) => b.y + b.h));
     return { top: Math.min(...bs.map((b) => b.y)) - BAND_PAD, bottom: bottom + BAND_PAD };
   });
-  const edges = [0, ...extents.slice(1).map((e, i) => half((extents[i]!.bottom + e.top) / 2)), height];
+  const edges = [
+    0,
+    ...extents.slice(1).map((e, i) => half((extents[i]!.bottom + e.top) / 2)),
+    height,
+  ];
 
   return w.lanes.map((lane, i): SceneGroup => {
     const y = edges[i]!;

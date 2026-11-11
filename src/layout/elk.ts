@@ -131,9 +131,16 @@ export async function layoutElk(
     id: "root",
     children: boxes.map(toElk),
     edges: edges.map((e) => {
-      const edge: ElkEdge = { id: e.id, sources: [e.fromPort ?? e.from], targets: [e.toPort ?? e.to] };
+      const edge: ElkEdge = {
+        id: e.id,
+        sources: [e.fromPort ?? e.from],
+        targets: [e.toPort ?? e.to],
+      };
       // ELK skips placement for labels without text; the real text is drawn later.
-      if (e.label) edge.labels = [{ id: `${e.id}:label`, text: e.id, width: e.label.width, height: e.label.height }];
+      if (e.label)
+        edge.labels = [
+          { id: `${e.id}:label`, text: e.id, width: e.label.width, height: e.label.height },
+        ];
       return edge;
     }),
     layoutOptions: {
@@ -151,7 +158,9 @@ export async function layoutElk(
   };
 
   if (options.edgeNodeSpacing !== undefined) {
-    root.layoutOptions!["elk.layered.spacing.edgeNodeBetweenLayers"] = String(options.edgeNodeSpacing);
+    root.layoutOptions!["elk.layered.spacing.edgeNodeBetweenLayers"] = String(
+      options.edgeNodeSpacing,
+    );
   }
 
   if (options.interactive) {

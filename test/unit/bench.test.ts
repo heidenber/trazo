@@ -27,12 +27,45 @@ describe("bench-lib helpers", () => {
 
   it("summarizes runs per condition", () => {
     const run = (condition: string, n: number, ok: boolean, repairs: number) => ({
-      task: "t", condition, run: n, inputTokens: 100 * n, outputTokens: 10 * n, cacheCreationTokens: 1000 * n, cacheReadTokens: 10000 * n,
-      failedCommands: repairs, repairs, firstTryOk: ok, finalOk: true, seconds: 10 * n,
+      task: "t",
+      condition,
+      run: n,
+      inputTokens: 100 * n,
+      outputTokens: 10 * n,
+      cacheCreationTokens: 1000 * n,
+      cacheReadTokens: 10000 * n,
+      failedCommands: repairs,
+      repairs,
+      firstTryOk: ok,
+      finalOk: true,
+      seconds: 10 * n,
     });
-    const s = summarize([run("skill", 1, true, 0), run("skill", 2, true, 0), run("no-skill", 1, false, 2), run("no-skill", 2, true, 0)]);
-    expect(s.skill).toEqual({ runs: 2, firstTryRate: 1, finalRate: 1, medianRepairs: 0, medianInputTokens: 150, medianTotalInputTokens: 16650, medianOutputTokens: 15, medianSeconds: 15 });
-    expect(s["no-skill"]).toEqual({ runs: 2, firstTryRate: 0.5, finalRate: 1, medianRepairs: 1, medianInputTokens: 150, medianTotalInputTokens: 16650, medianOutputTokens: 15, medianSeconds: 15 });
+    const s = summarize([
+      run("skill", 1, true, 0),
+      run("skill", 2, true, 0),
+      run("no-skill", 1, false, 2),
+      run("no-skill", 2, true, 0),
+    ]);
+    expect(s.skill).toEqual({
+      runs: 2,
+      firstTryRate: 1,
+      finalRate: 1,
+      medianRepairs: 0,
+      medianInputTokens: 150,
+      medianTotalInputTokens: 16650,
+      medianOutputTokens: 15,
+      medianSeconds: 15,
+    });
+    expect(s["no-skill"]).toEqual({
+      runs: 2,
+      firstTryRate: 0.5,
+      finalRate: 1,
+      medianRepairs: 1,
+      medianInputTokens: 150,
+      medianTotalInputTokens: 16650,
+      medianOutputTokens: 15,
+      medianSeconds: 15,
+    });
   });
 });
 
@@ -70,13 +103,19 @@ describe("deterministic measurements", () => {
 
   it.each(TYPES)("keeps reading cost of %s under 2000 tokens with the skill", (type) => {
     const skill = read("skill/SKILL.md").replace(/^---\n[\s\S]*?\n---\n/, "");
-    const total = estimateTokens(skill) + estimateTokens(REFERENCE[type]) + estimateTokens(read(`examples/${type}.json`));
+    const total =
+      estimateTokens(skill) +
+      estimateTokens(REFERENCE[type]) +
+      estimateTokens(read(`examples/${type}.json`));
     expect(total).toBeLessThan(2000);
   });
 });
 
 describe("bench/tasks.json", () => {
-  const file = JSON.parse(read("bench/tasks.json")) as { version: number; tasks: { id: string; type: string; level: number; prompt: string }[] };
+  const file = JSON.parse(read("bench/tasks.json")) as {
+    version: number;
+    tasks: { id: string; type: string; level: number; prompt: string }[];
+  };
 
   it("has 8 tasks with unique ids, 2 per type", () => {
     expect(file.version).toBe(1);

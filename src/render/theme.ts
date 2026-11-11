@@ -73,7 +73,9 @@ const DARK = `--t-bg: #14171c; --t-surface: #1b1f26; --t-text: #e6e9ed; --t-mute
   --t-edge: #6ea2f5; --t-accent: #6ea2f5; --t-icon: #9aa5b1; --t-icon-data: #5fc2b2; --t-icon-edge: #d49a5f; --t-table-head: #2a303a;`;
 
 /** Theme custom properties that an exported SVG needs to look the same outside the page. */
-export const THEME_VARS: readonly string[] = [...LIGHT.matchAll(/--t-[a-z-]+(?=:)/g)].map((m) => m[0]);
+export const THEME_VARS: readonly string[] = [...LIGHT.matchAll(/--t-[a-z-]+(?=:)/g)].map(
+  (m) => m[0],
+);
 
 export function pageCss(font400: string, font600: string): string {
   return `

@@ -78,7 +78,9 @@ describe("make", () => {
   });
 
   it("appends geometry warnings after validation warnings", async () => {
-    const actual = await vi.importActual<typeof import("../../src/layout/index.js")>("../../src/layout/index.js");
+    const actual = await vi.importActual<typeof import("../../src/layout/index.js")>(
+      "../../src/layout/index.js",
+    );
     vi.mocked(layout.layoutDiagram).mockImplementationOnce(async (diagram) => {
       const scene = await actual.layoutDiagram(diagram);
       const [a, b] = scene.nodes;

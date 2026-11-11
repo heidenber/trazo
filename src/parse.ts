@@ -60,7 +60,8 @@ export function findSyntaxError(text: string): number {
         i++;
         const esc = text[i];
         if (esc === "u") {
-          for (let k = 1; k <= 4; k++) if (!/[0-9a-fA-F]/.test(text[i + k] ?? "")) (i += k), fail();
+          for (let k = 1; k <= 4; k++)
+            if (!/[0-9a-fA-F]/.test(text[i + k] ?? "")) ((i += k), fail());
           i += 5;
           continue;
         }

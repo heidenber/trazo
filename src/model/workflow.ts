@@ -100,7 +100,14 @@ export function buildWorkflow(input: Parsed): { diagram?: Workflow; issues: Issu
       if (unknownStep(step, path)) return;
       const existing = laneOf.get(step);
       if (existing !== undefined) {
-        issues.push(error_("lane/multiple-lanes", path, `"${step}" is already in lane "${existing}"`, "a step belongs to one lane"));
+        issues.push(
+          error_(
+            "lane/multiple-lanes",
+            path,
+            `"${step}" is already in lane "${existing}"`,
+            "a step belongs to one lane",
+          ),
+        );
         return;
       }
       laneOf.set(step, lane.id);
@@ -109,7 +116,14 @@ export function buildWorkflow(input: Parsed): { diagram?: Workflow; issues: Issu
   if (lanes.length > 0) {
     input.steps.forEach((step, i) => {
       if (!laneOf.has(step.id)) {
-        issues.push(error_("lane/missing", `steps[${i}]`, `"${step.id}" is not in any lane`, "add it to a lane's steps"));
+        issues.push(
+          error_(
+            "lane/missing",
+            `steps[${i}]`,
+            `"${step.id}" is not in any lane`,
+            "add it to a lane's steps",
+          ),
+        );
       }
     });
   }
@@ -126,7 +140,8 @@ export function buildWorkflow(input: Parsed): { diagram?: Workflow; issues: Issu
     if (edge.label !== undefined) out.label = edge.label;
     const key = JSON.stringify([out.from, out.to, out.label ?? null, out.style]);
     const first = seen.get(key);
-    if (first !== undefined) issues.push(warning("edge/duplicate", `edges[${i}]`, `same as edges[${first}]`));
+    if (first !== undefined)
+      issues.push(warning("edge/duplicate", `edges[${i}]`, `same as edges[${first}]`));
     else seen.set(key, i);
     edges.push(out);
     edgeIndex.push(i);
@@ -147,7 +162,8 @@ export function buildWorkflow(input: Parsed): { diagram?: Workflow; issues: Issu
 
   let direction: "right" | "down" = input.direction ?? "down";
   if (lanes.length > 0) {
-    if (input.direction === "down") issues.push(warning("workflow/lanes-direction", "direction", "lanes always flow right"));
+    if (input.direction === "down")
+      issues.push(warning("workflow/lanes-direction", "direction", "lanes always flow right"));
     direction = "right";
   }
 
@@ -187,13 +203,32 @@ function checkFlow(
     list.push(edge.to);
     outgoing.set(edge.from, list);
     if (kindOf.get(edge.to) === "start") {
-      issues.push(error_("workflow/start-incoming", `edges[${i}]`, `"${edge.to}" is a start step and cannot have incoming edges`));
+      issues.push(
+        error_(
+          "workflow/start-incoming",
+          `edges[${i}]`,
+          `"${edge.to}" is a start step and cannot have incoming edges`,
+        ),
+      );
     }
     if (kindOf.get(edge.from) === "end") {
-      issues.push(error_("workflow/end-outgoing", `edges[${i}]`, `"${edge.from}" is an end step and cannot have outgoing edges`));
+      issues.push(
+        error_(
+          "workflow/end-outgoing",
+          `edges[${i}]`,
+          `"${edge.from}" is an end step and cannot have outgoing edges`,
+        ),
+      );
     }
     if (kindOf.get(edge.from) === "decision" && edge.label === undefined) {
-      issues.push(warning("workflow/decision-label", `edges[${i}]`, "decision branch has no label", 'label it with the answer, e.g. "yes"'));
+      issues.push(
+        warning(
+          "workflow/decision-label",
+          `edges[${i}]`,
+          "decision branch has no label",
+          'label it with the answer, e.g. "yes"',
+        ),
+      );
     }
   });
 
@@ -201,14 +236,29 @@ function checkFlow(
     const count = outgoing.get(step.id)?.length ?? 0;
     const kind = kindOf.get(step.id);
     if (kind === "decision" && count < 2) {
-      issues.push(error_("workflow/decision-outputs", `steps[${i}]`, `decision needs at least 2 outgoing edges (has ${count})`));
+      issues.push(
+        error_(
+          "workflow/decision-outputs",
+          `steps[${i}]`,
+          `decision needs at least 2 outgoing edges (has ${count})`,
+        ),
+      );
     }
     if (kind !== "end" && count === 0 && edges.length > 0) {
-      issues.push(warning("workflow/dead-end", `steps[${i}]`, `"${step.id}" has no outgoing edges`, 'connect it or mark it as kind "end"'));
+      issues.push(
+        warning(
+          "workflow/dead-end",
+          `steps[${i}]`,
+          `"${step.id}" has no outgoing edges`,
+          'connect it or mark it as kind "end"',
+        ),
+      );
     }
   });
 
-  const starts = input.steps.filter((step) => kindOf.get(step.id) === "start").map((step) => step.id);
+  const starts = input.steps
+    .filter((step) => kindOf.get(step.id) === "start")
+    .map((step) => step.id);
   if (starts.length === 0) return;
   const reached = new Set(starts);
   const queue = [...starts];
@@ -222,7 +272,13 @@ function checkFlow(
   }
   input.steps.forEach((step, i) => {
     if (!reached.has(step.id)) {
-      issues.push(warning("workflow/unreachable", `steps[${i}]`, `"${step.id}" cannot be reached from a start step`));
+      issues.push(
+        warning(
+          "workflow/unreachable",
+          `steps[${i}]`,
+          `"${step.id}" cannot be reached from a start step`,
+        ),
+      );
     }
   });
 }

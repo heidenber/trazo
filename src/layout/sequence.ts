@@ -48,11 +48,23 @@ const grow = (e: Extent, lo: number, hi: number) => {
   e.hi = Math.max(e.hi, hi);
 };
 
-function block(lines: string[], x: number, top: number, size: number, weight: 400 | 600, anchor: "start" | "middle"): TextBlock {
+function block(
+  lines: string[],
+  x: number,
+  top: number,
+  size: number,
+  weight: 400 | 600,
+  anchor: "start" | "middle",
+): TextBlock {
   return { lines, x: half(x), y: half(top + firstBaseline(size)), size, weight, anchor };
 }
 
-function build(seq: Sequence, heads: Headers, base: number[], dx: number): { scene: Scene; minX: number } {
+function build(
+  seq: Sequence,
+  heads: Headers,
+  base: number[],
+  dx: number,
+): { scene: Scene; minX: number } {
   const c = base.map((v) => v + dx);
   const at = new Map(seq.participants.map((p, i) => [p.id, i]));
   const col = (id: string) => c[at.get(id)!]!;
@@ -68,7 +80,14 @@ function build(seq: Sequence, heads: Headers, base: number[], dx: number): { sce
     const box: Box = { x: c[i]! - w / 2, y: MARGIN, w, h: heads.height };
     const lines = heads.lines[i]!;
     const top = box.y + (box.h - lines.length * lh) / 2;
-    const node: SceneNode = { id: p.id, kind: p.kind, icon: ICON_BY_KIND[p.kind], shape: "box", ...box, label: block(lines, box.x + ICON_TEXT_LEFT, top, LABEL_SIZE, 600, "start") };
+    const node: SceneNode = {
+      id: p.id,
+      kind: p.kind,
+      icon: ICON_BY_KIND[p.kind],
+      shape: "box",
+      ...box,
+      label: block(lines, box.x + ICON_TEXT_LEFT, top, LABEL_SIZE, 600, "start"),
+    };
     if (p.note !== undefined) node.note = p.note;
     if (p.source !== undefined) node.source = p.source;
     nodes.push(node);
@@ -84,7 +103,13 @@ function build(seq: Sequence, heads: Headers, base: number[], dx: number): { sce
     const b = col(m.to);
     const self = m.from === m.to;
     const h = self ? Math.max(SELF_ROW, textH + 16) : Math.max(MSG_ROW, textH + 14);
-    const edge: SceneEdge = { id: `#m${counts.m++}`, from: m.from, to: m.to, style: m.style, points: [] };
+    const edge: SceneEdge = {
+      id: `#m${counts.m++}`,
+      from: m.from,
+      to: m.to,
+      style: m.style,
+      points: [],
+    };
     let lo = Math.min(a, b);
     let hi = Math.max(a, b);
 
@@ -99,7 +124,10 @@ function build(seq: Sequence, heads: Headers, base: number[], dx: number): { sce
       hi = x;
       if (lines.length > 0) {
         const box = { x: x + LOOP_LABEL_GAP, y: half(y + (h - boxH) / 2), w: boxW, h: boxH };
-        edge.label = { box, text: block(lines, box.x + LABEL_PAD, box.y + LABEL_PAD / 2, LABEL_SIZE, 400, "start") };
+        edge.label = {
+          box,
+          text: block(lines, box.x + LABEL_PAD, box.y + LABEL_PAD / 2, LABEL_SIZE, 400, "start"),
+        };
         hi = box.x + box.w;
       }
     } else {
@@ -109,8 +137,16 @@ function build(seq: Sequence, heads: Headers, base: number[], dx: number): { sce
         { x: b, y: line },
       ];
       if (lines.length > 0) {
-        const box = { x: half((a + b) / 2 - boxW / 2), y: half(line - LABEL_LIFT - boxH), w: boxW, h: boxH };
-        edge.label = { box, text: block(lines, box.x + boxW / 2, box.y + LABEL_PAD / 2, LABEL_SIZE, 400, "middle") };
+        const box = {
+          x: half((a + b) / 2 - boxW / 2),
+          y: half(line - LABEL_LIFT - boxH),
+          w: boxW,
+          h: boxH,
+        };
+        edge.label = {
+          box,
+          text: block(lines, box.x + boxW / 2, box.y + LABEL_PAD / 2, LABEL_SIZE, 400, "middle"),
+        };
       }
     }
     edges.push(edge);
@@ -155,7 +191,10 @@ function build(seq: Sequence, heads: Headers, base: number[], dx: number): { sce
 
     const guardW = (when: string) => textWidth(`[${when}]`, FRAG_SIZE, 400);
     const tabW = Math.ceil(textWidth(tag, FRAG_SIZE, 600)) + 2 * TAB_PAD;
-    const needed = Math.max(tabW + TAB_PAD + guardW(f.branches[0]!.when) + TAB_PAD, ...splits.map((s) => guardW(s.when) + 2 * TAB_PAD));
+    const needed = Math.max(
+      tabW + TAB_PAD + guardW(f.branches[0]!.when) + TAB_PAD,
+      ...splits.map((s) => guardW(s.when) + 2 * TAB_PAD),
+    );
     const x = mine.lo;
     const tab: Box = { x, y, w: tabW, h: FRAG_TAB_H };
     const textTop = (top: number) => top + (FRAG_TAB_H - lineHeight(FRAG_SIZE)) / 2;
@@ -169,8 +208,18 @@ function build(seq: Sequence, heads: Headers, base: number[], dx: number): { sce
       depth,
       variant: "fragment",
       tab,
-      guard: block([f.branches[0]!.when], tab.x + tabW + TAB_PAD, textTop(y), FRAG_SIZE, 400, "start"),
-      dividers: splits.map((s) => ({ y: s.y, guard: block([s.when], x + TAB_PAD, s.y + 4, FRAG_SIZE, 400, "start") })),
+      guard: block(
+        [f.branches[0]!.when],
+        tab.x + tabW + TAB_PAD,
+        textTop(y),
+        FRAG_SIZE,
+        400,
+        "start",
+      ),
+      dividers: splits.map((s) => ({
+        y: s.y,
+        guard: block([s.when], x + TAB_PAD, s.y + 4, FRAG_SIZE, 400, "start"),
+      })),
     };
     groups.splice(at, 0, group);
 

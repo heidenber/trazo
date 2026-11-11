@@ -54,14 +54,18 @@ function groupsIn(text: string): Set<string>[] {
   return found.map((run) => new Set(run.split(" | ")));
 }
 
-const sameSet = (a: Set<string>, b: Set<string>) => a.size === b.size && [...a].every((v) => b.has(v));
-const word = (text: string, name: string) => new RegExp(`(^|[^A-Za-z0-9_])${name}($|[^A-Za-z0-9_])`).test(text);
+const sameSet = (a: Set<string>, b: Set<string>) =>
+  a.size === b.size && [...a].every((v) => b.has(v));
+const word = (text: string, name: string) =>
+  new RegExp(`(^|[^A-Za-z0-9_])${name}($|[^A-Za-z0-9_])`).test(text);
 
 // ---------------------------------------------------------------------------
 // Behavior helpers
 
 function errorCodes(raw: unknown): string[] {
-  return validateDiagram(raw).issues.filter((i) => i.severity === "error").map((i) => i.code);
+  return validateDiagram(raw)
+    .issues.filter((i) => i.severity === "error")
+    .map((i) => i.code);
 }
 function allCodes(raw: unknown): string[] {
   return validateDiagram(raw).issues.map((i) => i.code);
@@ -114,16 +118,23 @@ interface Manual {
   check: () => void;
 }
 
-const styleCheck = (make: (edges: unknown[]) => unknown, styles: string[], resolve: (d: Diagram) => string[]) => () => {
-  for (const style of styles) {
-    expect(resolve(build(make([{ from: "a", to: "b", style }])))).toEqual([style]);
-  }
-  expect(errorCodes(make([{ from: "a", to: "b", style: "bogus" }]))).toContain("schema/enum");
-};
+const styleCheck =
+  (make: (edges: unknown[]) => unknown, styles: string[], resolve: (d: Diagram) => string[]) =>
+  () => {
+    for (const style of styles) {
+      expect(resolve(build(make([{ from: "a", to: "b", style }])))).toEqual([style]);
+    }
+    expect(errorCodes(make([{ from: "a", to: "b", style: "bogus" }]))).toContain("schema/enum");
+  };
 const edgeStyles = (d: Diagram) => (d as { edges: { style: string }[] }).edges.map((e) => e.style);
 
 const MANUAL: Manual[] = [
-  { type: "architecture", what: "edge style", set: ["sync", "async", "data"], check: styleCheck(arch, ["sync", "async", "data"], edgeStyles) },
+  {
+    type: "architecture",
+    what: "edge style",
+    set: ["sync", "async", "data"],
+    check: styleCheck(arch, ["sync", "async", "data"], edgeStyles),
+  },
   {
     type: "architecture",
     what: "edge shorthand arrows",
@@ -133,7 +144,12 @@ const MANUAL: Manual[] = [
       expect(errorCodes(arch(["a --> b"]))).toEqual(["edge/arrow"]);
     },
   },
-  { type: "workflow", what: "edge style", set: ["sync", "async"], check: styleCheck(flow, ["sync", "async"], edgeStyles) },
+  {
+    type: "workflow",
+    what: "edge style",
+    set: ["sync", "async"],
+    check: styleCheck(flow, ["sync", "async"], edgeStyles),
+  },
   {
     type: "workflow",
     what: "edge shorthand arrows",
@@ -150,7 +166,9 @@ const MANUAL: Manual[] = [
       expect(erdColumn("x int pk")).toMatchObject({ pk: true, unique: false, nullable: false });
       expect(erdColumn("x int unique")).toMatchObject({ unique: true });
       expect(erdColumn("x int null")).toMatchObject({ nullable: true });
-      expect(erdColumn("x uuid fk users.id")).toMatchObject({ fk: { table: "users", column: "id" } });
+      expect(erdColumn("x uuid fk users.id")).toMatchObject({
+        fk: { table: "users", column: "id" },
+      });
       expect(erdColumn("x numeric(10, 2)")).toMatchObject({ type: "numeric(10, 2)" });
       expect(erdColumn("x int PK")).toMatchObject({ pk: true });
       expect(errorCodes(erd("x int pk bogus"))).toEqual(["column/unknown-mark"]);
@@ -162,10 +180,26 @@ const MANUAL: Manual[] = [
     type: "erd",
     what: "object column form",
     check: () => {
-      expect(erdColumn("x int")).toMatchObject({ name: "x", pk: false, unique: false, nullable: false });
-      const object = { name: "x", type: "uuid", unique: true, nullable: true, fk: "users.id", note: "n" };
+      expect(erdColumn("x int")).toMatchObject({
+        name: "x",
+        pk: false,
+        unique: false,
+        nullable: false,
+      });
+      const object = {
+        name: "x",
+        type: "uuid",
+        unique: true,
+        nullable: true,
+        fk: "users.id",
+        note: "n",
+      };
       const diagram = build(erd(object)) as Extract<Diagram, { type: "erd" }>;
-      expect(diagram.tables[1]!.columns[1]).toMatchObject({ unique: true, nullable: true, fk: { table: "users", column: "id" } });
+      expect(diagram.tables[1]!.columns[1]).toMatchObject({
+        unique: true,
+        nullable: true,
+        fk: { table: "users", column: "id" },
+      });
     },
   },
   {
@@ -187,9 +221,13 @@ const MANUAL: Manual[] = [
     what: "message style",
     set: ["sync", "async", "reply"],
     check: () => {
-      const styles = (d: Diagram) => (d as { items: { style: string }[] }).items.map((i) => i.style);
+      const styles = (d: Diagram) =>
+        (d as { items: { style: string }[] }).items.map((i) => i.style);
       for (const style of ["sync", "async", "reply"]) {
-        const messages = style === "reply" ? ["a -> b", { from: "b", to: "a", style }] : [{ from: "a", to: "b", style }];
+        const messages =
+          style === "reply"
+            ? ["a -> b", { from: "b", to: "a", style }]
+            : [{ from: "a", to: "b", style }];
         expect(styles(build(seq(messages))).at(-1)).toBe(style);
       }
       expect(errorCodes(seq([{ from: "a", to: "b", style: "bogus" }]))).toContain("schema/enum");
@@ -199,8 +237,13 @@ const MANUAL: Manual[] = [
     type: "sequence",
     what: "message shorthand arrows",
     check: () => {
-      const styles = (d: Diagram) => (d as { items: { style: string }[] }).items.map((i) => i.style);
-      expect(styles(build(seq(["a -> b: x", "a ~> b: y", "b --> a: z"])))).toEqual(["sync", "async", "reply"]);
+      const styles = (d: Diagram) =>
+        (d as { items: { style: string }[] }).items.map((i) => i.style);
+      expect(styles(build(seq(["a -> b: x", "a ~> b: y", "b --> a: z"])))).toEqual([
+        "sync",
+        "async",
+        "reply",
+      ]);
       expect(errorCodes(seq(["a => b"]))).toEqual(["edge/syntax"]);
     },
   },
@@ -221,8 +264,17 @@ const MANUAL: Manual[] = [
     type: "sequence",
     what: "note over 1 or 2 participants",
     check: () => {
-      expect(errorCodes(seq([{ note: "n", over: ["a"] }, { note: "n", over: ["a", "b"] }]))).toEqual([]);
-      expect(errorCodes(seq([{ note: "n", over: ["a", "b", "a"] }]))).toEqual(["sequence/note-over"]);
+      expect(
+        errorCodes(
+          seq([
+            { note: "n", over: ["a"] },
+            { note: "n", over: ["a", "b"] },
+          ]),
+        ),
+      ).toEqual([]);
+      expect(errorCodes(seq([{ note: "n", over: ["a", "b", "a"] }]))).toEqual([
+        "sequence/note-over",
+      ]);
     },
   },
   {
@@ -237,7 +289,12 @@ const MANUAL: Manual[] = [
 ];
 
 // Rules the texts state, each proven by the code it produces.
-const RULES: { type: DiagramType; code: string; severity: "error" | "warning"; doc: () => unknown }[] = [
+const RULES: {
+  type: DiagramType;
+  code: string;
+  severity: "error" | "warning";
+  doc: () => unknown;
+}[] = [
   {
     type: "architecture",
     code: "group/multiple-parents",
@@ -266,18 +323,55 @@ const RULES: { type: DiagramType; code: string; severity: "error" | "warning"; d
       ],
     }),
   },
-  { type: "architecture", code: "ref/unknown-node", severity: "error", doc: () => arch(["a -> zz"]) },
+  {
+    type: "architecture",
+    code: "ref/unknown-node",
+    severity: "error",
+    doc: () => arch(["a -> zz"]),
+  },
   {
     type: "architecture",
     code: "size/large",
     severity: "warning",
-    doc: () => ({ type: "architecture", title: "T", nodes: Array.from({ length: 61 }, (_, i) => ({ id: `n${i}` })) }),
+    doc: () => ({
+      type: "architecture",
+      title: "T",
+      nodes: Array.from({ length: 61 }, (_, i) => ({ id: `n${i}` })),
+    }),
   },
-  { type: "workflow", code: "workflow/start-incoming", severity: "error", doc: () => ({ ...flow(["b -> a"]), steps: [{ id: "a", kind: "start" }, { id: "b" }] }) },
-  { type: "workflow", code: "workflow/end-outgoing", severity: "error", doc: () => ({ ...flow(["a -> b"]), steps: [{ id: "a", kind: "end" }, { id: "b" }] }) },
-  { type: "workflow", code: "workflow/decision-outputs", severity: "error", doc: () => ({ ...flow(["a -> b"]), steps: [{ id: "a", kind: "decision" }, { id: "b" }] }) },
-  { type: "workflow", code: "workflow/decision-label", severity: "warning", doc: () => ({ ...flow(["a -> b", "a -> a"]), steps: [{ id: "a", kind: "decision" }, { id: "b" }] }) },
-  { type: "workflow", code: "lane/missing", severity: "error", doc: () => ({ ...flow([]), lanes: [{ id: "l", steps: ["a"] }] }) },
+  {
+    type: "workflow",
+    code: "workflow/start-incoming",
+    severity: "error",
+    doc: () => ({ ...flow(["b -> a"]), steps: [{ id: "a", kind: "start" }, { id: "b" }] }),
+  },
+  {
+    type: "workflow",
+    code: "workflow/end-outgoing",
+    severity: "error",
+    doc: () => ({ ...flow(["a -> b"]), steps: [{ id: "a", kind: "end" }, { id: "b" }] }),
+  },
+  {
+    type: "workflow",
+    code: "workflow/decision-outputs",
+    severity: "error",
+    doc: () => ({ ...flow(["a -> b"]), steps: [{ id: "a", kind: "decision" }, { id: "b" }] }),
+  },
+  {
+    type: "workflow",
+    code: "workflow/decision-label",
+    severity: "warning",
+    doc: () => ({
+      ...flow(["a -> b", "a -> a"]),
+      steps: [{ id: "a", kind: "decision" }, { id: "b" }],
+    }),
+  },
+  {
+    type: "workflow",
+    code: "lane/missing",
+    severity: "error",
+    doc: () => ({ ...flow([]), lanes: [{ id: "l", steps: ["a"] }] }),
+  },
   {
     type: "workflow",
     code: "lane/multiple-lanes",
@@ -290,15 +384,65 @@ const RULES: { type: DiagramType; code: string; severity: "error" | "warning"; d
       ],
     }),
   },
-  { type: "workflow", code: "workflow/lanes-direction", severity: "warning", doc: () => ({ ...flow([]), direction: "down", lanes: [{ id: "l", steps: ["a", "b"] }] }) },
-  { type: "workflow", code: "size/large", severity: "warning", doc: () => ({ type: "workflow", title: "T", steps: Array.from({ length: 41 }, (_, i) => ({ id: `s${i}` })) }) },
-  { type: "erd", code: "ref/unknown-table", severity: "error", doc: () => erd("x uuid fk nope.id") },
-  { type: "erd", code: "ref/unknown-column", severity: "error", doc: () => erd("x uuid fk users.nope") },
+  {
+    type: "workflow",
+    code: "workflow/lanes-direction",
+    severity: "warning",
+    doc: () => ({ ...flow([]), direction: "down", lanes: [{ id: "l", steps: ["a", "b"] }] }),
+  },
+  {
+    type: "workflow",
+    code: "size/large",
+    severity: "warning",
+    doc: () => ({
+      type: "workflow",
+      title: "T",
+      steps: Array.from({ length: 41 }, (_, i) => ({ id: `s${i}` })),
+    }),
+  },
+  {
+    type: "erd",
+    code: "ref/unknown-table",
+    severity: "error",
+    doc: () => erd("x uuid fk nope.id"),
+  },
+  {
+    type: "erd",
+    code: "ref/unknown-column",
+    severity: "error",
+    doc: () => erd("x uuid fk users.nope"),
+  },
   { type: "erd", code: "column/duplicate", severity: "error", doc: () => erd("id int") },
-  { type: "erd", code: "fk/type-mismatch", severity: "warning", doc: () => erd("x int fk users.id") },
-  { type: "erd", code: "fk/target-not-key", severity: "warning", doc: () => ({ ...erd("x text fk users.name"), tables: [{ id: "users", columns: ["id uuid pk", "name text"] }, { id: "posts", columns: ["id uuid pk", "x text fk users.name"] }] }) },
-  { type: "erd", code: "table/no-pk", severity: "warning", doc: () => ({ type: "erd", title: "T", tables: [{ id: "t", columns: ["x int"] }] }) },
-  { type: "sequence", code: "sequence/alt-branches", severity: "error", doc: () => seq([{ alt: [{ when: "w", messages: ["a -> b"] }] }]) },
+  {
+    type: "erd",
+    code: "fk/type-mismatch",
+    severity: "warning",
+    doc: () => erd("x int fk users.id"),
+  },
+  {
+    type: "erd",
+    code: "fk/target-not-key",
+    severity: "warning",
+    doc: () => ({
+      ...erd("x text fk users.name"),
+      tables: [
+        { id: "users", columns: ["id uuid pk", "name text"] },
+        { id: "posts", columns: ["id uuid pk", "x text fk users.name"] },
+      ],
+    }),
+  },
+  {
+    type: "erd",
+    code: "table/no-pk",
+    severity: "warning",
+    doc: () => ({ type: "erd", title: "T", tables: [{ id: "t", columns: ["x int"] }] }),
+  },
+  {
+    type: "sequence",
+    code: "sequence/alt-branches",
+    severity: "error",
+    doc: () => seq([{ alt: [{ when: "w", messages: ["a -> b"] }] }]),
+  },
   {
     type: "sequence",
     code: "sequence/nesting",
@@ -308,14 +452,41 @@ const RULES: { type: DiagramType; code: string; severity: "error" | "warning"; d
       return seq([{ opt: { when: "w", messages: [{ opt: { when: "w", messages: [leaf] } }] } }]);
     },
   },
-  { type: "sequence", code: "sequence/note-over", severity: "error", doc: () => seq([{ note: "n", over: ["a", "b", "a"] }]) },
+  {
+    type: "sequence",
+    code: "sequence/note-over",
+    severity: "error",
+    doc: () => seq([{ note: "n", over: ["a", "b", "a"] }]),
+  },
   { type: "sequence", code: "sequence/self-reply", severity: "error", doc: () => seq(["a --> a"]) },
-  { type: "sequence", code: "sequence/orphan-reply", severity: "warning", doc: () => seq(["a --> b"]) },
-  { type: "sequence", code: "ref/unknown-participant", severity: "error", doc: () => seq(["a -> zz"]) },
+  {
+    type: "sequence",
+    code: "sequence/orphan-reply",
+    severity: "warning",
+    doc: () => seq(["a --> b"]),
+  },
+  {
+    type: "sequence",
+    code: "ref/unknown-participant",
+    severity: "error",
+    doc: () => seq(["a -> zz"]),
+  },
 ];
 
 // Field words of sequence messages, notes and branches: Zod types them as unknown.
-const SEQUENCE_WORDS = ["from", "to", "label", "style", "note", "over", "when", "messages", "alt", "opt", "loop"];
+const SEQUENCE_WORDS = [
+  "from",
+  "to",
+  "label",
+  "style",
+  "note",
+  "over",
+  "when",
+  "messages",
+  "alt",
+  "opt",
+  "loop",
+];
 
 // ---------------------------------------------------------------------------
 
@@ -352,13 +523,20 @@ describe("REFERENCE follows the Zod schemas", () => {
     });
 
     it("names every schema enum value", () => {
-      for (const set of enums) for (const value of set) expect(word(text, value), `enum value "${value}"`).toBe(true);
+      for (const set of enums)
+        for (const value of set) expect(word(text, value), `enum value "${value}"`).toBe(true);
     });
 
     it("writes every a | b | c group as a known set", () => {
-      const known = [...enums, ...MANUAL.filter((m) => m.type === type && m.set).map((m) => new Set(m.set))];
+      const known = [
+        ...enums,
+        ...MANUAL.filter((m) => m.type === type && m.set).map((m) => new Set(m.set)),
+      ];
       for (const group of groupsIn(text)) {
-        expect(known.some((set) => sameSet(set, group)), `group ${[...group].join(" | ")}`).toBe(true);
+        expect(
+          known.some((set) => sameSet(set, group)),
+          `group ${[...group].join(" | ")}`,
+        ).toBe(true);
       }
     });
 
@@ -366,7 +544,10 @@ describe("REFERENCE follows the Zod schemas", () => {
       const groups = groupsIn(text);
       for (const set of enums) {
         if (set.size < 2) continue;
-        expect(groups.some((group) => sameSet(group, set)), `enum ${[...set].join(" | ")}`).toBe(true);
+        expect(
+          groups.some((group) => sameSet(group, set)),
+          `enum ${[...set].join(" | ")}`,
+        ).toBe(true);
       }
     });
   });
@@ -382,7 +563,10 @@ describe("REFERENCE MANUAL table", () => {
       entry.check();
       if (entry.set) {
         const groups = groupsIn(REFERENCE[entry.type]);
-        expect(groups.some((group) => sameSet(group, new Set(entry.set))), `group ${entry.set.join(" | ")}`).toBe(true);
+        expect(
+          groups.some((group) => sameSet(group, new Set(entry.set))),
+          `group ${entry.set.join(" | ")}`,
+        ).toBe(true);
       }
     });
   }
@@ -401,7 +585,9 @@ describe("REFERENCE rules", () => {
   for (const rule of RULES) {
     it(`${rule.type}: ${rule.code} is a ${rule.severity}`, () => {
       const issues = validateDiagram(rule.doc()).issues;
-      expect(issues.filter((i) => i.severity === rule.severity).map((i) => i.code)).toContain(rule.code);
+      expect(issues.filter((i) => i.severity === rule.severity).map((i) => i.code)).toContain(
+        rule.code,
+      );
     });
   }
 
@@ -412,7 +598,9 @@ describe("REFERENCE rules", () => {
 
 describe("examples still match the reference", () => {
   it.each(DIAGRAM_TYPES)("examples/%s.json validates with no issues", (type) => {
-    const raw: unknown = JSON.parse(readFileSync(new URL(`../../examples/${type}.json`, import.meta.url), "utf8"));
+    const raw: unknown = JSON.parse(
+      readFileSync(new URL(`../../examples/${type}.json`, import.meta.url), "utf8"),
+    );
     expect(validateDiagram(raw).issues).toEqual([]);
   });
 });

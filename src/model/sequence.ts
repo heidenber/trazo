@@ -4,7 +4,17 @@
 import { z } from "zod";
 import { didYouMean, formatPath, type Issue } from "../validate/issues.js";
 import { IdRegistry } from "../validate/refs.js";
-import { customIssue, describe, edgeSchema, error_, fromZod, idSchema, textSchema, themeSchema, warning } from "./common.js";
+import {
+  customIssue,
+  describe,
+  edgeSchema,
+  error_,
+  fromZod,
+  idSchema,
+  textSchema,
+  themeSchema,
+  warning,
+} from "./common.js";
 
 export const PARTICIPANT_KINDS = ["actor", "service", "database", "queue", "external"] as const;
 
@@ -90,7 +100,11 @@ const messageSchema = edgeSchema("sequence", ["->", "~>", "-->"], ["sync", "asyn
 const overSchema = z.preprocess((v, ctx) => {
   if (typeof v === "string") return [v];
   if (v !== undefined && !Array.isArray(v)) {
-    ctx.issues.push(customIssue(v, `expected an id or a list of ids, got ${describe(v)}`, { code: "schema/type" }));
+    ctx.issues.push(
+      customIssue(v, `expected an id or a list of ids, got ${describe(v)}`, {
+        code: "schema/type",
+      }),
+    );
   }
   return v;
 }, z.array(idSchema).min(1));
@@ -130,7 +144,8 @@ class Walker {
 
   private element(raw: unknown, path: Path, depth: number): SeqItem | undefined {
     if (typeof raw === "string") return this.message(raw, path);
-    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return this.unreadable(raw, path);
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw))
+      return this.unreadable(raw, path);
 
     const keys = Object.keys(raw);
     const kinds: string[] = [];
@@ -139,7 +154,12 @@ class Walker {
 
     if (kinds.length === 0) return this.unreadable(raw, path);
     if (kinds.length > 1) {
-      this.fail("sequence/element", path, `element mixes "${kinds[0]}" and "${kinds[1]}"`, "split it into separate elements");
+      this.fail(
+        "sequence/element",
+        path,
+        `element mixes "${kinds[0]}" and "${kinds[1]}"`,
+        "split it into separate elements",
+      );
       return undefined;
     }
     if (kinds[0] === "from") return this.message(raw, path);
@@ -158,7 +178,12 @@ class Walker {
         }
       }
     }
-    this.fail("sequence/element", path, "cannot read element, expected a message, a note or a fragment", hint);
+    this.fail(
+      "sequence/element",
+      path,
+      "cannot read element, expected a message, a note or a fragment",
+      hint,
+    );
     return undefined;
   }
 
@@ -168,7 +193,12 @@ class Walker {
       this.issues.push(...fromZod(parsed.error, messageSchema, path));
       return undefined;
     }
-    const { from, to, label, style } = parsed.data as { from: string; to: string; label?: string; style?: SeqStyle };
+    const { from, to, label, style } = parsed.data as {
+      from: string;
+      to: string;
+      label?: string;
+      style?: SeqStyle;
+    };
     // Short form has no field to point at, so refs report at the element.
     const short = typeof raw === "string";
     const badFrom = this.ids.unknown(from, formatPath(short ? path : [...path, "from"]));
@@ -183,12 +213,22 @@ class Walker {
 
     if (out.style === "reply") {
       if (from === to) {
-        this.fail("sequence/self-reply", path, `"${from} --> ${to}" replies to itself`, `a self-call has no reply; use "${from} -> ${to}" or drop it`);
+        this.fail(
+          "sequence/self-reply",
+          path,
+          `"${from} --> ${to}" replies to itself`,
+          `a self-call has no reply; use "${from} -> ${to}" or drop it`,
+        );
         return undefined;
       }
       if (!this.requests.has(`${to}>${from}`)) {
         this.warnings.push(
-          warning("sequence/orphan-reply", formatPath(path), `"${from} --> ${to}" has no earlier request ${to} -> ${from}`, "send the request before replying"),
+          warning(
+            "sequence/orphan-reply",
+            formatPath(path),
+            `"${from} --> ${to}" has no earlier request ${to} -> ${from}`,
+            "send the request before replying",
+          ),
         );
       }
     } else {
@@ -222,23 +262,44 @@ class Walker {
     const { note, over } = parsed.data;
     let ok = true;
     if (over.length > 2) {
-      this.fail("sequence/note-over", [...path, "over"], `over takes 1 or 2 participants, got ${over.length}`, "split the note or pick the two that matter");
+      this.fail(
+        "sequence/note-over",
+        [...path, "over"],
+        `over takes 1 or 2 participants, got ${over.length}`,
+        "split the note or pick the two that matter",
+      );
       ok = false;
     } else if (over.length === 2 && over[0] === over[1]) {
-      this.fail("sequence/note-over", [...path, "over", 1], `over repeats "${over[1]}"`, "list each participant once");
+      this.fail(
+        "sequence/note-over",
+        [...path, "over", 1],
+        `over repeats "${over[1]}"`,
+        "list each participant once",
+      );
       ok = false;
     }
     over.forEach((id, i) => {
-      if (this.ids.unknown(id, formatPath(single ? [...path, "over"] : [...path, "over", i]))) ok = false;
+      if (this.ids.unknown(id, formatPath(single ? [...path, "over"] : [...path, "over", i])))
+        ok = false;
     });
     if (!ok) return undefined;
     over.forEach((id) => this.used.add(id));
     return { type: "note", text: note, over };
   }
 
-  private fragment(raw: object, op: FragmentOp, path: Path, depth: number): SeqFragment | undefined {
+  private fragment(
+    raw: object,
+    op: FragmentOp,
+    path: Path,
+    depth: number,
+  ): SeqFragment | undefined {
     if (depth > MAX_DEPTH) {
-      this.fail("sequence/nesting", path, `fragment nested ${depth} levels deep, limit is ${MAX_DEPTH}`, "move the inner block out or split the diagram");
+      this.fail(
+        "sequence/nesting",
+        path,
+        `fragment nested ${depth} levels deep, limit is ${MAX_DEPTH}`,
+        "move the inner block out or split the diagram",
+      );
       return undefined;
     }
     const shape = op === "alt" ? z.array(z.unknown()).min(1) : z.unknown();
@@ -254,7 +315,12 @@ class Walker {
 
     let ok = true;
     if (op === "alt" && rawBranches.length < 2) {
-      this.fail("sequence/alt-branches", [...path, op], `alt needs at least 2 branches (has ${rawBranches.length})`, 'use "opt" for a single condition');
+      this.fail(
+        "sequence/alt-branches",
+        [...path, op],
+        `alt needs at least 2 branches (has ${rawBranches.length})`,
+        'use "opt" for a single condition',
+      );
       ok = false;
     }
     const branches: SeqBranch[] = [];
@@ -280,7 +346,9 @@ class Walker {
 export function buildSequence(input: Parsed): { diagram?: Sequence; issues: Issue[] } {
   const issues: Issue[] = [];
   const ids = new IdRegistry(issues, { noun: "participant", code: "ref/unknown-participant" });
-  input.participants.forEach((participant, i) => ids.claim(participant.id, `participants[${i}].id`));
+  input.participants.forEach((participant, i) =>
+    ids.claim(participant.id, `participants[${i}].id`),
+  );
 
   const walker = new Walker(issues, ids);
   const items = walker.list(input.messages, ["messages"], 0);
@@ -291,7 +359,12 @@ export function buildSequence(input: Parsed): { diagram?: Sequence; issues: Issu
   input.participants.forEach((participant, i) => {
     if (!walker.used.has(participant.id)) {
       warnings.push(
-        warning("sequence/unused-participant", `participants[${i}]`, `participant "${participant.id}" never appears in a message or note`, "remove it or add a message"),
+        warning(
+          "sequence/unused-participant",
+          `participants[${i}]`,
+          `participant "${participant.id}" never appears in a message or note`,
+          "remove it or add a message",
+        ),
       );
     }
   });

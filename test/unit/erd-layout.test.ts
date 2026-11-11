@@ -18,9 +18,18 @@ const shop = () =>
   erd({
     tables: [
       { id: "users", columns: ["id uuid pk", "email text unique", "name text null"] },
-      { id: "orders", columns: ["id uuid pk", "user_id uuid fk users.id", "created_at timestamp with time zone"] },
-      { id: "payments", columns: ["id uuid pk", "order_id uuid fk orders.id unique", "amount numeric(10, 2)"] },
-      { id: "categories", columns: ["id int pk", "parent_id int fk categories.id null", "name text"] },
+      {
+        id: "orders",
+        columns: ["id uuid pk", "user_id uuid fk users.id", "created_at timestamp with time zone"],
+      },
+      {
+        id: "payments",
+        columns: ["id uuid pk", "order_id uuid fk orders.id unique", "amount numeric(10, 2)"],
+      },
+      {
+        id: "categories",
+        columns: ["id int pk", "parent_id int fk categories.id null", "name text"],
+      },
     ],
   });
 
@@ -34,7 +43,8 @@ const cyclic = () =>
     ],
   });
 
-const overlaps = (a: Box, b: Box) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+const overlaps = (a: Box, b: Box) =>
+  a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
 function rowCentre(node: SceneNode, column: string): number {
   const row = node.rows!.find((r) => r.name.lines[0] === column)!;
@@ -64,12 +74,20 @@ describe("erd layout", () => {
     const scene = await layoutDiagram(
       erd({
         tables: [
-          { id: "users", note: "people", source: "db/migrations/001_users.sql:1", columns: ["id uuid pk"] },
+          {
+            id: "users",
+            note: "people",
+            source: "db/migrations/001_users.sql:1",
+            columns: ["id uuid pk"],
+          },
           { id: "orders", columns: ["id uuid pk"] },
         ],
       }),
     );
-    expect(byId(scene, "users")).toMatchObject({ note: "people", source: "db/migrations/001_users.sql:1" });
+    expect(byId(scene, "users")).toMatchObject({
+      note: "people",
+      source: "db/migrations/001_users.sql:1",
+    });
     expect("source" in byId(scene, "orders")).toBe(false);
   });
 
@@ -79,7 +97,12 @@ describe("erd layout", () => {
     expect(users.header).toBe(32);
     expect(users.h).toBe(32 + 3 * 24);
     expect(users.label.lines).toEqual(["users"]);
-    const rows = users.rows!.map((r) => [r.name.lines[0], r.type.lines[0], r.marks?.lines[0], r.key]);
+    const rows = users.rows!.map((r) => [
+      r.name.lines[0],
+      r.type.lines[0],
+      r.marks?.lines[0],
+      r.key,
+    ]);
     expect(rows).toEqual([
       ["id", "uuid", "PK", true],
       ["email", "text", "UQ", false],
@@ -101,7 +124,8 @@ describe("erd layout", () => {
 
   it("keeps tables apart", async () => {
     const scene = await layoutDiagram(shop());
-    for (const a of scene.nodes) for (const b of scene.nodes) if (a !== b) expect(overlaps(a, b)).toBe(false);
+    for (const a of scene.nodes)
+      for (const b of scene.nodes) if (a !== b) expect(overlaps(a, b)).toBe(false);
   });
 
   it("derives relation ids, ends and a crow's foot instead of an arrow", async () => {
@@ -155,8 +179,16 @@ describe("erd layout", () => {
               w: n.w - 2,
               h: n.h - 2,
             };
-            const seg = { x: Math.min(p.x, q.x), y: Math.min(p.y, q.y), w: Math.abs(p.x - q.x), h: Math.abs(p.y - q.y) };
-            expect(overlaps({ ...seg, w: Math.max(seg.w, 0.01), h: Math.max(seg.h, 0.01) }, inside), `${e.id} crosses ${n.id}`).toBe(false);
+            const seg = {
+              x: Math.min(p.x, q.x),
+              y: Math.min(p.y, q.y),
+              w: Math.abs(p.x - q.x),
+              h: Math.abs(p.y - q.y),
+            };
+            expect(
+              overlaps({ ...seg, w: Math.max(seg.w, 0.01), h: Math.max(seg.h, 0.01) }, inside),
+              `${e.id} crosses ${n.id}`,
+            ).toBe(false);
           }
         }
       }

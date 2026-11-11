@@ -17,7 +17,13 @@ function error(text: string) {
 
 describe("parseColumn", () => {
   it("reads name and type with no marks", () => {
-    expect(column("name text")).toEqual({ name: "name", type: "text", pk: false, unique: false, nullable: false });
+    expect(column("name text")).toEqual({
+      name: "name",
+      type: "text",
+      pk: false,
+      unique: false,
+      nullable: false,
+    });
   });
 
   it("keeps types with spaces and parentheses whole", () => {
@@ -94,7 +100,11 @@ describe("parseColumn", () => {
 
   it("rejects an fk without a usable target", () => {
     const hint = 'write "fk table.column"';
-    expect(error("a int fk")).toEqual({ code: "column/fk-target", message: 'fk needs a target in "a int fk"', hint });
+    expect(error("a int fk")).toEqual({
+      code: "column/fk-target",
+      message: 'fk needs a target in "a int fk"',
+      hint,
+    });
     expect(error("a int fk unique")).toEqual({
       code: "column/fk-target",
       message: 'fk needs a target in "a int fk unique"',
