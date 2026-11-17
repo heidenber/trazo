@@ -3,12 +3,15 @@
 
 import { spawnSync } from "node:child_process";
 import {
+  cpSync,
   existsSync,
   mkdirSync,
   readdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
+  unlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -644,6 +647,33 @@ describe("skill install", () => {
     expect(r.stderr.startsWith(prefix)).toBe(true);
     expect(r.stderr.slice(prefix.length)).toMatch(/^E[A-Z]+\)\n/);
     expect(r.stderr.endsWith(USAGE_TAIL)).toBe(true);
+  });
+
+  it("names the bundled skill when the package lacks it and writes nothing", () => {
+    // A copy of the built package without skill/: dist plus the real dependencies.
+    const pkg = join(dir, "pkg");
+    cpSync(resolve("dist"), join(pkg, "dist"), { recursive: true });
+    cpSync(resolve("package.json"), join(pkg, "package.json"));
+    const link = join(pkg, "node_modules");
+    symlinkSync(resolve("node_modules"), link, "junction");
+    const home = join(dir, "home");
+    mkdirSync(home, { recursive: true });
+    let result;
+    try {
+      result = spawnSync(
+        process.execPath,
+        [join(pkg, "dist", "cli", "main.js"), "skill", "install", "--agent", "pi"],
+        { cwd: dir, encoding: "utf8", env: { ...process.env, HOME: home, USERPROFILE: home } },
+      );
+    } finally {
+      unlinkSync(link); // drop the link first so cleanup never reaches the real node_modules
+    }
+    expect({ code: result.status, stdout: result.stdout, stderr: result.stderr }).toEqual({
+      code: 3,
+      stdout: "",
+      stderr: `error: internal: cannot read the bundled skill "${join(pkg, "skill", "SKILL.md")}" (ENOENT); reinstall @heidenber/trazo\n`,
+    });
+    expect(readdirSync(home)).toEqual([]);
   });
 
   it("rejects --agent outside skill install", () => {

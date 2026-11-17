@@ -4,6 +4,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { suggest } from "../validate/issues.js";
 import { writeAtomic, writeError } from "./io.js";
 import { UsageError } from "./usage.js";
@@ -39,7 +40,17 @@ export function skill(args: string[], agent: string | undefined): string {
   }
 
   const target = join(homedir(), ...LOCATIONS[agent as keyof typeof LOCATIONS], "SKILL.md");
-  const content = readFileSync(new URL("../../skill/SKILL.md", import.meta.url), "utf8");
+  const source = fileURLToPath(new URL("../../skill/SKILL.md", import.meta.url));
+  let content: string;
+  try {
+    content = readFileSync(source, "utf8");
+  } catch (err) {
+    // A broken install, not a usage mistake: stays an internal error, but says what to do.
+    const code = (err as { code?: unknown }).code;
+    throw new Error(
+      `cannot read the bundled skill "${source}"${typeof code === "string" ? ` (${code})` : ""}; reinstall @heidenber/trazo`,
+    );
+  }
   const existed = existsSync(target);
   try {
     writeAtomic(target, content);
