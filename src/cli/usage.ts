@@ -10,17 +10,21 @@ Usage:
   trazo check <input> [--json]
   trazo schema <type>
   trazo example <type>
+  trazo skill install --agent claude|pi|codex
 
 Commands:
   make     validate, lay out and write a self-contained HTML file
   check    validate only; writes nothing
   schema   print the compact field reference for a diagram type
   example  print a complete example diagram, valid input for make
+  skill    install the trazo skill for an agent in your home directory
+           (Claude Code, Pi or Codex); an existing copy is updated
 
 Options:
   -o, --out <file>   output path (default: <input> with .html, or stdout when <input> is "-"; "-" forces stdout)
       --theme <t>    light or dark; overrides the diagram's theme
       --json         print one JSON line instead of plain text
+      --agent <a>    claude, pi or codex (skill install only)
   -h, --help         show this help
   -v, --version      print the version
 

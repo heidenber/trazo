@@ -551,3 +551,118 @@ describe("example", () => {
     expect(run(["check"])).toEqual({ code: 2, stdout: "", stderr: usageError("missing <input>") });
   });
 });
+
+describe("skill install", () => {
+  const SKILL = readFileSync(resolve("skill/SKILL.md"), "utf8");
+  const TARGETS = {
+    claude: [".claude", "skills", "trazo", "SKILL.md"],
+    pi: [".pi", "agent", "skills", "trazo", "SKILL.md"],
+    codex: [".agents", "skills", "trazo", "SKILL.md"],
+  } as const;
+
+  function runHome(args: string[]) {
+    const home = join(dir, "home");
+    mkdirSync(home, { recursive: true });
+    const result = spawnSync(process.execPath, [BIN, ...args], {
+      cwd: dir,
+      encoding: "utf8",
+      env: { ...process.env, HOME: home, USERPROFILE: home },
+    });
+    return { home, code: result.status, stdout: result.stdout, stderr: result.stderr };
+  }
+
+  it("copies SKILL.md to each agent's location and reports installed", () => {
+    for (const [agent, parts] of Object.entries(TARGETS)) {
+      const r = runHome(["skill", "install", "--agent", agent]);
+      const target = join(r.home, ...parts);
+      expect({ code: r.code, stdout: r.stdout, stderr: r.stderr }).toEqual({
+        code: 0,
+        stdout: `installed ${target}\n`,
+        stderr: "",
+      });
+      expect(readFileSync(target, "utf8")).toBe(SKILL);
+    }
+  });
+
+  it("overwrites an existing copy and reports updated", () => {
+    runHome(["skill", "install", "--agent", "claude"]);
+    const target = join(dir, "home", ...TARGETS.claude);
+    writeFileSync(target, "old");
+    const r = runHome(["skill", "install", "--agent", "claude"]);
+    expect({ code: r.code, stdout: r.stdout, stderr: r.stderr }).toEqual({
+      code: 0,
+      stdout: `updated ${target}\n`,
+      stderr: "",
+    });
+    expect(readFileSync(target, "utf8")).toBe(SKILL);
+  });
+
+  it("rejects bad usage and writes nothing", () => {
+    const cases: [string[], string][] = [
+      [["skill", "install"], "missing --agent (use one of: claude, pi, codex)"],
+      [["skill", "install", "--agent", "claud"], 'unknown agent "claud" (did you mean "claude"?)'],
+      [
+        ["skill", "install", "--agent", "zzzz"],
+        'unknown agent "zzzz" (use one of: claude, pi, codex)',
+      ],
+      [["skill"], "missing <action> (use install)"],
+      [
+        ["skill", "instal", "--agent", "pi"],
+        'unknown skill action "instal" (did you mean "install"?)',
+      ],
+      [["skill", "install", "extra", "--agent", "pi"], 'unexpected argument "extra"'],
+      [
+        ["skill", "install", "--agent", "pi", "--json"],
+        'option "--json" only applies to make and check',
+      ],
+      [["skill", "install", "--agent", "pi", "--out", "x"], 'option "--out" only applies to make'],
+      [
+        ["skill", "install", "--agent", "pi", "--theme", "dark"],
+        'option "--theme" only applies to make',
+      ],
+    ];
+    for (const [args, message] of cases) {
+      const r = runHome(args);
+      expect({ args, code: r.code, stdout: r.stdout, stderr: r.stderr }).toEqual({
+        args,
+        code: 2,
+        stdout: "",
+        stderr: usageError(message),
+      });
+      expect(readdirSync(r.home)).toEqual([]);
+    }
+  });
+
+  it("names the path when the skill cannot be written", () => {
+    const home = join(dir, "home");
+    mkdirSync(home, { recursive: true });
+    writeFileSync(join(home, ".claude"), "not a directory");
+    const r = runHome(["skill", "install", "--agent", "claude"]);
+    expect(r.code).toBe(2);
+    expect(r.stdout).toBe("");
+    const prefix = `error: cannot write "${join(home, ...TARGETS.claude)}" (`;
+    expect(r.stderr.startsWith(prefix)).toBe(true);
+    expect(r.stderr.slice(prefix.length)).toMatch(/^E[A-Z]+\)\n/);
+    expect(r.stderr.endsWith(USAGE_TAIL)).toBe(true);
+  });
+
+  it("rejects --agent outside skill install", () => {
+    const input = write("in.json", valid);
+    for (const args of [
+      ["make", input, "--agent", "pi"],
+      ["check", input, "--agent", "pi"],
+      ["schema", "erd", "--agent", "pi"],
+      ["example", "erd", "--agent", "pi"],
+    ]) {
+      expect(run(args)).toEqual({
+        code: 2,
+        stdout: "",
+        stderr: usageError('option "--agent" only applies to skill install'),
+      });
+    }
+  });
+
+  it("lists skill install in --help", () => {
+    expect(run(["--help"]).stdout).toContain("trazo skill install --agent claude|pi|codex");
+  });
+});
