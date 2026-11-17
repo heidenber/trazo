@@ -20,7 +20,7 @@ Necesitas un agente que pueda ejecutar comandos, como Claude Code, Codex o Pi.
    npm i -g @heidenber/trazo
    ```
 
-2. Opcional: instala la skill, que le explica a tu agente cómo usar bien trazo. Copia los comandos de [Skill para agentes](#skill-para-agentes) o pídeselo a tu agente:
+2. Opcional: instala la skill, que le explica a tu agente cómo usar bien trazo. Ejecuta `trazo skill install --agent claude` (o `pi`, `codex`; consulta [Skill para agentes](#skill-para-agentes)) o pídeselo a tu agente:
 
    > Instala la skill de trazo para ti, siguiendo https://github.com/heidenber/trazo/blob/main/README_ES.md#skill-para-agentes
 
@@ -137,30 +137,15 @@ Los ejemplos incluidos (`trazo example <type>`) tal como los dibuja trazo; el ER
 
 ## Skill para agentes
 
-`skill/` trae una skill corta que le indica al agente que lea el código antes de dibujar y dibuje solo lo que encontró, cite cada parte en `source`, parta de `trazo example`, valide el JSON y corrija los errores a partir de los mensajes. `skill/SKILL.md` es para Claude Code y Pi; `skill/AGENTS.md` es el mismo texto para Codex. trazo no instala nada por su cuenta: copia los archivos después de instalar el paquete de forma global. Son las ubicaciones documentadas de cada agente; compruébalas con la versión que uses.
+`skill/` trae una skill corta que le indica al agente que lea el código antes de dibujar y dibuje solo lo que encontró, cite cada parte en `source`, parta de `trazo example`, valide el JSON y corrija los errores a partir de los mensajes. trazo nunca la instala por su cuenta (no hay postinstall). Después de instalar el paquete de forma global, ejecuta un comando para tu agente, en cualquier terminal:
 
-Bash:
-
-```bash
-SK="$(npm root -g)/@heidenber/trazo/skill"
-mkdir -p ~/.claude/skills/trazo && cp "$SK/SKILL.md" ~/.claude/skills/trazo/        # Claude Code
-mkdir -p ~/.pi/agent/skills/trazo && cp "$SK/SKILL.md" ~/.pi/agent/skills/trazo/    # Pi
-mkdir -p ~/.codex && cat "$SK/AGENTS.md" >> ~/.codex/AGENTS.md                      # Codex
+```sh
+trazo skill install --agent claude   # ~/.claude/skills/trazo/SKILL.md
+trazo skill install --agent pi       # ~/.pi/agent/skills/trazo/SKILL.md
+trazo skill install --agent codex    # ~/.agents/skills/trazo/SKILL.md
 ```
 
-PowerShell:
-
-```powershell
-$sk = Join-Path (npm root -g) "@heidenber\trazo\skill"
-New-Item -ItemType Directory -Force "$HOME\.claude\skills\trazo" | Out-Null
-Copy-Item "$sk\SKILL.md" "$HOME\.claude\skills\trazo\"                              # Claude Code
-New-Item -ItemType Directory -Force "$HOME\.pi\agent\skills\trazo" | Out-Null
-Copy-Item "$sk\SKILL.md" "$HOME\.pi\agent\skills\trazo\"                            # Pi
-New-Item -ItemType Directory -Force "$HOME\.codex" | Out-Null
-Get-Content "$sk\AGENTS.md" | Add-Content "$HOME\.codex\AGENTS.md"                  # Codex
-```
-
-Si ejecutas el comando de Codex dos veces, el bloque queda duplicado. Para actualizarlo, borra antes todo lo que hay entre `<!-- trazo:start -->` y `<!-- trazo:end -->` en `~/.codex/AGENTS.md`. En Claude Code y Pi, vuelve a copiar el archivo.
+Muestra `installed <ruta>`, o `updated <ruta>` si ya había una copia anterior; vuelve a ejecutarlo después de actualizar trazo. Son las ubicaciones documentadas de nivel de usuario de cada agente; compruébalas con la versión que uses. `skill/AGENTS.md` conserva el mismo texto como bloque de `AGENTS.md` para versiones de Codex sin skills.
 
 ## Librería
 

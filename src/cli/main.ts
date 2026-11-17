@@ -11,14 +11,16 @@ import { formatIssues, hasErrors, suggest, type Issue } from "../validate/issues
 import { VERSION } from "../version.js";
 import { REFERENCE } from "./reference.js";
 import { readInput, writeAtomic, writeError } from "./io.js";
+import { skill } from "./skill.js";
 import { USAGE, UsageError } from "./usage.js";
 
-const COMMANDS = ["make", "check", "schema", "example"];
+const COMMANDS = ["make", "check", "schema", "example", "skill"];
 
 interface Options {
   out?: string | undefined;
   theme?: string | undefined;
   json?: boolean | undefined;
+  agent?: string | undefined;
   help?: boolean | undefined;
   version?: boolean | undefined;
 }
@@ -27,6 +29,7 @@ const OPTIONS = {
   out: { type: "string", short: "o" },
   theme: { type: "string" },
   json: { type: "boolean" },
+  agent: { type: "string" },
   help: { type: "boolean", short: "h" },
   version: { type: "boolean", short: "v" },
 } as const satisfies NonNullable<ParseArgsConfig["options"]>;
@@ -121,6 +124,14 @@ async function execute(argv: string[]): Promise<{ code: number; out: string; err
       `unknown command "${command}"${guess ? ` (did you mean "${guess}"?)` : ""}`,
     );
   }
+  if (command === "skill") {
+    if (options.out !== undefined) throw new UsageError('option "--out" only applies to make');
+    if (options.theme !== undefined) throw new UsageError('option "--theme" only applies to make');
+    if (options.json) throw new UsageError('option "--json" only applies to make and check');
+    return { code: 0, out: skill(positionals.slice(1), options.agent), err: "" };
+  }
+  if (options.agent !== undefined)
+    throw new UsageError('option "--agent" only applies to skill install');
   if (command === "schema" || command === "example")
     return describeType(command, options, positionals.slice(1));
   if (input === undefined) throw new UsageError("missing <input>");

@@ -4,6 +4,10 @@ All notable changes to trazo are listed here. The format follows [Keep a Changel
 
 ## [Unreleased]
 
+### Added
+
+- `trazo skill install --agent claude|pi|codex` copies the skill to the agent's user-level location (`~/.claude/skills/trazo`, `~/.pi/agent/skills/trazo`, `~/.agents/skills/trazo`) in any shell and prints `installed <path>` or `updated <path>`. It replaces the per-shell copy commands in the README; trazo still installs nothing on its own.
+
 ## [0.1.4] - 2026-11-09
 
 ### Added
