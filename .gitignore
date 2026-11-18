@@ -44,3 +44,7 @@ desktop.ini
 .playwright-mcp/
 odd/
 PUBLISHING.md
+
+# npm is the only package manager; ignore other lockfiles
+pnpm-lock.yaml
+yarn.lock
