@@ -105,10 +105,11 @@ table
   columns       column[], at least 1
 
 column, short form (a string)
-  "name type [pk] [fk table.column] [unique] [null]"
+  "name type [pk] [fk table.column] [unique] [null|nullable]"
   "id uuid pk"   "author_id uuid fk users.id"   "email text unique"   "bio text null"
   type is everything between the name and the first mark: "numeric(10, 2)"
   marks may come in any order, once each, in any letter case
+  null and nullable are aliases; using both is a repeated mark
 
 column, object form
   {name, type, pk?, unique?, nullable?, fk?, note?}   fk: "table.column"
@@ -118,7 +119,7 @@ defaults
 
 relation ends, deduced from the fk column
   not unique: many rows here per parent; unique: at most one
-  null: the parent is optional
+  null or nullable: the parent is optional
 
 rules
   column names are unique within a table
