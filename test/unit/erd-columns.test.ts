@@ -47,6 +47,21 @@ describe("parseColumn", () => {
     expect(column("a int NULL Unique FK t.id")).toEqual(column("a int fk t.id unique null"));
   });
 
+  it("accepts nullable as an alias for null, in any letter case", () => {
+    expect(column("email text nullable")).toEqual(column("email text null"));
+    expect(column("email text NULLABLE").nullable).toBe(true);
+    expect(column("author_id uuid nullable fk users.id").fk).toEqual({
+      table: "users",
+      column: "id",
+    });
+  });
+
+  it("rejects null and nullable together", () => {
+    expect(error("email text null nullable").code).toBe("column/repeated-mark");
+    expect(error("email text nullable null").code).toBe("column/repeated-mark");
+    expect(error("email text nullable NULLABLE").code).toBe("column/repeated-mark");
+  });
+
   it("splits the fk target at the last dot", () => {
     expect(column("u int fk public.users.id").fk).toEqual({ table: "public.users", column: "id" });
     expect(splitRef("users")).toBeUndefined();
@@ -58,7 +73,7 @@ describe("parseColumn", () => {
     expect(error("   ")).toEqual({
       code: "column/syntax",
       message: 'cannot read "   "',
-      hint: 'write "name type [pk] [fk table.column] [unique] [null]"',
+      hint: 'write "name type [pk] [fk table.column] [unique] [null|nullable]"',
     });
   });
 
@@ -78,7 +93,7 @@ describe("parseColumn", () => {
       message: 'unknown mark "uniq" in "email text pk uniq"',
       hint: 'did you mean "unique"?',
     });
-    expect(error("email text pk bogus").hint).toBe("use one of: pk, fk, unique, null");
+    expect(error("email text pk bogus").hint).toBe("use one of: pk, fk, unique, null, nullable");
   });
 
   it("catches a typo'd mark that sits right after the type", () => {

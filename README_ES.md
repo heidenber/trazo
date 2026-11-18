@@ -125,6 +125,7 @@ trazo example erd | trazo make - -o erd.html
 - `architecture`: servicios, almacenes, colas y personas, agrupados en cajas. `trazo example architecture`
 - `workflow`: pasos y decisiones, opcionalmente en carriles. `trazo example workflow`
 - `erd`: tablas, columnas y claves foráneas, con terminaciones de pata de gallo. `trazo example erd`
+  Las columnas ERD abreviadas aceptan `null` o `nullable` (por ejemplo, `"bio text nullable"`), pero no ambos.
 - `sequence`: mensajes entre participantes, con notas y fragmentos `alt`, `opt` y `loop`. `trazo example sequence`
 
 `trazo schema <type>` imprime los campos de cada tipo en unas 40 líneas.
