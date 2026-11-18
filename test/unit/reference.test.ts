@@ -166,6 +166,7 @@ const MANUAL: Manual[] = [
       expect(erdColumn("x int pk")).toMatchObject({ pk: true, unique: false, nullable: false });
       expect(erdColumn("x int unique")).toMatchObject({ unique: true });
       expect(erdColumn("x int null")).toMatchObject({ nullable: true });
+      expect(erdColumn("x int nullable")).toMatchObject({ nullable: true });
       expect(erdColumn("x uuid fk users.id")).toMatchObject({
         fk: { table: "users", column: "id" },
       });
