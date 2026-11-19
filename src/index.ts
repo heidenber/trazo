@@ -8,6 +8,13 @@ import { parseJson } from "./parse.js";
 import { renderHtml } from "./render/html.js";
 import { hasErrors, type Issue } from "./validate/issues.js";
 
+export type {
+  ArchitectureInput,
+  DiagramInput,
+  ErdInput,
+  SequenceInput,
+  WorkflowInput,
+} from "./model/input.js";
 export type { Issue } from "./validate/issues.js";
 export { VERSION } from "./version.js";
 

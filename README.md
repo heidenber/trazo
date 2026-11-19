@@ -161,6 +161,21 @@ const made = await make(jsonTextOrObject, { theme: "dark" });
 
 Both accept JSON text or an already parsed object. `make` also returns geometry warnings in `issues`.
 
+TypeScript users can import `ArchitectureInput`, `WorkflowInput`, `ErdInput`, `SequenceInput`, or their union `DiagramInput` for typed parsed objects. For example:
+
+```ts
+import { check, type ArchitectureInput } from "@heidenber/trazo";
+
+const input: ArchitectureInput = {
+  type: "architecture",
+  title: "Orders",
+  nodes: [{ id: "api" }],
+};
+const result = check(input);
+```
+
+These types describe the input, not the normalized diagram. Runtime validation still checks semantic constraints such as references and required non-empty arrays.
+
 The stable part of an `Issue` is `severity`, `code`, `path` and `hint`. The `message` text may change between versions, so do not match on it.
 See the [validation issue codes](docs/issue-codes.md) for the full list.
 
