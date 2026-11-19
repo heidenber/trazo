@@ -2,7 +2,15 @@
 // Copyright 2026 Heidenber Palacio Garzón
 
 import { describe, expect, it, vi } from "vitest";
-import { check, make } from "../../src/index.js";
+import {
+  check,
+  make,
+  type ArchitectureInput,
+  type DiagramInput,
+  type ErdInput,
+  type SequenceInput,
+  type WorkflowInput,
+} from "../../src/index.js";
 import * as layout from "../../src/layout/index.js";
 
 vi.mock("../../src/layout/index.js", async (original) => {
@@ -21,6 +29,38 @@ const valid = {
 describe("check", () => {
   it("accepts a parsed value", () => {
     expect(check(valid)).toEqual({ ok: true, issues: [] });
+  });
+
+  it("accepts typed inputs for all four diagram kinds", () => {
+    const architecture: ArchitectureInput = {
+      type: "architecture",
+      title: "Architecture",
+      nodes: [{ id: "a" }, { id: "b" }],
+      edges: ["a -> b", { from: "b", to: "a", style: "data" }],
+    };
+    const workflow: WorkflowInput = {
+      type: "workflow",
+      title: "Workflow",
+      steps: [{ id: "a", kind: "start" }, { id: "b", kind: "end" }],
+      edges: [{ from: "a", to: "b" }],
+    };
+    const erd: ErdInput = {
+      type: "erd",
+      title: "Database",
+      tables: [{ id: "users", columns: ["id uuid pk", { name: "bio", type: "text" }] }],
+    };
+    const sequence: SequenceInput = {
+      type: "sequence",
+      title: "Sequence",
+      participants: [{ id: "a" }, { id: "b" }],
+      messages: [
+        "a -> b: request",
+        { note: "waiting", over: "b" },
+        { opt: { when: "ready", messages: [{ from: "b", to: "a", style: "reply" }] } },
+      ],
+    };
+    const inputs: DiagramInput[] = [architecture, workflow, erd, sequence];
+    for (const input of inputs) expect(check(input).ok).toBe(true);
   });
 
   it("accepts JSON text", () => {
