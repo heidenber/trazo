@@ -169,6 +169,8 @@ When the agent fails before doing the task (for example Claude Code with an expi
 
 The summary printed at the end of a run adds, per tool and per task type, `finalRate` next to `judged` and `judgeRate`.
 
+Hidden on purpose: text with no visible area left after clipping counts as invisible, like `display:none`. It is not counted, not checked and does not satisfy an `expect` term. That covers the screen-reader-only pattern: a box of at most 2 px, `clip: rect(0 0 0 0)`, `clip-path: inset(50%)`, or text entirely outside an `overflow: hidden` container. Text that is partly visible and partly cut off is still reported as `text-clipped`. The `<svg>` viewport is not part of this rule, so SVG text past it stays `text-clipped`.
+
 Limits: the judge sees text, not lines, colors or shapes, so a diagram with crossing edges or a wrong structure can still pass. An `expect` term matches whole words or phrases only (word boundaries on both ends, `_` counts as part of a word), so `app` does not match inside `application` and `api` not inside `rapid`, while `post_tags` matches itself. An agent that writes `DB` for `database` still fails `content-missing` even though the diagram is right. The browser profiles go to `<root>/_judge-*` (the sandbox root, not the system temp folder) and are removed after each judgement.
 
 ## OpenCode runs

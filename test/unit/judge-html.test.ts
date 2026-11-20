@@ -107,6 +107,26 @@ describe.skipIf(!hasBrowser)("judgeHtml", () => {
     expect(kinds(r)).toEqual(["text-clipped"]);
   });
 
+  it("ignores text that is clipped away completely, as hidden on purpose", async () => {
+    const r = await judge.judgeHtml(fixture("sr-only"), {
+      expectedTerms: ["Orders service"],
+      settleMs: 200,
+    });
+    expect(r.issues).toEqual([]);
+    expect(r.textCount).toBe(2);
+    const missing = await judge.judgeHtml(fixture("sr-only"), {
+      expectedTerms: ["Dark mode", "Present"],
+      settleMs: 200,
+    });
+    expect(missing.issues.map((i) => i.kind)).toEqual(["content-missing", "content-missing"]);
+  });
+
+  it("still reports text that is only partly clipped", async () => {
+    const r = await judge.judgeHtml(fixture("clipped-partial"), { settleMs: 200 });
+    expect(kinds(r)).toEqual(["text-clipped"]);
+    expect(r.textCount).toBe(1);
+  });
+
   it("detects SVG text running past the svg viewport", async () => {
     const r = await judge.judgeHtml(fixture("clipped-svg"), { settleMs: 200 });
     expect(kinds(r)).toEqual(["text-clipped"]);

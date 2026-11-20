@@ -50,6 +50,32 @@ export function findBrowser() {
 // Runs inside the page. Must be self-contained: it is sent as source text.
 function inspectPage() {
   const TOL = 2;
+  const clips = (v) => v === "hidden" || v === "clip";
+  // Text that is clipped away completely is hidden on purpose (the screen-reader-only pattern), like display:none.
+  const clippedAway = (el, rects) => {
+    const left = Math.min(...rects.map((r) => r.left));
+    const top = Math.min(...rects.map((r) => r.top));
+    const right = Math.max(...rects.map((r) => r.right));
+    const bottom = Math.max(...rects.map((r) => r.bottom));
+    for (let a = el; a && a !== document.documentElement; a = a.parentElement) {
+      const cs = getComputedStyle(a);
+      const box = a.getBoundingClientRect();
+      if (/^inset\(\s*50%/.test(cs.clipPath)) return true;
+      const m = /^rect\(([^)]*)\)$/.exec(cs.clip);
+      if (m) {
+        const [t, r, b, l] = m[1].split(",").map((v) => parseFloat(v));
+        if (b - t <= TOL || r - l <= TOL) return true;
+      }
+      if (a instanceof SVGSVGElement) continue;
+      if (clips(cs.overflowX) && Math.min(right, box.right) - Math.max(left, box.left) <= TOL) {
+        return true;
+      }
+      if (clips(cs.overflowY) && Math.min(bottom, box.bottom) - Math.max(top, box.top) <= TOL) {
+        return true;
+      }
+    }
+    return false;
+  };
   const texts = [];
   const walker = document.createTreeWalker(document.documentElement, NodeFilter.SHOW_TEXT);
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
@@ -61,7 +87,7 @@ function inspectPage() {
     const range = document.createRange();
     range.selectNodeContents(node);
     const rects = [...range.getClientRects()].filter((r) => r.width > 0 && r.height > 0);
-    if (rects.length === 0) continue;
+    if (rects.length === 0 || clippedAway(el, rects)) continue;
     texts.push({ node, el, text, rects });
   }
 
@@ -84,7 +110,6 @@ function inspectPage() {
   const root = document.documentElement;
   const pageW = Math.max(root.scrollWidth, document.body ? document.body.scrollWidth : 0);
   const pageH = Math.max(root.scrollHeight, document.body ? document.body.scrollHeight : 0);
-  const clips = (v) => v === "hidden" || v === "clip";
 
   for (const t of texts) {
     const box = {
