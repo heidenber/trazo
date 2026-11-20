@@ -109,11 +109,15 @@ export function parseArgs(argv, knownTasks, today) {
       case "--resume":
         opts.resume = true;
         break;
+      case "--rejudge":
+        opts.rejudge = true;
+        break;
       default:
         throw new Error(`unknown option: ${a}`);
     }
   }
   if (!opts.model) throw new Error("--model is required");
+  if (opts.rejudge && !opts.out) throw new Error("--rejudge needs --out <results.json>");
   if (opts.effort && opts.agent !== "claude-code")
     throw new Error("--effort needs --agent claude-code");
   if (opts.tools.includes("archify")) {

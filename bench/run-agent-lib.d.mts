@@ -18,6 +18,8 @@ export interface RunOptions {
   timeout: number;
   dryRun: boolean;
   resume: boolean;
+  /** Set only with --rejudge. */
+  rejudge?: boolean;
   sandboxRoot: string;
   tools: ToolName[];
   browser: string;

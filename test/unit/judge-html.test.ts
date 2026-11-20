@@ -132,6 +132,17 @@ describe.skipIf(!hasBrowser)("judgeHtml", () => {
     expect(kinds(r)).toEqual(["text-clipped"]);
   });
 
+  it("detects SVG text past an svg that hides its overflow", async () => {
+    const r = await judge.judgeHtml(fixture("svg-overflow-hidden"), { settleMs: 200 });
+    expect(kinds(r)).toEqual(["text-clipped"]);
+  });
+
+  it("accepts SVG text past an svg that renders its overflow", async () => {
+    const r = await judge.judgeHtml(fixture("svg-overflow-visible"), { settleMs: 200 });
+    expect(r.issues).toEqual([]);
+    expect(r.ok).toBe(true);
+  });
+
   it("detects text placed outside the page", async () => {
     const r = await judge.judgeHtml(fixture("outside-page"), { settleMs: 200 });
     expect(kinds(r)).toEqual(["outside-page"]);

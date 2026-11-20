@@ -125,16 +125,15 @@ function inspectPage() {
       box.bottom > c.bottom + TOL;
 
     let clipper = null;
-    let svg = null;
+    // The owning svg is one of the ancestors and clips only through its own overflow: with
+    // overflow: visible, text drawn past the viewport is shown.
     for (let a = t.el; a && a !== document.body && a !== root; a = a.parentElement) {
-      if (a instanceof SVGSVGElement && !(a.parentElement instanceof SVGElement)) svg = a;
       const cs = getComputedStyle(a);
       if ((clips(cs.overflowX) || clips(cs.overflowY)) && past(a.getBoundingClientRect())) {
         clipper = a;
         break;
       }
     }
-    if (!clipper && svg && past(svg.getBoundingClientRect())) clipper = svg;
     if (clipper) {
       issues.push({
         kind: "text-clipped",

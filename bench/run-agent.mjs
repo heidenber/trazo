@@ -25,7 +25,7 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { summarize } from "../scripts/bench-lib.mjs";
 import { tmpdir } from "node:os";
@@ -154,6 +154,73 @@ function resolveAgentOnce(cmd) {
 }
 let resolvedAgent;
 const resolveAgent = (cmd) => (resolvedAgent ??= resolveAgentOnce(cmd));
+
+/**
+ * --rejudge: judges the recorded runs again with the current expected terms. No agent runs and
+ * nothing else in the record changes. Runs with an agentError are left as they are.
+ */
+async function rejudgeRecord() {
+  if (!existsSync(outFile)) fail(`${opts.out} not found`);
+  const rec = JSON.parse(readFileSync(outFile, "utf8"));
+  if ((rec.agent ?? "claude-code") !== opts.agent)
+    fail(`${opts.out} holds agent ${rec.agent}, not ${opts.agent}`);
+  if (rec.model !== opts.model) fail(`${opts.out} holds model ${rec.model}, not ${opts.model}`);
+  // Archify runs live under <root>/<model>; the record says whether the original run used that layout.
+  const tools = rec.runs.some((r) => r.tool === "archify") ? ["archify"] : opts.tools;
+  const runsDir = sandboxLayout({ ...opts, tools }, root, tmpdir()).runs;
+  let judged = 0;
+  for (const r of rec.runs) {
+    if (r.agentError) continue;
+    const task = taskById.get(r.task);
+    if (!task) {
+      console.log(`warning: ${r.task}-${r.condition}-${r.run}: unknown task, left as recorded`);
+      continue;
+    }
+    // Plain trazo runs are named without the tool unless --tool was given.
+    const named = join(
+      runsDir,
+      runName({ task: r.task, tool: r.tool, condition: r.condition, run: r.run }),
+    );
+    const plain = join(runsDir, runName({ task: r.task, condition: r.condition, run: r.run }));
+    const sandbox = existsSync(named) || !existsSync(plain) ? named : plain;
+    delete r.judgeError;
+    delete r.screenshot;
+    Object.assign(r, await judgeRun(sandbox, task.expect ?? []));
+    judged++;
+    console.log(`${basename(sandbox)}: judgeOk=${r.judgeOk}`);
+  }
+  writeFileSync(
+    outFile,
+    `${JSON.stringify(rec, null, 2)}
+`,
+  );
+  console.log(`
+${judged} run(s) judged again. Results: ${outFile}`);
+  printSummaries(rec);
+  process.exit(0);
+}
+
+/** The two summaries printed at the end of a run. */
+function printSummaries(rec) {
+  const errored = countAgentErrors(rec.runs);
+  if (errored)
+    console.log(
+      `warning: ${errored} run(s) with an agent error are left out of the rates below (agentErrors per tool in the second summary); rerun them with --resume`,
+    );
+  console.log(JSON.stringify(summarize(withoutAgentErrors(rec.runs)), null, 2));
+  console.log(
+    JSON.stringify(
+      {
+        model: rec.model,
+        ...judgeSummary(rec.runs, Object.fromEntries(tasksFile.tasks.map((t) => [t.id, t.type]))),
+      },
+      null,
+      2,
+    ),
+  );
+}
+
+if (opts.rejudge) await rejudgeRecord();
 
 if (opts.dryRun) {
   for (const p of plan) {
@@ -438,19 +505,4 @@ for (const p of plan) {
 }
 
 console.log(`\n${done} run(s) done, ${skipped} skipped. Results: ${outFile}`);
-const errored = countAgentErrors(record.runs);
-if (errored)
-  console.log(
-    `warning: ${errored} run(s) with an agent error are left out of the rates below (agentErrors per tool in the second summary); rerun them with --resume`,
-  );
-console.log(JSON.stringify(summarize(withoutAgentErrors(record.runs)), null, 2));
-console.log(
-  JSON.stringify(
-    {
-      model: record.model,
-      ...judgeSummary(record.runs, Object.fromEntries(tasksFile.tasks.map((t) => [t.id, t.type]))),
-    },
-    null,
-    2,
-  ),
-);
+printSummaries(record);

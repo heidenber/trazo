@@ -169,10 +169,20 @@ Issue kinds:
 
 - `content-missing`: an expected term (case-insensitive, whitespace-normalized, whole word or phrase) is not in the visible text.
 - `text-overlap`: the boxes of two different text nodes overlap by more than 2 px on both axes.
-- `text-clipped`: a text box extends past an ancestor with `overflow: hidden` or `clip`, or past its SVG viewport.
+- `text-clipped`: a text box extends past an ancestor with `overflow: hidden` or `clip`. The owning `<svg>` counts as such an ancestor only through its own `overflow`: text past the viewport of an svg with `overflow: visible` is drawn in full and is not reported.
 - `outside-page`: a text box has negative coordinates or lies beyond the document size.
 - `js-error`: an uncaught exception or a console error while loading.
 - `render-empty`: there is no visible text.
+
+### Judging again
+
+`--rejudge` judges the runs of an existing results file again, for example after a judge fix or a change to a task's `expect` list. No agent runs: it needs `--out <results.json>`, `--model` (and `--sandbox-root` or `--tool archify` when the original run used them, so the sandboxes are found), and it reads each `<sandbox>/diagram.html`.
+
+```
+node bench/run-agent.mjs --model claude-haiku-4-5 --out bench/results/<file>.json --rejudge
+```
+
+Each run gets new `judgeOk`, `judgeIssues` and `screenshot` values, using the task's current `expect`. A missing `diagram.html` stays `no-html`; runs with `agentError` are not touched. Nothing else in the record changes. The file is rewritten and the summary is printed.
 
 ### Agent errors
 

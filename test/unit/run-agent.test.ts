@@ -1161,6 +1161,75 @@ afterAll(() => rmSync(work, { recursive: true, force: true }));
 const run = (args: string[]) =>
   spawnSync(process.execPath, [script, ...args], { cwd: root, encoding: "utf8", timeout: 120000 });
 
+describe("run-agent.mjs --rejudge", () => {
+  const page = (words: string[]) =>
+    `<!doctype html><html><body style="margin:0;font:16px sans-serif">${words
+      .map((w) => `<p>${w}</p>`)
+      .join("")}</body></html>`;
+  const rec = (over: Record<string, unknown>) => ({
+    tool: "trazo",
+    condition: "skill",
+    run: 1,
+    finalOk: true,
+    judgeOk: true,
+    judgeIssues: {},
+    ...over,
+  });
+
+  it("judges the recorded sandboxes again without spawning an agent", () => {
+    const sb = join(work, "sb-rejudge");
+    const dir = (name: string) => join(sb, name);
+    mkdirSync(dir("arch-shop-skill-1"), { recursive: true });
+    mkdirSync(dir("arch-shop-skill-2"), { recursive: true });
+    mkdirSync(dir("arch-shop-skill-3"), { recursive: true });
+    mkdirSync(dir("arch-shop-skill-4"), { recursive: true });
+    writeFileSync(
+      join(dir("arch-shop-skill-1"), "diagram.html"),
+      page(["web app", "API", "database", "job queue", "payment gateway"]),
+    );
+    writeFileSync(join(dir("arch-shop-skill-2"), "diagram.html"), page(["only this"]));
+    writeFileSync(join(dir("arch-shop-skill-4"), "diagram.html"), page(["only this"]));
+    const out = join(work, "rejudge.json");
+    const failedBefore = { judgeOk: false, judgeIssues: { "content-missing": 1 } };
+    writeFileSync(
+      out,
+      JSON.stringify({
+        kind: "agent",
+        agent: "claude-code",
+        model: "m1",
+        runs: [
+          rec({ task: "arch-shop", run: 1, ...failedBefore }),
+          rec({ task: "arch-shop", run: 2 }),
+          rec({ task: "arch-shop", run: 3 }),
+          rec({ task: "arch-shop", run: 4, agentError: "api_error", ...failedBefore }),
+        ],
+      }),
+    );
+    const r = run(["--model", "m1", "--rejudge", "--out", out, "--sandbox-root", sb]);
+    expect(r.stderr).toBe("");
+    expect(r.status).toBe(0);
+    const runs = JSON.parse(readFileSync(out, "utf8")).runs;
+    expect(runs[0].judgeOk).toBe(true);
+    expect(runs[0].judgeIssues).toEqual({});
+    expect(runs[0].screenshot).toBe(join(dir("arch-shop-skill-1"), "diagram.png"));
+    expect(existsSync(join(dir("arch-shop-skill-1"), "diagram.png"))).toBe(true);
+    expect(runs[1].judgeOk).toBe(false);
+    expect(runs[1].judgeIssues).toEqual({ "content-missing": 5 });
+    expect(runs[2].judgeOk).toBe(false);
+    expect(runs[2].judgeIssues).toEqual({ "no-html": 1 });
+    expect(runs[3]).toMatchObject({ agentError: "api_error", ...failedBefore });
+    expect(runs[3].screenshot).toBeUndefined();
+    expect(r.stdout).toContain("3 run(s) judged again");
+    expect(r.stdout).toContain("judgeRate");
+  });
+
+  it("needs --out", () => {
+    const r = run(["--model", "m1", "--rejudge"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toBe("error: --rejudge needs --out <results.json>\n");
+  });
+});
+
 describe("run-agent.mjs", () => {
   it("dry-run prints the plan and the command lines and runs nothing", () => {
     const out = join(work, "dry.json");
