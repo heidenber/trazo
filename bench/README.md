@@ -115,6 +115,28 @@ The runner saves the runs as `bench/results/<YYYY-MM-DD>-agent-<agent>.json`:
 
 Run `node scripts/bench.mjs --summary <file>` to get, per condition, the number of runs, the first-try and final success rates, and the medians of repairs, uncached and total input tokens, output tokens and seconds.
 
+## Comparing tools (trazo and Archify)
+
+`--tool trazo|archify` picks the tool under test. It can be repeated or given as a comma list (`--tool trazo,archify`); the default is `trazo` and nothing else about a trazo-only run changes. `--browser <path>` sets the Chrome or Edge that Archify uses (default: `BENCH_BROWSER`, then the usual install paths). `--tool archify` needs `--agent claude-code`, and Archify only runs in the `skill` condition.
+
+Archify is pinned to v3.2.0 and staged once, outside this repository:
+
+```sh
+node bench/stage-archify.mjs [--sandbox-root <dir>]
+```
+
+It runs `git clone --depth 1 --branch v3.2.0 https://github.com/tt-a1i/archify` into `<root>/_archify-v3.2.0` (skipped when present) and prints the folder that holds the skill. It needs git and network access. Nothing from the clone is read or copied into this repo.
+
+What changes when `archify` is in `--tool`:
+
+- The sandbox root defaults to `<os tmp>/trazo-bench` (on Windows `%TEMP%\trazo-bench`) and runs live at `<root>/<model>/<task>-<tool>-<condition>-<n>`. `--sandbox-root` replaces the root and keeps the `<model>` folder. The clone is `<root>/_archify-v3.2.0`.
+- With `--tool`, run names carry the tool (`arch-shop-archify-skill-1`); without it they stay `arch-shop-skill-1`.
+- With several tools the order alternates by run index: the given order on odd run numbers (1, 3, ...), reversed on even ones (2, 4, ...), so neither tool always goes first.
+- The staged skill folder is copied into `<sandbox>/.claude/skills/archify/`. The allowed tools are `Read`, `Write`, `Edit` and `Bash(node <sandbox>/.claude/skills/archify/bin/archify.mjs:*)`. The environment adds `ARCHIFY_UPDATE_CHECK_DISABLED=1` and, when a browser is found, `ARCHIFY_CHROME=<browser path>`.
+- The prompt asks for the `archify` skill and for `diagram.html` in the current directory. There is no `trazo` shim for Archify-only runs.
+- Native success (`finalOk`) is `diagram.html` exists and the last `finalize` call exited 0. Failed commands count every `archify.mjs` call that failed; `firstTryOk` is the first `finalize`; repairs are edits to a `.json` or `.html` file after a failure.
+- Each run records `tool`, `toolVersion` (`v3.2.0` for Archify, the package version for trazo) and `agentVersion` (the first line of `claude --version`, or `unknown`). Tokens keep four separate classes: `inputTokens`, `outputTokens`, `cacheReadTokens`, `cacheCreationTokens`. `--resume` matches on tool as well.
+
 ## OpenCode runs
 
 `--agent opencode` runs free OpenCode models (for example `opencode/deepseek-v4.1-flash-free`, no API key needed) with `opencode run --standalone -m <model> --format json <prompt>`. The harness is OpenCode, not Claude Code, so a result is labeled `"agent": "opencode"` with its `agentVersion` (the output of `opencode --version`) and is **not comparable 1:1 with a Claude Code run**: the system prompt, tools and context handling differ as well as the model. Compare an OpenCode result with the other conditions of the same agent and model. It spends free-model quota; run a pilot first:

@@ -7,15 +7,17 @@
 // intact; if none is found pass --agent-cmd <path to the .exe>. The resolved path is printed and saved as agentBin.
 //   node bench/run-agent.mjs --model <id> [--agent claude-code|opencode] [--task <id>]...
 //     [--condition skill|no-skill|both] [--runs N] [--out <file>] [--agent-cmd <path>]
-//     [--sandbox-root <dir>] [--timeout <s>] [--resume] [--dry-run]
+//     [--tool trazo|archify[,...]] [--browser <path>] [--sandbox-root <dir>] [--timeout <s>] [--resume] [--dry-run]
 // Each run happens in a fresh sandbox: tmp/bench-runs/<model>/ for claude-code, <os tmp>/trazo-bench-runs/<model>/
-// for opencode (outside the repository). Results are appended to --out as each run finishes.
+// for opencode (outside the repository). Runs that include archify live in <os tmp>/trazo-bench/<model>/ and need
+// the pinned copy from bench/stage-archify.mjs. Results are appended to --out as each run finishes.
 // Never run in CI: a real run spends model quota.
 
 import { spawn, spawnSync } from "node:child_process";
 import {
   chmodSync,
   copyFileSync,
+  cpSync,
   createWriteStream,
   existsSync,
   mkdirSync,
@@ -30,8 +32,8 @@ import { tmpdir } from "node:os";
 import {
   agentEnv,
   buildAgentArgs,
+  archifyCloneDir,
   buildPrompt,
-  defaultSandboxRoot,
   formatCommandLine,
   opencodeConfig,
   opencodeEnv,
@@ -41,11 +43,14 @@ import {
   parseStream,
   planRuns,
   runName,
+  sandboxLayout,
   shellCommandLine,
   shimExePath,
   shimFiles,
   skillSegments,
+  toolAdapter,
 } from "./run-agent-lib.mjs";
+import { locateSkillDir } from "./stage-archify.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const distCli = join(root, "dist", "cli", "main.js");
@@ -70,12 +75,36 @@ try {
   fail(e.message, 2);
 }
 const outFile = resolve(root, opts.out);
-const sandboxRoot = opts.sandboxRoot
-  ? resolve(opts.sandboxRoot)
-  : defaultSandboxRoot(opts.agent, opts.model, root, tmpdir());
+const layout = sandboxLayout(opts, root, tmpdir());
+const sandboxRoot = layout.runs;
 const isOpencode = opts.agent === "opencode";
-const parseOutput = isOpencode ? parseOpencodeStream : parseStream;
-const plan = planRuns(opts.tasks, opts.conditions, opts.runs);
+const withArchify = opts.tools.includes("archify");
+const withTrazo = opts.tools.includes("trazo");
+// Without --tool the names, the record and the plan stay as they were before adapters.
+const toolsGiven = process.argv.slice(2).includes("--tool");
+const plan = planRuns(opts.tasks, opts.conditions, opts.runs, toolsGiven ? opts.tools : undefined);
+const toolOf = (p) => p.tool ?? "trazo";
+
+/** Chrome or Edge for Archify's checks: --browser, then BENCH_BROWSER, then the usual install paths. */
+function findBrowser() {
+  const given = opts.browser || process.env.BENCH_BROWSER;
+  if (given) return given;
+  const env = process.env;
+  const candidates = {
+    win32: [
+      join(env["PROGRAMFILES"] ?? "", "Google", "Chrome", "Application", "chrome.exe"),
+      join(env["PROGRAMFILES(X86)"] ?? "", "Google", "Chrome", "Application", "chrome.exe"),
+      join(env["LOCALAPPDATA"] ?? "", "Google", "Chrome", "Application", "chrome.exe"),
+      join(env["PROGRAMFILES(X86)"] ?? "", "Microsoft", "Edge", "Application", "msedge.exe"),
+    ],
+    darwin: [
+      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+      "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+    ],
+    linux: ["/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"],
+  };
+  return (candidates[process.platform] ?? []).find((f) => existsSync(f)) ?? "";
+}
 
 /** Real executable of a .cmd/.bat shim (see shimExePath), or null. */
 function exeBehindShim(shim) {
@@ -122,11 +151,15 @@ const resolveAgent = (cmd) => (resolvedAgent ??= resolveAgentOnce(cmd));
 
 if (opts.dryRun) {
   for (const p of plan) {
-    const prompt = buildPrompt(taskById.get(p.task).prompt);
+    const tool = toolAdapter(toolOf(p), {
+      sandbox: join(sandboxRoot, runName(p)),
+      browser: opts.browser,
+    });
+    const prompt = buildPrompt(taskById.get(p.task).prompt, tool);
     console.log(`${runName(p)}  (${p.condition})`);
     console.log(`  cwd: ${join(sandboxRoot, runName(p))}`);
     console.log(
-      `  ${formatCommandLine(opts.agentCmd, buildAgentArgs(prompt, opts.model, opts.agent))}`,
+      `  ${formatCommandLine(opts.agentCmd, buildAgentArgs(prompt, opts.model, opts.agent, tool))}`,
     );
   }
   console.log(`${plan.length} run(s) planned, timeout ${opts.timeout} s each. Nothing was run.`);
@@ -137,6 +170,17 @@ if (!existsSync(distCli)) fail("dist/ not found; run npm run build");
 const agentBin = resolveAgent(opts.agentCmd).bin;
 console.log(`agent binary: ${agentBin}`);
 const VERSION = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version ?? "unknown";
+const browser = withArchify ? findBrowser() : "";
+if (withArchify && !browser)
+  console.log("warning: no Chrome or Edge found; ARCHIFY_CHROME is not set (use --browser)");
+let archifySkillDir = "";
+if (withArchify) {
+  try {
+    archifySkillDir = locateSkillDir(archifyCloneDir(layout.archifyHome));
+  } catch (e) {
+    fail(`${e.message}; run node bench/stage-archify.mjs first`);
+  }
+}
 
 // Output file: load the existing record or start a new one.
 let record;
@@ -167,36 +211,44 @@ const save = () => {
 // trazo shim on PATH, shared by all runs.
 const binDir = join(sandboxRoot, "_bin");
 mkdirSync(binDir, { recursive: true });
-for (const f of shimFiles(process.execPath, distCli, process.platform)) {
-  const path = join(binDir, f.name);
-  writeFileSync(path, f.content);
-  if (f.executable) chmodSync(path, 0o755);
-}
+if (withTrazo)
+  for (const f of shimFiles(process.execPath, distCli, process.platform)) {
+    const path = join(binDir, f.name);
+    writeFileSync(path, f.content);
+    if (f.executable) chmodSync(path, 0o755);
+  }
 const opencodeDir = join(sandboxRoot, "_opencode");
 const baseEnv = isOpencode
   ? opencodeEnv(process.env, binDir, opencodeDir, process.platform)
   : agentEnv(process.env, binDir, process.platform);
-if (isOpencode) {
+if (isOpencode)
   for (const d of ["home", "config", "data", "state", "cache"])
     mkdirSync(join(opencodeDir, d), { recursive: true });
-  // Same isolated env as the runs, so the version check cannot touch the user's OpenCode state.
+
+/** Output of `<agent> --version`, or "" when it cannot be read. Uses the same isolated env as the runs. */
+function readAgentVersion() {
   const agent = resolveAgent(opts.agentCmd);
   const argv = [...agent.prefix, "--version"];
+  const env = isOpencode ? opencodeRunEnv(baseEnv, sandboxRoot) : baseEnv;
   const v = agent.shell
     ? spawnSync(shellCommandLine(agent.file, argv), {
         cwd: sandboxRoot,
-        env: opencodeRunEnv(baseEnv, sandboxRoot),
+        env,
         shell: true,
         encoding: "utf8",
       })
-    : spawnSync(agent.file, argv, {
-        cwd: sandboxRoot,
-        env: opencodeRunEnv(baseEnv, sandboxRoot),
-        encoding: "utf8",
-      });
-  const version = v.status === 0 ? v.stdout.trim() : "";
+    : spawnSync(agent.file, argv, { cwd: sandboxRoot, env, encoding: "utf8" });
+  return v.status === 0 ? v.stdout.trim() : "";
+}
+if (isOpencode) {
+  const version = readAgentVersion();
   if (!version) fail(`could not read the version from ${opts.agentCmd} --version`);
   record.agentVersion = version;
+  save();
+} else {
+  // Claude Code prints e.g. "2.1.308 (Claude Code)"; anything that does not start with a version is dropped.
+  const version = readAgentVersion().split(/\r?\n/)[0] ?? "";
+  record.agentVersion = /^\d+\.\d+\.\d+/.test(version) ? version : "unknown";
   save();
 }
 
@@ -207,7 +259,7 @@ function killTree(child) {
 }
 
 /** Runs the agent in the sandbox; resolves to { code, timedOut, error }. */
-function runAgent(sandbox, args) {
+function runAgent(sandbox, args, toolEnv) {
   const agent = resolveAgent(opts.agentCmd);
   return new Promise((done) => {
     const stream = createWriteStream(join(sandbox, "stream.jsonl"));
@@ -222,7 +274,7 @@ function runAgent(sandbox, args) {
       stderr.end(() => done(r));
     };
     const argv = [...agent.prefix, ...args];
-    const env = isOpencode ? opencodeRunEnv(baseEnv, sandbox) : baseEnv;
+    const env = isOpencode ? opencodeRunEnv(baseEnv, sandbox) : { ...baseEnv, ...toolEnv };
     const child = agent.shell
       ? spawn(shellCommandLine(agent.file, argv), {
           cwd: sandbox,
@@ -242,7 +294,8 @@ function runAgent(sandbox, args) {
   });
 }
 
-function finalCheck(sandbox, stats) {
+function finalCheck(sandbox, stats, tool) {
+  if (tool.nativeOk) return tool.nativeOk(stats, existsSync(join(sandbox, "diagram.html")));
   if (!existsSync(join(sandbox, "diagram.html"))) return false;
   const named = stats.lastMakeInput?.replace(/^["']|["']$/g, "");
   const candidates = [named, "diagram.json"]
@@ -259,7 +312,13 @@ for (const p of plan) {
   const name = runName(p);
   if (
     opts.resume &&
-    record.runs.some((r) => r.task === p.task && r.condition === p.condition && r.run === p.run)
+    record.runs.some(
+      (r) =>
+        r.task === p.task &&
+        r.condition === p.condition &&
+        r.run === p.run &&
+        (r.tool ?? "trazo") === toolOf(p),
+    )
   ) {
     skipped++;
     console.log(`${name}: skipped (already recorded)`);
@@ -273,28 +332,37 @@ for (const p of plan) {
       join(sandbox, "opencode.json"),
       `${JSON.stringify(opencodeConfig(p.condition), null, 2)}\n`,
     );
+  const tool = toolAdapter(toolOf(p), { sandbox, browser });
   if (p.condition === "skill") {
-    const dest = join(sandbox, ...skillSegments(opts.agent));
+    const dest = join(sandbox, ...skillSegments(opts.agent, tool.skillName));
     mkdirSync(dest, { recursive: true });
-    copyFileSync(join(root, "skill", "SKILL.md"), join(dest, "SKILL.md"));
+    if (tool.name === "archify") cpSync(archifySkillDir, dest, { recursive: true });
+    else copyFileSync(join(root, "skill", "SKILL.md"), join(dest, "SKILL.md"));
   }
-  const prompt = buildPrompt(taskById.get(p.task).prompt);
+  const prompt = buildPrompt(taskById.get(p.task).prompt, tool);
   const started = Date.now();
-  const outcome = await runAgent(sandbox, buildAgentArgs(prompt, opts.model, opts.agent));
+  const outcome = await runAgent(
+    sandbox,
+    buildAgentArgs(prompt, opts.model, opts.agent, tool),
+    tool.env,
+  );
   const seconds = Math.round((Date.now() - started) / 100) / 10;
   const streamText = existsSync(join(sandbox, "stream.jsonl"))
     ? readFileSync(join(sandbox, "stream.jsonl"), "utf8")
     : "";
-  const stats = parseOutput(streamText);
+  const stats = isOpencode ? parseOpencodeStream(streamText) : parseStream(streamText, tool);
   const notes = [];
   if (outcome.timedOut) notes.push(`timeout after ${opts.timeout} s`);
   if (outcome.error) notes.push(`spawn error: ${outcome.error}`);
   else if (!outcome.timedOut && outcome.code !== 0) notes.push(`agent exit code ${outcome.code}`);
   if (!stats.hasResult) notes.push("no result message");
   else if (stats.resultIsError) notes.push("result reported an error");
-  const finalOk = finalCheck(sandbox, stats);
+  const finalOk = finalCheck(sandbox, stats, tool);
   const entry = {
     task: p.task,
+    tool: tool.name,
+    toolVersion: tool.version ?? VERSION,
+    agentVersion: record.agentVersion,
     condition: p.condition,
     run: p.run,
     inputTokens: stats.inputTokens,

@@ -9,6 +9,7 @@ export const PROMPT_SUFFIX =
   "\n\nThe `trazo` command is installed and turns a semantic JSON description into an HTML diagram; `trazo --help` explains it. Use the `trazo` command to build the diagram and save it as diagram.html in the current directory.";
 
 const CONDITIONS = ["skill", "no-skill"];
+const TOOLS = ["trazo", "archify"];
 const AGENTS = ["claude-code", "opencode"];
 const AGENT_CMDS = { "claude-code": "claude", opencode: "opencode" };
 
@@ -26,7 +27,10 @@ export function parseArgs(argv, knownTasks, today) {
     dryRun: false,
     resume: false,
     sandboxRoot: "",
+    tools: ["trazo"],
+    browser: "",
   };
+  let toolsGiven = false;
   const valueOf = (i) => {
     const v = argv[i + 1];
     if (v === undefined || v.startsWith("--")) throw new Error(`${argv[i]} needs a value`);
@@ -74,6 +78,18 @@ export function parseArgs(argv, knownTasks, today) {
       case "--agent-cmd":
         opts.agentCmd = valueOf(i++);
         break;
+      case "--tool": {
+        if (!toolsGiven) opts.tools = [];
+        toolsGiven = true;
+        for (const t of valueOf(i++).split(",")) {
+          if (!TOOLS.includes(t)) throw new Error("--tool must be trazo or archify");
+          if (!opts.tools.includes(t)) opts.tools.push(t);
+        }
+        break;
+      }
+      case "--browser":
+        opts.browser = valueOf(i++);
+        break;
       case "--sandbox-root":
         opts.sandboxRoot = valueOf(i++);
         break;
@@ -88,6 +104,11 @@ export function parseArgs(argv, knownTasks, today) {
     }
   }
   if (!opts.model) throw new Error("--model is required");
+  if (opts.tools.includes("archify")) {
+    if (opts.agent !== "claude-code") throw new Error("--tool archify needs --agent claude-code");
+    if (opts.tools.length === 1 && !opts.conditions.includes("skill"))
+      throw new Error("archify only runs with the skill condition");
+  }
   // Defaults that depend on the agent are resolved once all options are read.
   if (!opts.out) opts.out = `bench/results/${today}-agent-${opts.agent}.json`;
   if (!opts.agentCmd) opts.agentCmd = AGENT_CMDS[opts.agent];
@@ -95,11 +116,70 @@ export function parseArgs(argv, knownTasks, today) {
   return opts;
 }
 
-export function buildPrompt(taskPrompt) {
-  return taskPrompt + PROMPT_SUFFIX;
+export const ARCHIFY_VERSION = "v3.2.0";
+export const ARCHIFY_REPO = "https://github.com/tt-a1i/archify";
+
+/** Pinned clone of Archify, next to the sandboxes. */
+export const archifyCloneDir = (home) => join(home, `_archify-${ARCHIFY_VERSION}`);
+
+const ARCHIFY_SUFFIX =
+  "\n\nThe `archify` skill is installed in this project. Use it to build the diagram and save it as diagram.html in the current directory.";
+
+/**
+ * Everything the runner and the parser need to know about the tool under test. The Archify
+ * skill is copied into each sandbox, so its allowed command depends on the sandbox path.
+ */
+export function toolAdapter(name, ctx = {}) {
+  if (name === "trazo")
+    return {
+      name,
+      version: null,
+      promptSuffix: PROMPT_SUFFIX,
+      bashRule: "Bash(trazo:*)",
+      skillName: "trazo",
+      env: {},
+      shim: true,
+      repairFile: (file) => file.endsWith(".json"),
+      verbs: (cmd) =>
+        segments(cmd)
+          .map((s) => /^trazo\s+(check|make)\b/.exec(s)?.[1])
+          .filter(Boolean),
+      firstVerb: "make",
+      nativeVerb: null,
+      inputOf: (seg) => /^trazo\s+make\s+(\S+)/.exec(seg)?.[1] ?? null,
+      nativeOk: null,
+    };
+  if (name === "archify") {
+    const skillDir = join(ctx.sandbox ?? "", ...skillSegments("claude-code", "archify"));
+    const env = { ARCHIFY_UPDATE_CHECK_DISABLED: "1" };
+    if (ctx.browser) env.ARCHIFY_CHROME = ctx.browser;
+    return {
+      name,
+      version: ARCHIFY_VERSION,
+      promptSuffix: ARCHIFY_SUFFIX,
+      bashRule: `Bash(node ${join(skillDir, "bin", "archify.mjs")}:*)`,
+      skillName: "archify",
+      env,
+      shim: false,
+      repairFile: (file) => /\.(json|html)$/.test(file),
+      verbs: (cmd) =>
+        segments(cmd)
+          .map((s) => /^node\s+["']?[^\s"']*archify\.mjs["']?\s+([\w-]+)/.exec(s)?.[1])
+          .filter(Boolean),
+      firstVerb: "finalize",
+      nativeVerb: "finalize",
+      inputOf: () => null,
+      nativeOk: (stats, htmlExists) => htmlExists && stats.lastFinalizeOk === true,
+    };
+  }
+  throw new Error(`unknown tool: ${name}`);
 }
 
-export function buildAgentArgs(prompt, model, agent = "claude-code") {
+export function buildPrompt(taskPrompt, tool) {
+  return taskPrompt + (tool ? tool.promptSuffix : PROMPT_SUFFIX);
+}
+
+export function buildAgentArgs(prompt, model, agent = "claude-code", tool) {
   // --standalone: a private server per run, so the env overrides apply and no shared service is reused.
   if (agent === "opencode") return ["run", "--standalone", "-m", model, "--format", "json", prompt];
   return [
@@ -114,23 +194,38 @@ export function buildAgentArgs(prompt, model, agent = "claude-code") {
     "Read",
     "Write",
     "Edit",
-    "Bash(trazo:*)",
+    tool ? tool.bashRule : "Bash(trazo:*)",
     "--output-format",
     "stream-json",
     "--verbose",
   ];
 }
 
-export function planRuns(taskIds, conditions, runs) {
+/**
+ * With `tools` each run index runs every tool once; the order is the given one on even
+ * indexes (run 1 is index 0) and reversed on odd ones, so neither tool always goes first.
+ * Archify has no no-skill condition.
+ */
+export function planRuns(taskIds, conditions, runs, tools) {
   const plan = [];
   for (const task of taskIds)
     for (const condition of conditions)
-      for (let run = 1; run <= runs; run++) plan.push({ task, condition, run });
+      for (let run = 1; run <= runs; run++) {
+        if (!tools) {
+          plan.push({ task, condition, run });
+          continue;
+        }
+        const order = (run - 1) % 2 === 0 ? tools : [...tools].reverse();
+        for (const tool of order)
+          if (tool !== "archify" || condition === "skill")
+            plan.push({ task, condition, run, tool });
+      }
   return plan;
 }
 
 export function runName(plan) {
-  return `${plan.task}-${plan.condition}-${plan.run}`;
+  const tool = plan.tool ? `-${plan.tool}` : "";
+  return `${plan.task}${tool}-${plan.condition}-${plan.run}`;
 }
 
 // One safe directory name per model id; "." and ".." would escape or collapse the folder.
@@ -140,8 +235,10 @@ export function modelDir(model) {
 }
 
 /** Where each agent loads project skills from, relative to the sandbox. */
-export function skillSegments(agent) {
-  return agent === "opencode" ? [".opencode", "skills", "trazo"] : [".claude", "skills", "trazo"];
+export function skillSegments(agent, skillName = "trazo") {
+  return agent === "opencode"
+    ? [".opencode", "skills", skillName]
+    : [".claude", "skills", skillName];
 }
 
 // OpenCode sees the git repository around its working directory (its snapshots hold the
@@ -150,6 +247,20 @@ export function defaultSandboxRoot(agent, model, repoRoot, tmpDir) {
   return agent === "opencode"
     ? join(tmpDir, "trazo-bench-runs", modelDir(model))
     : join(repoRoot, "tmp", "bench-runs", modelDir(model));
+}
+
+/**
+ * Where the runs and the pinned Archify clone live. Runs that include archify go under
+ * <root>/<model> (root defaults to <os tmp>/trazo-bench); trazo-only runs keep their old layout.
+ */
+export function sandboxLayout(opts, repoRoot, tmpDir) {
+  const base = opts.sandboxRoot ? resolve(opts.sandboxRoot) : join(tmpDir, "trazo-bench");
+  if (opts.tools.includes("archify"))
+    return { runs: join(base, modelDir(opts.model)), archifyHome: base };
+  const runs = opts.sandboxRoot
+    ? resolve(opts.sandboxRoot)
+    : defaultSandboxRoot(opts.agent, opts.model, repoRoot, tmpDir);
+  return { runs, archifyHome: base };
 }
 
 /**
@@ -262,10 +373,7 @@ export function agentEnv(baseEnv, binDir, platform) {
 
 // Agents often chain `trazo check x && trazo make x`; each segment is read on its own.
 const segments = (cmd) => cmd.split(/&&|\|\||;|\n/).map((s) => s.trim());
-const trazoVerbs = (cmd) =>
-  segments(cmd)
-    .map((s) => /^trazo\s+(check|make)\b/.exec(s)?.[1])
-    .filter(Boolean);
+const trazoVerbs = (cmd) => toolAdapter("trazo").verbs(cmd);
 // A command that ran and failed reports "Exit code N". An error without it is the sandbox
 // refusing the whole call (a heredoc or an `rm` next to trazo), so trazo never ran.
 const denied = (block) =>
@@ -284,7 +392,7 @@ function resultText(content) {
  * carry tool_result blocks {tool_use_id, is_error, content}; the last line is
  * {type:"result", is_error, usage:{input_tokens, output_tokens, cache_*}}.
  */
-export function parseStream(text) {
+export function parseStream(text, tool = toolAdapter("trazo")) {
   const stats = {
     inputTokens: 0,
     outputTokens: 0,
@@ -297,6 +405,7 @@ export function parseStream(text) {
     resultIsError: false,
     lastMakeInput: null,
   };
+  if (tool.nativeVerb) stats.lastFinalizeOk = null;
   const uses = new Map();
   let failedSeen = false;
   let firstMakeSeen = false;
@@ -329,32 +438,33 @@ export function parseStream(text) {
         if (
           (b.name === "Write" || b.name === "Edit") &&
           typeof file === "string" &&
-          file.endsWith(".json") &&
+          tool.repairFile(file) &&
           failedSeen
         )
           stats.repairs++;
         const cmd = b.input?.command;
         if (b.name === "Bash" && typeof cmd === "string") {
           for (const seg of segments(cmd)) {
-            const m = /^trazo\s+make\s+(\S+)/.exec(seg);
-            if (m) stats.lastMakeInput = m[1];
+            const input = tool.inputOf(seg);
+            if (input) stats.lastMakeInput = input;
           }
         }
       } else if (b?.type === "tool_result") {
         const use = uses.get(b.tool_use_id);
         const cmd = use?.input?.command;
         if (use?.name !== "Bash" || typeof cmd !== "string") continue;
-        const verbs = trazoVerbs(cmd);
+        const verbs = tool.verbs(cmd);
         if (verbs.length === 0 || denied(b)) continue;
         const failed = b.is_error === true || /^Exit code [1-9]/.test(resultText(b.content));
         if (failed) {
           stats.failedCommands++;
           failedSeen = true;
         }
-        if (verbs.includes("make") && !firstMakeSeen) {
+        if (verbs.includes(tool.firstVerb) && !firstMakeSeen) {
           firstMakeSeen = true;
           stats.firstTryOk = !failed;
         }
+        if (tool.nativeVerb && verbs.includes(tool.nativeVerb)) stats.lastFinalizeOk = !failed;
       }
     }
   }

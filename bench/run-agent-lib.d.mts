@@ -18,8 +18,27 @@ export interface RunOptions {
   dryRun: boolean;
   resume: boolean;
   sandboxRoot: string;
+  tools: ToolName[];
+  browser: string;
+}
+export type ToolName = "trazo" | "archify";
+export interface ToolAdapter {
+  name: ToolName;
+  version: string | null;
+  promptSuffix: string;
+  bashRule: string;
+  skillName: string;
+  env: Record<string, string>;
+  shim: boolean;
+  repairFile(file: string): boolean;
+  verbs(cmd: string): string[];
+  firstVerb: string;
+  nativeVerb: string | null;
+  inputOf(segment: string): string | null;
+  nativeOk: ((stats: { lastFinalizeOk?: boolean | null }, htmlExists: boolean) => boolean) | null;
 }
 export interface RunPlan {
+  tool?: ToolName;
   task: string;
   condition: "skill" | "no-skill";
   run: number;
@@ -35,17 +54,40 @@ export interface StreamStats {
   hasResult: boolean;
   resultIsError: boolean;
   lastMakeInput: string | null;
+  lastFinalizeOk?: boolean | null;
 }
 export const PROMPT_SUFFIX: string;
 export function parseArgs(argv: string[], knownTasks: string[], today: string): RunOptions;
-export function buildPrompt(taskPrompt: string): string;
-export function buildAgentArgs(prompt: string, model: string, agent?: AgentName): string[];
-export function planRuns(taskIds: string[], conditions: string[], runs: number): RunPlan[];
+export const ARCHIFY_VERSION: string;
+export const ARCHIFY_REPO: string;
+export function archifyCloneDir(home: string): string;
+export function toolAdapter(
+  name: string,
+  ctx?: { sandbox?: string; browser?: string },
+): ToolAdapter;
+export function sandboxLayout(
+  opts: { model: string; sandboxRoot: string; tools: string[]; agent: AgentName },
+  repoRoot: string,
+  tmpDir: string,
+): { runs: string; archifyHome: string };
+export function buildPrompt(taskPrompt: string, tool?: ToolAdapter): string;
+export function buildAgentArgs(
+  prompt: string,
+  model: string,
+  agent?: AgentName,
+  tool?: ToolAdapter,
+): string[];
+export function planRuns(
+  taskIds: string[],
+  conditions: string[],
+  runs: number,
+  tools?: string[],
+): RunPlan[];
 export function runName(plan: RunPlan): string;
 export function modelDir(model: string): string;
-export function parseStream(text: string): StreamStats;
+export function parseStream(text: string, tool?: ToolAdapter): StreamStats;
 export function parseOpencodeStream(text: string): StreamStats;
-export function skillSegments(agent: AgentName): string[];
+export function skillSegments(agent: AgentName, skillName?: string): string[];
 export function defaultSandboxRoot(
   agent: AgentName,
   model: string,
