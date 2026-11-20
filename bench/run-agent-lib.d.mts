@@ -21,6 +21,7 @@ export interface RunOptions {
   sandboxRoot: string;
   tools: ToolName[];
   browser: string;
+  effort: "" | "low" | "medium" | "high" | "xhigh" | "max";
 }
 export type ToolName = "trazo" | "archify";
 export interface ToolAdapter {
@@ -54,6 +55,7 @@ export interface StreamStats {
   firstTryOk: boolean;
   hasResult: boolean;
   resultIsError: boolean;
+  agentError?: string;
   lastMakeInput: string | null;
   lastFinalizeOk?: boolean | null;
 }
@@ -77,6 +79,7 @@ export function buildAgentArgs(
   model: string,
   agent?: AgentName,
   tool?: ToolAdapter,
+  effort?: string,
 ): string[];
 export function planRuns(
   taskIds: string[],
@@ -126,7 +129,7 @@ export function keepSkillEntry(src: string): boolean;
 export function countIssues(issues: { kind: string; detail?: string }[]): Record<string, number>;
 export interface RateSummary {
   runs: number;
-  finalRate: number;
+  finalRate: number | null;
   judged: number;
   judgeRate: number | null;
 }
@@ -136,6 +139,12 @@ export function judgeSummary(
     tool?: string | undefined;
     finalOk: boolean;
     judgeOk?: boolean | null | undefined;
+    agentError?: string | undefined;
   }[],
   typeOfTask: Record<string, string>,
-): Record<string, { overall: RateSummary; byType: Record<string, RateSummary> }>;
+): Record<
+  string,
+  { overall: RateSummary; byType: Record<string, RateSummary>; agentErrors: number }
+>;
+export function withoutAgentErrors<T extends { agentError?: string | undefined }>(runs: T[]): T[];
+export function countAgentErrors(runs: { agentError?: string | undefined }[]): number;

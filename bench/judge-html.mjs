@@ -212,6 +212,18 @@ async function removeDir(dir) {
   }
 }
 
+/**
+ * True when `term` appears in `visible` as a whole word or phrase: case-insensitive, whitespace-normalized,
+ * and not glued to a letter, digit or underscore on either side (so "app" is not in "application").
+ */
+export function containsTerm(visible, term) {
+  const needle = term.replace(/\s+/g, " ").trim();
+  if (!needle) return false;
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`(?<![\\p{L}\\p{N}_])${escaped}(?![\\p{L}\\p{N}_])`, "iu");
+  return re.test(visible.replace(/\s+/g, " "));
+}
+
 export async function judgeHtml(
   htmlPath,
   {
@@ -310,10 +322,9 @@ export async function judgeHtml(
     const { issues: pageIssues, texts } = evaluated.result.value;
 
     const issues = jsErrors.map((detail) => ({ kind: "js-error", detail }));
-    const visible = texts.join(" ").replace(/\s+/g, " ").toLowerCase();
+    const visible = texts.join(" ");
     for (const term of expectedTerms) {
-      const needle = term.replace(/\s+/g, " ").trim().toLowerCase();
-      if (!visible.includes(needle)) {
+      if (!containsTerm(visible, term)) {
         issues.push({ kind: "content-missing", detail: `expected "${term}" not in visible text` });
       }
     }

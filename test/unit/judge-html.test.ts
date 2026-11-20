@@ -17,6 +17,7 @@ interface Judge {
   judgeHtml(file: string, opts?: Record<string, unknown>): Promise<Result>;
   findBrowser(): string | null;
   createProfileDir(root?: string): string;
+  containsTerm(visible: string, term: string): boolean;
 }
 
 const root = resolve(__dirname, "../..");
@@ -25,6 +26,27 @@ const fixture = (name: string) => join(root, "test", "fixtures", "judge-html", `
 const judge = (await import(/* @vite-ignore */ modulePath)) as Judge;
 const hasBrowser = judge.findBrowser() !== null;
 const kinds = (r: Result) => [...new Set(r.issues.map((i) => i.kind))].sort();
+
+describe("containsTerm", () => {
+  it("matches whole words and phrases, case-insensitive and whitespace-normalized", () => {
+    expect(judge.containsTerm("the api gateway", "API")).toBe(true);
+    expect(judge.containsTerm("order   service", "Order Service")).toBe(true);
+    expect(judge.containsTerm("post_tags table", "post_tags")).toBe(true);
+    expect(judge.containsTerm("(web) -> db", "web")).toBe(true);
+  });
+
+  it("does not match inside a longer word", () => {
+    expect(judge.containsTerm("an application", "app")).toBe(false);
+    expect(judge.containsTerm("rapid growth", "api")).toBe(false);
+    expect(judge.containsTerm("post_tags", "tags")).toBe(false);
+    expect(judge.containsTerm("databases", "database")).toBe(false);
+  });
+
+  it("treats regex characters in a term literally", () => {
+    expect(judge.containsTerm("cost (usd)", "(usd)")).toBe(true);
+    expect(judge.containsTerm("abc", "a.c")).toBe(false);
+  });
+});
 
 describe("createProfileDir", () => {
   it("creates a _judge-* folder under the given root, making the root if needed", () => {
@@ -57,6 +79,16 @@ describe.skipIf(!hasBrowser)("judgeHtml", () => {
     expect(r.issues).toHaveLength(1);
     expect(r.issues[0]?.kind).toBe("content-missing");
     expect(r.issues[0]?.detail).toContain("Cache layer");
+  });
+
+  it("matches expected terms as whole words in the rendered page", async () => {
+    const r = await judge.judgeHtml(fixture("words"), {
+      expectedTerms: ["app", "api", "post_tags", "application"],
+    });
+    expect(r.issues.map((i) => i.detail)).toEqual([
+      'expected "app" not in visible text',
+      'expected "api" not in visible text',
+    ]);
   });
 
   it("detects overlapping HTML text", async () => {

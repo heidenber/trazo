@@ -23,6 +23,8 @@ import {
   defaultSandboxRoot,
   formatCommandLine,
   judgeSummary,
+  withoutAgentErrors,
+  countAgentErrors,
   keepSkillEntry,
   modelDir,
   opencodeConfig,
@@ -84,7 +86,57 @@ const result = (extra: object = {}) =>
     ...extra,
   });
 
+const synthetic = (text: string) =>
+  line({
+    type: "assistant",
+    message: { model: "<synthetic>", content: [{ type: "text", text }] },
+  });
+const oauthExpired = [
+  synthetic("Failed to authenticate: OAuth session expired. Please run /login"),
+  result({
+    is_error: true,
+    subtype: "success",
+    terminal_reason: "api_error",
+    usage: {
+      input_tokens: 0,
+      output_tokens: 0,
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 0,
+    },
+  }),
+].join("\n");
+
 describe("parseStream", () => {
+  it("reports an agent error when the run failed before working", () => {
+    const stats = parseStream(oauthExpired);
+    expect(stats.agentError).toBe(
+      "api_error: Failed to authenticate: OAuth session expired. Please run /login",
+    );
+    expect(stats.resultIsError).toBe(true);
+    expect(stats.inputTokens).toBe(0);
+  });
+
+  it("reports an error result without a terminal reason by its subtype", () => {
+    const stats = parseStream(result({ is_error: true, subtype: "error_during_execution" }));
+    expect(stats.agentError).toBe("error_during_execution");
+  });
+
+  it("reports a terminal reason other than a normal completion", () => {
+    expect(parseStream(result({ terminal_reason: "aborted" })).agentError).toBe("aborted");
+  });
+
+  it("reports a synthetic assistant message even without a result", () => {
+    expect(parseStream(synthetic("Credit balance is too low")).agentError).toBe(
+      "synthetic: Credit balance is too low",
+    );
+  });
+
+  it("does not flag a normal completion", () => {
+    const stats = parseStream(result({ terminal_reason: "completed" }));
+    expect(stats.agentError).toBeUndefined();
+    expect("agentError" in parseStream(result())).toBe(false);
+  });
+
   it("reads check and make chained in one Bash call", () => {
     const text = [
       write("a", "/s/shop.json"),
@@ -931,6 +983,70 @@ describe("tool adapters", () => {
       judgeRate: null,
     });
     expect(out.archify?.overall).toEqual({ runs: 1, finalRate: 1, judged: 1, judgeRate: 1 });
+  });
+
+  it("parses --effort, defaulting to unset", () => {
+    expect(parseArgs(["--model", "m"], tasks, "d").effort).toBe("");
+    for (const level of ["low", "medium", "high", "xhigh", "max"])
+      expect(parseArgs(["--model", "m", "--effort", level], tasks, "d").effort).toBe(level);
+  });
+
+  it("rejects a bad --effort level and --effort with opencode", () => {
+    expect(() => parseArgs(["--model", "m", "--effort", "huge"], tasks, "d")).toThrow(
+      "--effort must be low, medium, high, xhigh or max",
+    );
+    expect(() => parseArgs(["--model", "m", "--effort"], tasks, "d")).toThrow(
+      "--effort needs a value",
+    );
+    expect(() =>
+      parseArgs(["--model", "m", "--agent", "opencode", "--effort", "low"], tasks, "d"),
+    ).toThrow("--effort needs --agent claude-code");
+  });
+
+  it("passes --effort to claude only when set, the same for every tool", () => {
+    const base = buildAgentArgs("p", "m", "claude-code");
+    expect(base).not.toContain("--effort");
+    for (const name of ["trazo", "archify"]) {
+      const args = buildAgentArgs(
+        "p",
+        "m",
+        "claude-code",
+        toolAdapter(name, { sandbox: sb }),
+        "high",
+      );
+      expect(args.slice(-2)).toEqual(["--effort", "high"]);
+    }
+    expect(buildAgentArgs("p", "m", "claude-code", undefined, "")).toEqual(base);
+  });
+
+  it("leaves agent errors out of every rate and counts them per tool", () => {
+    const r = (tool: string, finalOk: boolean, judgeOk: boolean | null, agentError?: string) => ({
+      task: "s1",
+      tool,
+      finalOk,
+      judgeOk,
+      agentError,
+    });
+    const out = judgeSummary(
+      [
+        r("trazo", true, true),
+        r("trazo", false, null, "api_error: Failed to authenticate"),
+        r("archify", false, null, "api_error: x"),
+        r("archify", false, null, "api_error: y"),
+      ],
+      { s1: "sequence" },
+    );
+    expect(out.trazo?.overall).toEqual({ runs: 1, finalRate: 1, judged: 1, judgeRate: 1 });
+    expect(out.trazo?.agentErrors).toBe(1);
+    expect(out.archify?.overall).toEqual({ runs: 0, finalRate: null, judged: 0, judgeRate: null });
+    expect(out.archify?.agentErrors).toBe(2);
+    expect(out.archify?.byType).toEqual({});
+  });
+
+  it("splits agent errors from the runs that count", () => {
+    const runs = [{ id: 1 }, { id: 2, agentError: "api_error" }, { id: 3, agentError: "" }];
+    expect(withoutAgentErrors(runs)).toEqual([{ id: 1 }, { id: 3, agentError: "" }]);
+    expect(countAgentErrors(runs)).toBe(1);
   });
 
   it("judges native archify success from the html file and the last finalize", () => {

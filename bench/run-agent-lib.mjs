@@ -14,6 +14,8 @@ const AGENTS = ["claude-code", "opencode"];
 const AGENT_CMDS = { "claude-code": "claude", opencode: "opencode" };
 
 /** Parses the runner arguments. Throws Error with a plain message on bad input. */
+const EFFORTS = ["low", "medium", "high", "xhigh", "max"];
+
 export function parseArgs(argv, knownTasks, today) {
   const opts = {
     agent: "claude-code",
@@ -29,6 +31,7 @@ export function parseArgs(argv, knownTasks, today) {
     sandboxRoot: "",
     tools: ["trazo"],
     browser: "",
+    effort: "",
   };
   let toolsGiven = false;
   const valueOf = (i) => {
@@ -90,6 +93,13 @@ export function parseArgs(argv, knownTasks, today) {
       case "--browser":
         opts.browser = valueOf(i++);
         break;
+      case "--effort": {
+        const level = valueOf(i++);
+        if (!EFFORTS.includes(level))
+          throw new Error("--effort must be low, medium, high, xhigh or max");
+        opts.effort = level;
+        break;
+      }
       case "--sandbox-root":
         opts.sandboxRoot = valueOf(i++);
         break;
@@ -104,6 +114,8 @@ export function parseArgs(argv, knownTasks, today) {
     }
   }
   if (!opts.model) throw new Error("--model is required");
+  if (opts.effort && opts.agent !== "claude-code")
+    throw new Error("--effort needs --agent claude-code");
   if (opts.tools.includes("archify")) {
     if (opts.agent !== "claude-code") throw new Error("--tool archify needs --agent claude-code");
     if (opts.tools.length === 1 && !opts.conditions.includes("skill"))
@@ -189,7 +201,7 @@ export function buildPrompt(taskPrompt, tool) {
   return taskPrompt + (tool ? tool.promptSuffix : PROMPT_SUFFIX);
 }
 
-export function buildAgentArgs(prompt, model, agent = "claude-code", tool) {
+export function buildAgentArgs(prompt, model, agent = "claude-code", tool, effort = "") {
   // --standalone: a private server per run, so the env overrides apply and no shared service is reused.
   if (agent === "opencode") return ["run", "--standalone", "-m", model, "--format", "json", prompt];
   return [
@@ -208,6 +220,7 @@ export function buildAgentArgs(prompt, model, agent = "claude-code", tool) {
     "--output-format",
     "stream-json",
     "--verbose",
+    ...(effort ? ["--effort", effort] : []),
   ];
 }
 
@@ -420,6 +433,8 @@ export function parseStream(text, tool = toolAdapter("trazo")) {
   const uses = new Map();
   let failedSeen = false;
   let firstMakeSeen = false;
+  let syntheticText = null;
+  let resultReason = null;
   for (const raw of text.split("\n")) {
     const trimmed = raw.trim();
     if (!trimmed) continue;
@@ -430,9 +445,19 @@ export function parseStream(text, tool = toolAdapter("trazo")) {
       continue;
     }
     if (!ev || typeof ev !== "object") continue;
+    if (ev.type === "assistant" && ev.message?.model === "<synthetic>") {
+      // Claude Code writes its own failures (auth, quota, API) as a synthetic assistant message.
+      const t = ev.message.content?.find?.((b) => b?.type === "text")?.text;
+      syntheticText = typeof t === "string" ? t : "";
+    }
     if (ev.type === "result") {
       stats.hasResult = true;
       stats.resultIsError = ev.is_error === true;
+      const reason = ev.terminal_reason;
+      if (ev.is_error === true || (typeof reason === "string" && reason !== "completed"))
+        resultReason =
+          (typeof reason === "string" ? reason : null) ??
+          (typeof ev.subtype === "string" ? ev.subtype : "error");
       const u = ev.usage ?? {};
       stats.inputTokens = u.input_tokens ?? 0;
       stats.outputTokens = u.output_tokens ?? 0;
@@ -479,7 +504,26 @@ export function parseStream(text, tool = toolAdapter("trazo")) {
       }
     }
   }
+  const agentError = agentErrorReason(resultReason, syntheticText);
+  if (agentError) stats.agentError = agentError;
   return stats;
+}
+
+/** Short reason ("api_error: Failed to authenticate...") when the agent failed itself, else null. */
+function agentErrorReason(reason, syntheticText) {
+  if (reason === null && syntheticText === null) return null;
+  const text = (syntheticText ?? "").replace(/\s+/g, " ").trim().slice(0, 120);
+  const head = reason ?? "synthetic";
+  return text ? `${head}: ${text}` : head;
+}
+
+/** Runs that count toward the rates: the ones where the agent did not fail itself. */
+export function withoutAgentErrors(runs) {
+  return runs.filter((r) => !r.agentError);
+}
+
+export function countAgentErrors(runs) {
+  return runs.length - withoutAgentErrors(runs).length;
 }
 
 const SHELL_TOOLS = ["shell", "bash"];
@@ -583,7 +627,7 @@ export function judgeSummary(runs, typeOfTask) {
     const judged = list.filter((r) => typeof r.judgeOk === "boolean");
     return {
       runs: list.length,
-      finalRate: list.filter((r) => r.finalOk).length / list.length,
+      finalRate: list.length ? list.filter((r) => r.finalOk).length / list.length : null,
       judged: judged.length,
       judgeRate: judged.length ? judged.filter((r) => r.judgeOk).length / judged.length : null,
     };
@@ -591,12 +635,14 @@ export function judgeSummary(runs, typeOfTask) {
   const byTool = {};
   for (const r of runs) (byTool[r.tool ?? "trazo"] ??= []).push(r);
   const out = {};
-  for (const [tool, list] of Object.entries(byTool)) {
+  for (const [tool, all] of Object.entries(byTool)) {
+    const list = withoutAgentErrors(all);
     const byType = {};
     for (const r of list) (byType[typeOfTask[r.task] ?? "unknown"] ??= []).push(r);
     out[tool] = {
       overall: rates(list),
       byType: Object.fromEntries(Object.entries(byType).map(([t, l]) => [t, rates(l)])),
+      agentErrors: countAgentErrors(all),
     };
   }
   return out;

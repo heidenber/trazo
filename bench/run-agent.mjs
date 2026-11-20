@@ -7,7 +7,7 @@
 // intact; if none is found pass --agent-cmd <path to the .exe>. The resolved path is printed and saved as agentBin.
 //   node bench/run-agent.mjs --model <id> [--agent claude-code|opencode] [--task <id>]...
 //     [--condition skill|no-skill|both] [--runs N] [--out <file>] [--agent-cmd <path>]
-//     [--tool trazo|archify[,...]] [--browser <path>] [--sandbox-root <dir>] [--timeout <s>] [--resume] [--dry-run]
+//     [--tool trazo|archify[,...]] [--effort low|medium|high|xhigh|max] [--browser <path>] [--sandbox-root <dir>] [--timeout <s>] [--resume] [--dry-run]
 // Each run happens in a fresh sandbox: tmp/bench-runs/<model>/ for claude-code, <os tmp>/trazo-bench-runs/<model>/
 // for opencode (outside the repository). Runs that include archify live in <os tmp>/trazo-bench/<model>/ and need
 // the pinned copy from bench/stage-archify.mjs. Results are appended to --out as each run finishes.
@@ -34,6 +34,7 @@ import {
   buildAgentArgs,
   archifyCloneDir,
   buildPrompt,
+  countAgentErrors,
   countIssues,
   formatCommandLine,
   judgeSummary,
@@ -52,6 +53,7 @@ import {
   shimFiles,
   skillSegments,
   toolAdapter,
+  withoutAgentErrors,
 } from "./run-agent-lib.mjs";
 import { judgeHtml } from "./judge-html.mjs";
 import { locateSkillDir } from "./stage-archify.mjs";
@@ -163,7 +165,7 @@ if (opts.dryRun) {
     console.log(`${runName(p)}  (${p.condition})`);
     console.log(`  cwd: ${join(sandboxRoot, runName(p))}`);
     console.log(
-      `  ${formatCommandLine(opts.agentCmd, buildAgentArgs(prompt, opts.model, opts.agent, tool))}`,
+      `  ${formatCommandLine(opts.agentCmd, buildAgentArgs(prompt, opts.model, opts.agent, tool, opts.effort))}`,
     );
   }
   console.log(`${plan.length} run(s) planned, timeout ${opts.timeout} s each. Nothing was run.`);
@@ -194,6 +196,8 @@ if (existsSync(outFile)) {
     fail(`${opts.out} holds agent ${record.agent}, not ${opts.agent}`);
   if (record.model !== opts.model)
     fail(`${opts.out} holds model ${record.model}, not ${opts.model}`);
+  if ((record.effort ?? "") !== opts.effort)
+    fail(`${opts.out} holds effort ${record.effort ?? "unset"}, not ${opts.effort || "unset"}`);
   record.runsPerTask = opts.runs;
 } else {
   record = {
@@ -202,6 +206,7 @@ if (existsSync(outFile)) {
     trazoVersion: VERSION,
     agent: opts.agent,
     model: opts.model,
+    effort: opts.effort || null,
     runsPerTask: opts.runs,
     runs: [],
   };
@@ -343,13 +348,24 @@ for (const p of plan) {
         r.task === p.task &&
         r.condition === p.condition &&
         r.run === p.run &&
-        (r.tool ?? "trazo") === toolOf(p),
+        (r.tool ?? "trazo") === toolOf(p) &&
+        !r.agentError, // an agent error is not a result: --resume runs it again
     )
   ) {
     skipped++;
     console.log(`${name}: skipped (already recorded)`);
     continue;
   }
+  record.runs = record.runs.filter(
+    (r) =>
+      !(
+        r.agentError &&
+        r.task === p.task &&
+        r.condition === p.condition &&
+        r.run === p.run &&
+        (r.tool ?? "trazo") === toolOf(p)
+      ),
+  );
   const sandbox = join(sandboxRoot, name);
   rmSync(sandbox, { recursive: true, force: true });
   mkdirSync(sandbox, { recursive: true });
@@ -370,7 +386,7 @@ for (const p of plan) {
   const started = Date.now();
   const outcome = await runAgent(
     sandbox,
-    buildAgentArgs(prompt, opts.model, opts.agent, tool),
+    buildAgentArgs(prompt, opts.model, opts.agent, tool, opts.effort),
     tool.env,
   );
   const seconds = Math.round((Date.now() - started) / 100) / 10;
@@ -392,6 +408,7 @@ for (const p of plan) {
     agentVersion: record.agentVersion,
     condition: p.condition,
     run: p.run,
+    effort: opts.effort || null,
     inputTokens: stats.inputTokens,
     outputTokens: stats.outputTokens,
     cacheCreationTokens: stats.cacheCreationTokens,
@@ -401,19 +418,30 @@ for (const p of plan) {
     firstTryOk: stats.firstTryOk,
     finalOk,
     seconds,
-    ...(await judgeRun(sandbox, taskById.get(p.task).expect ?? [])),
   };
+  // An agent that failed before working (auth, quota, API) says nothing about the tool: it is not judged.
+  if (stats.agentError) entry.agentError = stats.agentError;
+  else Object.assign(entry, await judgeRun(sandbox, taskById.get(p.task).expect ?? []));
   if (notes.length) entry.notes = notes.join("; ");
   record.runs.push(entry);
   save();
   done++;
+  if (stats.agentError)
+    console.log(
+      `warning: ${name}: agent error (${stats.agentError}); the run is excluded from every rate and not judged`,
+    );
   console.log(
     `${name}: finalOk=${finalOk} firstTryOk=${stats.firstTryOk} judgeOk=${entry.judgeOk} failed=${stats.failedCommands} repairs=${stats.repairs} tokens=${stats.inputTokens}/${stats.outputTokens} ${seconds}s${notes.length ? `  [${notes.join("; ")}]` : ""}`,
   );
 }
 
 console.log(`\n${done} run(s) done, ${skipped} skipped. Results: ${outFile}`);
-console.log(JSON.stringify(summarize(record.runs), null, 2));
+const errored = countAgentErrors(record.runs);
+if (errored)
+  console.log(
+    `warning: ${errored} run(s) with an agent error are left out of the rates below (agentErrors per tool in the second summary); rerun them with --resume`,
+  );
+console.log(JSON.stringify(summarize(withoutAgentErrors(record.runs)), null, 2));
 console.log(
   JSON.stringify(
     {

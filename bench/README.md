@@ -119,6 +119,8 @@ Run `node scripts/bench.mjs --summary <file>` to get, per condition, the number 
 
 `--tool trazo|archify` picks the tool under test. It can be repeated or given as a comma list (`--tool trazo,archify`); the default is `trazo` and nothing else about a trazo-only run changes. `--browser <path>` sets the Chrome or Edge that Archify uses (default: `BENCH_BROWSER`, then the usual install paths). `--tool archify` needs `--agent claude-code`, and Archify only runs in the `skill` condition.
 
+`--effort low|medium|high|xhigh|max` is passed to Claude Code as `--effort <level>` for every run of the matrix, so both tools get the same level. Without it nothing is passed and the agent uses its own default. It is rejected with `--agent opencode`. Every run record and the results header carry `effort` (`null` when unset); `--out` refuses to mix levels in one file.
+
 Archify is pinned to v3.2.0 and staged once, outside this repository:
 
 ```sh
@@ -150,20 +152,24 @@ Compare it across tools with that in mind: `finalize` also runs Archify's own ch
 
 After every run, whatever the tool, the runner opens `<sandbox>/diagram.html` in headless Chrome or Edge with `bench/judge-html.mjs` and writes `<sandbox>/diagram.png`. The judge knows nothing about either tool: it only looks at the visible text. Each task in `tasks.json` has an `expect` list with the names its prompt states (entities, steps, participants) and nothing else; `erd-payments` has none because its prompt names no table.
 
-Each run record gets `judgeOk`, `judgeIssues` (issue kind to count) and `screenshot` (path). A run with no `diagram.html` is `judgeOk: false` with `{"no-html": 1}`. If the browser cannot be started the run gets `judgeOk: null` and `judgeError`, and is left out of the judge rate.
+Each run record gets `judgeOk`, `judgeIssues` (issue kind to count) and `screenshot` (path). A run with no `diagram.html` is `judgeOk: false` with `{"no-html": 1}`. If the browser cannot be started the run gets `judgeOk: null` and `judgeError`, and is left out of the judge rate. A browser failure never counts against the tool.
 
 Issue kinds:
 
-- `content-missing`: an expected term (case-insensitive, whitespace-normalized) is not in the visible text.
+- `content-missing`: an expected term (case-insensitive, whitespace-normalized, whole word or phrase) is not in the visible text.
 - `text-overlap`: the boxes of two different text nodes overlap by more than 2 px on both axes.
 - `text-clipped`: a text box extends past an ancestor with `overflow: hidden` or `clip`, or past its SVG viewport.
 - `outside-page`: a text box has negative coordinates or lies beyond the document size.
 - `js-error`: an uncaught exception or a console error while loading.
 - `render-empty`: there is no visible text.
 
+### Agent errors
+
+When the agent fails before doing the task (for example Claude Code with an expired login: the stream's final `result` has `is_error: true` or a `terminal_reason` other than `completed`, or the only assistant message is the synthetic `<synthetic>` one, and all usage is 0), the run records `agentError: "<short reason>"` and keeps the raw fields. It is not judged, a warning is printed, and it is left out of every rate (`finalRate`, `judgeRate`, `firstTryRate` and the medians). The summary counts them apart as `agentErrors` per tool. `--resume` runs them again instead of skipping them.
+
 The summary printed at the end of a run adds, per tool and per task type, `finalRate` next to `judged` and `judgeRate`.
 
-Limits: the judge sees text, not lines, colors or shapes, so a diagram with crossing edges or a wrong structure can still pass. An `expect` term is a plain substring, so an agent that writes `DB` for `database` fails `content-missing` even though the diagram is right. The browser profiles go to `<root>/_judge-*` (the sandbox root, not the system temp folder) and are removed after each judgement.
+Limits: the judge sees text, not lines, colors or shapes, so a diagram with crossing edges or a wrong structure can still pass. An `expect` term matches whole words or phrases only (word boundaries on both ends, `_` counts as part of a word), so `app` does not match inside `application` and `api` not inside `rapid`, while `post_tags` matches itself. An agent that writes `DB` for `database` still fails `content-missing` even though the diagram is right. The browser profiles go to `<root>/_judge-*` (the sandbox root, not the system temp folder) and are removed after each judgement.
 
 ## OpenCode runs
 
