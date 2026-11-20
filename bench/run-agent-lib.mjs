@@ -453,11 +453,9 @@ export function parseStream(text, tool = toolAdapter("trazo")) {
     if (ev.type === "result") {
       stats.hasResult = true;
       stats.resultIsError = ev.is_error === true;
-      const reason = ev.terminal_reason;
-      if (ev.is_error === true || (typeof reason === "string" && reason !== "completed"))
-        resultReason =
-          (typeof reason === "string" ? reason : null) ??
-          (typeof ev.subtype === "string" ? ev.subtype : "error");
+      // Only failures of the agent's own service count; max turns, aborts and execution
+      // errors can come from the tool under test, so they stay tool failures.
+      if (ev.terminal_reason === "api_error") resultReason = "api_error";
       const u = ev.usage ?? {};
       stats.inputTokens = u.input_tokens ?? 0;
       stats.outputTokens = u.output_tokens ?? 0;

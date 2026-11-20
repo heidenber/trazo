@@ -165,7 +165,7 @@ Issue kinds:
 
 ### Agent errors
 
-When the agent fails before doing the task (for example Claude Code with an expired login: the stream's final `result` has `is_error: true` or a `terminal_reason` other than `completed`, or the only assistant message is the synthetic `<synthetic>` one, and all usage is 0), the run records `agentError: "<short reason>"` and keeps the raw fields. It is not judged, a warning is printed, and it is left out of every rate (`finalRate`, `judgeRate`, `firstTryRate` and the medians). The summary counts them apart as `agentErrors` per tool. `--resume` runs them again instead of skipping them.
+When the agent fails before doing the task (for example Claude Code with an expired login: the stream's final `result` has `terminal_reason: api_error`, or Claude Code wrote a synthetic `<synthetic>` assistant message). Max turns, aborts and execution errors are not agent errors: the tool under test can cause them, so they count as tool failures, the run records `agentError: "<short reason>"` and keeps the raw fields. It is not judged, a warning is printed, and it is left out of every rate (`finalRate`, `judgeRate`, `firstTryRate` and the medians). The summary counts them apart as `agentErrors` per tool. `--resume` runs them again instead of skipping them.
 
 The summary printed at the end of a run adds, per tool and per task type, `finalRate` next to `judged` and `judgeRate`.
 

@@ -116,13 +116,22 @@ describe("parseStream", () => {
     expect(stats.inputTokens).toBe(0);
   });
 
-  it("reports an error result without a terminal reason by its subtype", () => {
-    const stats = parseStream(result({ is_error: true, subtype: "error_during_execution" }));
-    expect(stats.agentError).toBe("error_during_execution");
+  it("reports an API error even without a synthetic message", () => {
+    expect(parseStream(result({ is_error: true, terminal_reason: "api_error" })).agentError).toBe(
+      "api_error",
+    );
   });
 
-  it("reports a terminal reason other than a normal completion", () => {
-    expect(parseStream(result({ terminal_reason: "aborted" })).agentError).toBe("aborted");
+  it("keeps errors the tool can cause as tool failures, not agent errors", () => {
+    for (const ev of [
+      { is_error: true, subtype: "error_max_turns" },
+      { is_error: true, subtype: "error_during_execution" },
+      { terminal_reason: "aborted" },
+    ]) {
+      const stats = parseStream(result(ev));
+      expect("agentError" in stats).toBe(false);
+      expect(stats.hasResult).toBe(true);
+    }
   });
 
   it("reports a synthetic assistant message even without a result", () => {
