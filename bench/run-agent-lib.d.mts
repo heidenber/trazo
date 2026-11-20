@@ -57,6 +57,8 @@ export interface StreamStats {
   resultIsError: boolean;
   agentError?: string;
   lastMakeInput: string | null;
+  deniedCommands?: number;
+  deniedTools?: Record<string, number>;
   lastFinalizeOk?: boolean | null;
 }
 export const PROMPT_SUFFIX: string;
@@ -140,11 +142,18 @@ export function judgeSummary(
     finalOk: boolean;
     judgeOk?: boolean | null | undefined;
     agentError?: string | undefined;
+    deniedCommands?: number | undefined;
+    deniedTools?: Record<string, number> | undefined;
   }[],
   typeOfTask: Record<string, string>,
 ): Record<
   string,
-  { overall: RateSummary; byType: Record<string, RateSummary>; agentErrors: number }
+  {
+    overall: RateSummary;
+    byType: Record<string, RateSummary>;
+    agentErrors: number;
+    denials: { runs: number; commands: number; tools: Record<string, number> };
+  }
 >;
 export function withoutAgentErrors<T extends { agentError?: string | undefined }>(runs: T[]): T[];
 export function countAgentErrors(runs: { agentError?: string | undefined }[]): number;

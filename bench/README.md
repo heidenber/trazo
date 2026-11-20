@@ -109,6 +109,7 @@ The runner saves the runs as `bench/results/<YYYY-MM-DD>-agent-<agent>.json`:
 
 - `failedCommands`: number of `check` or `make` calls that exited with a non-zero code.
 - `repairs`: number of edits to the JSON after the first failure.
+- `deniedCommands`, `deniedTools`: calls Claude Code refused for lack of permission and their count per tool name (see "Permission denials").
 - `firstTryOk`: the first `make` exited with 0. A chained call such as `trazo check x && trazo make x` counts as that `make`. A call the sandbox refused (an error without `Exit code N`) is not counted, because trazo never ran.
 - `finalOk`: `diagram.html` exists and `trazo check` passes on the final JSON.
 - `cacheCreationTokens` and `cacheReadTokens` are reported separately from `inputTokens` and are 0 if the agent does not report them. With prompt caching `inputTokens` is only the uncached part, a few dozen tokens; the summary also gives the median total input (uncached + cache creation + cache read), which is what a run actually read.
@@ -147,6 +148,16 @@ What changes when `archify` is in `--tool`:
 - archify: the first `finalize`.
 
 Compare it across tools with that in mind: `finalize` also runs Archify's own checks.
+
+A refused call is not counted, so a run whose first `finalize` was refused has `firstTryOk: false` until a later `finalize` runs, and then that later call is the one that counts. In the first Haiku run (invalid, see below) `firstTryOk` was false in 18 of 18 Archify runs without agent error, and the parser was right: in 12 the first `finalize` that ran exited 1 on schema validation (for example `/boundaries/0/kind ... must be equal to one of the allowed values`, or `/nodes/7 ... must NOT have additional properties`), and in 6 no `finalize` ever ran because every call was refused (PowerShell, see below). So the figure measures the tool as it is: Archify's strict schema rejects the first spec the agent writes.
+
+### Permission denials
+
+On Windows, Claude Code offers a `PowerShell` tool next to `Bash`. The runner's `--allowedTools` rules only cover `Bash(...)`, so PowerShell calls were refused without a visible error, and the agent often stopped asking for approval. Both tools were hit (Archify in 15 of 24 runs, trazo in 5 of 24 in the invalid run).
+
+- Claude Code runs now pass `--disallowedTools PowerShell` for every tool, so the agent uses Bash as on Linux and macOS. OpenCode runs are unchanged.
+- Each run records `deniedCommands` (the number of entries in the final result's `permission_denials`) and `deniedTools` (count per tool name, for example `{"Bash": 1}`). The summary shows, per tool, `denials`: runs with any denial, total commands and counts per tool name. A run with denials that failed still counts as a tool failure; the denials only make the cause visible. Denials do not appear for OpenCode runs (`0` and `{}`).
+- Other Bash denials seen in the invalid run: output redirection (`trazo example x > diagram.json`, which Claude Code asks about because it writes a file; the agent has `Write`), PowerShell syntax pasted into Bash, and Archify calls spelled with Windows backslashes, as `/c/...` Git Bash paths, or with a `../..` relative path after a `cd`. The Git Bash spelling of the exact allowed path is now allowed too. Backslash paths cannot be written as rules (`\` escapes in a rule), and the prompt already names the exact command, so they stay refused for both tools. Redirection and shell scripts are not a use of the tool under test and stay refused.
 
 ### Judge
 

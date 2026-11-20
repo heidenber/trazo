@@ -136,6 +136,8 @@ export const archifyCloneDir = (home) => join(home, `_archify-${ARCHIFY_VERSION}
 
 const SKILL_BIN = ".claude/skills/archify/bin/archify.mjs";
 const forwardSlashes = (p) => p.replace(/\\/g, "/");
+// Git Bash spells C:/x as /c/x.
+const gitBashPath = (p) => p.replace(/^([A-Za-z]):\//, (_, d) => `/${d.toLowerCase()}/`);
 
 /** Prompt tail for archify: names the one command the sandbox allows, so the agent does not guess a path. */
 const archifySuffix = (bin) =>
@@ -176,7 +178,7 @@ export function toolAdapter(name, ctx = {}) {
       name,
       version: ARCHIFY_VERSION,
       promptSuffix: archifySuffix(bin),
-      bashRules: [bin, SKILL_BIN, `./${SKILL_BIN}`].flatMap((f) => [
+      bashRules: [...new Set([bin, gitBashPath(bin), SKILL_BIN, `./${SKILL_BIN}`])].flatMap((f) => [
         `Bash(node ${f}:*)`,
         `Bash(node "${f}":*)`,
       ]),
@@ -217,6 +219,9 @@ export function buildAgentArgs(prompt, model, agent = "claude-code", tool, effor
     "Write",
     "Edit",
     ...(tool ? tool.bashRules : ["Bash(trazo:*)"]),
+    // Windows adds a PowerShell tool our Bash rules do not cover; its calls would be denied.
+    "--disallowedTools",
+    "PowerShell",
     "--output-format",
     "stream-json",
     "--verbose",
@@ -428,6 +433,8 @@ export function parseStream(text, tool = toolAdapter("trazo")) {
     hasResult: false,
     resultIsError: false,
     lastMakeInput: null,
+    deniedCommands: 0,
+    deniedTools: {},
   };
   if (tool.nativeVerb) stats.lastFinalizeOk = null;
   const uses = new Map();
@@ -461,6 +468,12 @@ export function parseStream(text, tool = toolAdapter("trazo")) {
       stats.outputTokens = u.output_tokens ?? 0;
       stats.cacheCreationTokens = u.cache_creation_input_tokens ?? 0;
       stats.cacheReadTokens = u.cache_read_input_tokens ?? 0;
+      // Calls Claude Code refused for lack of permission; the agent never ran them.
+      for (const d of Array.isArray(ev.permission_denials) ? ev.permission_denials : []) {
+        const name = typeof d?.tool_name === "string" ? d.tool_name : "unknown";
+        stats.deniedCommands++;
+        stats.deniedTools[name] = (stats.deniedTools[name] ?? 0) + 1;
+      }
       continue;
     }
     const blocks = ev.message?.content;
@@ -637,8 +650,17 @@ export function judgeSummary(runs, typeOfTask) {
     const list = withoutAgentErrors(all);
     const byType = {};
     for (const r of list) (byType[typeOfTask[r.task] ?? "unknown"] ??= []).push(r);
+    const denials = { runs: 0, commands: 0, tools: {} };
+    for (const r of list) {
+      if (!r.deniedCommands) continue;
+      denials.runs++;
+      denials.commands += r.deniedCommands;
+      for (const [name, n] of Object.entries(r.deniedTools ?? {}))
+        denials.tools[name] = (denials.tools[name] ?? 0) + n;
+    }
     out[tool] = {
       overall: rates(list),
+      denials,
       byType: Object.fromEntries(Object.entries(byType).map(([t, l]) => [t, rates(l)])),
       agentErrors: countAgentErrors(all),
     };

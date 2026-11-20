@@ -235,6 +235,8 @@ describe("parseStream", () => {
       hasResult: true,
       resultIsError: false,
       lastMakeInput: "diagram.json",
+      deniedCommands: 0,
+      deniedTools: {},
     });
   });
 
@@ -285,6 +287,46 @@ describe("parseStream", () => {
     expect(parseStream(text).repairs).toBe(0);
   });
 
+  it("records the permission denials of the final result per tool", () => {
+    const denial = (tool_name: string, command: string) => ({
+      tool_name,
+      tool_use_id: "x",
+      tool_input: { command },
+    });
+    const stats = parseStream(
+      result({
+        permission_denials: [
+          denial("PowerShell", "node a.mjs finalize x"),
+          denial("PowerShell", "trazo --help"),
+          denial("Bash", "trazo example x > d.json"),
+        ],
+      }),
+    );
+    expect(stats.deniedCommands).toBe(3);
+    expect(stats.deniedTools).toEqual({ PowerShell: 2, Bash: 1 });
+    const none = parseStream(result({ permission_denials: [] }));
+    expect(none.deniedCommands).toBe(0);
+    expect(none.deniedTools).toEqual({});
+  });
+
+  it("does not count a denied finalize as the first try, nor a later retry as one", () => {
+    const archify = toolAdapter("archify", { sandbox: "/w/s" });
+    const cmd =
+      "node /w/s/.claude/skills/archify/bin/archify.mjs finalize architecture c.json d.html";
+    const stats = parseStream(
+      [
+        bash("a", cmd),
+        res("a", "This command requires approval", true),
+        bash("b", cmd),
+        res("b", "ok"),
+        result(),
+      ].join("\n"),
+      archify,
+    );
+    expect(stats.firstTryOk).toBe(true);
+    expect(stats.failedCommands).toBe(0);
+  });
+
   it("returns zeros when there is no result message (timeout) and ignores bad lines", () => {
     const text = ["not json", bash("a", "trazo check d.json"), "{broken"].join("\n");
     expect(parseStream(text)).toEqual({
@@ -298,6 +340,8 @@ describe("parseStream", () => {
       hasResult: false,
       resultIsError: false,
       lastMakeInput: null,
+      deniedCommands: 0,
+      deniedTools: {},
     });
     expect(parseStream("").hasResult).toBe(false);
   });
@@ -403,6 +447,8 @@ describe("plan and command", () => {
       "Write",
       "Edit",
       "Bash(trazo:*)",
+      "--disallowedTools",
+      "PowerShell",
       "--output-format",
       "stream-json",
       "--verbose",
@@ -801,6 +847,8 @@ describe("tool adapters", () => {
       "Write",
       "Edit",
       ...fwdRules,
+      "--disallowedTools",
+      "PowerShell",
       "--output-format",
       "stream-json",
       "--verbose",
@@ -1050,6 +1098,46 @@ describe("tool adapters", () => {
     expect(out.archify?.overall).toEqual({ runs: 0, finalRate: null, judged: 0, judgeRate: null });
     expect(out.archify?.agentErrors).toBe(2);
     expect(out.archify?.byType).toEqual({});
+  });
+
+  it("shows the permission denials per tool in the summary", () => {
+    const r = (tool: string, deniedCommands: number, deniedTools: Record<string, number>) => ({
+      task: "s1",
+      tool,
+      finalOk: false,
+      deniedCommands,
+      deniedTools,
+    });
+    const out = judgeSummary(
+      [
+        r("archify", 3, { PowerShell: 2, Bash: 1 }),
+        r("archify", 0, {}),
+        r("archify", 1, { Bash: 1 }),
+        r("trazo", 0, {}),
+        { task: "s1", tool: "trazo", finalOk: true },
+      ],
+      { s1: "sequence" },
+    );
+    expect(out.archify?.denials).toEqual({
+      runs: 2,
+      commands: 4,
+      tools: { PowerShell: 2, Bash: 2 },
+    });
+    expect(out.trazo?.denials).toEqual({ runs: 0, commands: 0, tools: {} });
+    expect(out.archify?.overall.runs).toBe(3);
+  });
+
+  it("also allows the Git Bash spelling of the archify path", () => {
+    const tool = toolAdapter("archify", { sandbox: "C:/w/m/run-1" });
+    const bin = "C:/w/m/run-1/.claude/skills/archify/bin/archify.mjs";
+    expect(tool.bashRules).toContain(`Bash(node ${bin}:*)`);
+    expect(tool.bashRules).toContain(
+      `Bash(node /c/w/m/run-1/.claude/skills/archify/bin/archify.mjs:*)`,
+    );
+    expect(tool.bashRules).toContain(
+      `Bash(node "/c/w/m/run-1/.claude/skills/archify/bin/archify.mjs":*)`,
+    );
+    expect(tool.bashRules.some((r: string) => r.includes("\\"))).toBe(false);
   });
 
   it("splits agent errors from the runs that count", () => {

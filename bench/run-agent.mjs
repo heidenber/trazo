@@ -416,6 +416,8 @@ for (const p of plan) {
     failedCommands: stats.failedCommands,
     repairs: stats.repairs,
     firstTryOk: stats.firstTryOk,
+    deniedCommands: stats.deniedCommands ?? 0,
+    deniedTools: stats.deniedTools ?? {},
     finalOk,
     seconds,
   };
@@ -431,7 +433,7 @@ for (const p of plan) {
       `warning: ${name}: agent error (${stats.agentError}); the run is excluded from every rate and not judged`,
     );
   console.log(
-    `${name}: finalOk=${finalOk} firstTryOk=${stats.firstTryOk} judgeOk=${entry.judgeOk} failed=${stats.failedCommands} repairs=${stats.repairs} tokens=${stats.inputTokens}/${stats.outputTokens} ${seconds}s${notes.length ? `  [${notes.join("; ")}]` : ""}`,
+    `${name}: finalOk=${finalOk} firstTryOk=${stats.firstTryOk} judgeOk=${entry.judgeOk} failed=${stats.failedCommands} denied=${stats.deniedCommands ?? 0} repairs=${stats.repairs} tokens=${stats.inputTokens}/${stats.outputTokens} ${seconds}s${notes.length ? `  [${notes.join("; ")}]` : ""}`,
   );
 }
 
