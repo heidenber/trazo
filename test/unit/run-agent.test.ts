@@ -4,6 +4,7 @@
 import { spawnSync } from "node:child_process";
 import {
   copyFileSync,
+  readdirSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -12,14 +13,17 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join, resolve, sep } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
   agentEnv,
   buildAgentArgs,
   buildPrompt,
+  countIssues,
   defaultSandboxRoot,
   formatCommandLine,
+  judgeSummary,
+  keepSkillEntry,
   modelDir,
   opencodeConfig,
   opencodeEnv,
@@ -38,6 +42,10 @@ import {
 } from "../../bench/run-agent-lib.mjs";
 
 const root = resolve(__dirname, "../..");
+const judgeModule = join(root, "bench", "judge-html.mjs");
+const { findBrowser } = (await import(/* @vite-ignore */ judgeModule)) as {
+  findBrowser(): string | null;
+};
 const tasks = ["arch-shop", "wf-expenses"];
 const line = (o: unknown) => JSON.stringify(o);
 const bash = (id: string, command: string) =>
@@ -682,6 +690,16 @@ describe("shellCommandLine", () => {
 describe("tool adapters", () => {
   const sb = join("/w", "m", "arch-shop-archify-skill-1");
   const copy = join(sb, ".claude", "skills", "archify", "bin", "archify.mjs");
+  const fwd = copy.replace(/\\/g, "/");
+  const rel = ".claude/skills/archify/bin/archify.mjs";
+  const fwdRules = [
+    `Bash(node ${fwd}:*)`,
+    `Bash(node "${fwd}":*)`,
+    `Bash(node ${rel}:*)`,
+    `Bash(node "${rel}":*)`,
+    `Bash(node ./${rel}:*)`,
+    `Bash(node "./${rel}":*)`,
+  ];
 
   it("parses --tool as a repeatable or comma list and defaults to trazo", () => {
     expect(parseArgs(["--model", "m"], tasks, "d").tools).toEqual(["trazo"]);
@@ -721,7 +739,7 @@ describe("tool adapters", () => {
       "Read",
       "Write",
       "Edit",
-      `Bash(node ${copy}:*)`,
+      ...fwdRules,
       "--output-format",
       "stream-json",
       "--verbose",
@@ -828,6 +846,91 @@ describe("tool adapters", () => {
       archify,
     );
     expect(other.firstTryOk).toBe(false);
+  });
+
+  it("allows the archify command by absolute, relative and quoted path, with forward slashes", () => {
+    const tool = toolAdapter("archify", { sandbox: sb });
+    expect(tool.bashRules).toEqual(fwdRules);
+    expect(tool.bashRules.some((r: string) => r.includes("\\"))).toBe(false);
+    expect(toolAdapter("trazo").bashRules).toEqual(["Bash(trazo:*)"]);
+  });
+
+  it("states the exact archify command in the prompt and keeps trazo naming trazo", () => {
+    const p = buildPrompt("Draw it.", toolAdapter("archify", { sandbox: sb }));
+    expect(p).toContain(`node ${fwd} `);
+    expect(p).toContain("finalize");
+    expect(buildPrompt("Draw it.", toolAdapter("trazo"))).toContain("`trazo`");
+  });
+
+  it("copies the skill without .git and node_modules", () => {
+    expect(keepSkillEntry(join("/s", "skill", "SKILL.md"))).toBe(true);
+    expect(keepSkillEntry(join("/s", "skill", "bin", "archify.mjs"))).toBe(true);
+    expect(keepSkillEntry(join("/s", "skill", ".git"))).toBe(false);
+    expect(keepSkillEntry(join("/s", "skill", "node_modules"))).toBe(false);
+  });
+
+  it("balances which tool goes first across tasks and runs", () => {
+    const plan = planRuns(["a", "b"], ["skill"], 2, ["trazo", "archify"]);
+    expect(plan.map(runName)).toEqual([
+      "a-trazo-skill-1",
+      "a-archify-skill-1",
+      "a-archify-skill-2",
+      "a-trazo-skill-2",
+      "b-archify-skill-1",
+      "b-trazo-skill-1",
+      "b-trazo-skill-2",
+      "b-archify-skill-2",
+    ]);
+  });
+
+  it("counts judge issues by kind", () => {
+    expect(countIssues([])).toEqual({});
+    expect(
+      countIssues([
+        { kind: "text-overlap", detail: "a" },
+        { kind: "content-missing", detail: "b" },
+        { kind: "text-overlap", detail: "c" },
+      ]),
+    ).toEqual({ "text-overlap": 2, "content-missing": 1 });
+  });
+
+  it("summarizes final and judge pass rates per tool and per type", () => {
+    const r = (
+      task: string,
+      tool: string | undefined,
+      finalOk: boolean,
+      judgeOk?: boolean | null,
+    ) => ({
+      task,
+      tool,
+      finalOk,
+      judgeOk,
+    });
+    const types = { s1: "sequence", s2: "sequence", e1: "erd" };
+    const out = judgeSummary(
+      [
+        r("s1", "trazo", true, true),
+        r("s2", "trazo", true, false),
+        r("e1", "trazo", false, null),
+        r("s1", "archify", true, true),
+        r("e1", undefined, true),
+      ],
+      types,
+    );
+    expect(out.trazo?.overall).toEqual({ runs: 4, finalRate: 0.75, judged: 2, judgeRate: 0.5 });
+    expect(out.trazo?.byType["sequence"]).toEqual({
+      runs: 2,
+      finalRate: 1,
+      judged: 2,
+      judgeRate: 0.5,
+    });
+    expect(out.trazo?.byType["erd"]).toEqual({
+      runs: 2,
+      finalRate: 0.5,
+      judged: 0,
+      judgeRate: null,
+    });
+    expect(out.archify?.overall).toEqual({ runs: 1, finalRate: 1, judged: 1, judgeRate: 1 });
   });
 
   it("judges native archify success from the html file and the last finalize", () => {
@@ -1007,7 +1110,9 @@ describe("run-agent.mjs", () => {
       "bin",
       "archify.mjs",
     );
-    expect(r.stdout).toContain(formatCommandLine("x", [`Bash(node ${copy}:*)`]).slice(2));
+    expect(r.stdout).toContain(
+      formatCommandLine("x", [`Bash(node ${copy.split(sep).join("/")}:*)`]).slice(2),
+    );
     expect(r.stdout).toContain("--allowedTools Read Write Edit Bash(trazo:*)");
     expect(r.stdout).toContain("6 run(s) planned");
     expect(existsSync(join(work, "sb-tools"))).toBe(false);
@@ -1044,6 +1149,7 @@ describe("run-agent.mjs", () => {
     expect(r.stderr).toContain("error: --model is required");
   });
 
+  const hasBrowser = findBrowser() !== null;
   const hasDist = existsSync(join(root, "dist", "cli", "main.js"));
   it.skipIf(!hasDist)(
     "runs a fake agent end to end: sandbox, shim, skill copy, record, resume",
@@ -1106,6 +1212,15 @@ describe("run-agent.mjs", () => {
       });
       expect(by["no-skill"]).toMatchObject({ firstTryOk: true, finalOk: true });
       expect(typeof by.skill.seconds).toBe("number");
+      if (hasBrowser) {
+        // The example diagram does not carry the words of the arch-shop prompt.
+        expect(by.skill.judgeOk).toBe(false);
+        expect(by.skill.judgeIssues["content-missing"]).toBeGreaterThan(0);
+        expect(by.skill.screenshot).toBe(join(sb, "arch-shop-skill-1", "diagram.png"));
+        expect(existsSync(by.skill.screenshot)).toBe(true);
+        expect(readdirSync(sb).filter((d) => d.startsWith("_judge-"))).toEqual([]);
+      }
+      expect(r.stdout).toContain("judgeRate");
 
       expect(
         existsSync(join(sb, "arch-shop-skill-1", ".claude", "skills", "trazo", "SKILL.md")),
@@ -1337,5 +1452,6 @@ describe("run-agent.mjs", () => {
     const rec = JSON.parse(readFileSync(out, "utf8")).runs[0];
     expect(rec).toMatchObject({ finalOk: false, firstTryOk: false, inputTokens: 0 });
     expect(rec.notes).toContain("no result message");
+    expect(rec).toMatchObject({ judgeOk: false, judgeIssues: { "no-html": 1 } });
   });
 });

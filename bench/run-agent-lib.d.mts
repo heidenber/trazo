@@ -6,6 +6,7 @@ export interface Task {
   type: string;
   level: number;
   prompt: string;
+  expect: string[];
 }
 export interface RunOptions {
   model: string;
@@ -26,7 +27,7 @@ export interface ToolAdapter {
   name: ToolName;
   version: string | null;
   promptSuffix: string;
-  bashRule: string;
+  bashRules: string[];
   skillName: string;
   env: Record<string, string>;
   shim: boolean;
@@ -121,3 +122,20 @@ export function opencodeRunEnv(
 ): Record<string, string | undefined>;
 export function shellCommandLine(cmd: string, args: string[]): string;
 export function shimExePath(text: string, shimDir: string): string | null;
+export function keepSkillEntry(src: string): boolean;
+export function countIssues(issues: { kind: string; detail?: string }[]): Record<string, number>;
+export interface RateSummary {
+  runs: number;
+  finalRate: number;
+  judged: number;
+  judgeRate: number | null;
+}
+export function judgeSummary(
+  runs: {
+    task: string;
+    tool?: string | undefined;
+    finalOk: boolean;
+    judgeOk?: boolean | null | undefined;
+  }[],
+  typeOfTask: Record<string, string>,
+): Record<string, { overall: RateSummary; byType: Record<string, RateSummary> }>;

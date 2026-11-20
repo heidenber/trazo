@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 Heidenber Palacio Garzón
 
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 
@@ -16,6 +16,7 @@ interface Result {
 interface Judge {
   judgeHtml(file: string, opts?: Record<string, unknown>): Promise<Result>;
   findBrowser(): string | null;
+  createProfileDir(root?: string): string;
 }
 
 const root = resolve(__dirname, "../..");
@@ -24,6 +25,18 @@ const fixture = (name: string) => join(root, "test", "fixtures", "judge-html", `
 const judge = (await import(/* @vite-ignore */ modulePath)) as Judge;
 const hasBrowser = judge.findBrowser() !== null;
 const kinds = (r: Result) => [...new Set(r.issues.map((i) => i.kind))].sort();
+
+describe("createProfileDir", () => {
+  it("creates a _judge-* folder under the given root, making the root if needed", () => {
+    const base = mkdtempSync(join(tmpdir(), "judge-profile-"));
+    const rootDir = join(base, "bench", "root");
+    const dir = judge.createProfileDir(rootDir);
+    expect(dirname(dir)).toBe(rootDir);
+    expect(basename(dir).startsWith("_judge-")).toBe(true);
+    expect(existsSync(dir)).toBe(true);
+    rmSync(base, { recursive: true, force: true });
+  });
+});
 
 describe.skipIf(!hasBrowser)("judgeHtml", () => {
   it("accepts a clean page and counts its visible text", async () => {

@@ -34,7 +34,10 @@ import {
   buildAgentArgs,
   archifyCloneDir,
   buildPrompt,
+  countIssues,
   formatCommandLine,
+  judgeSummary,
+  keepSkillEntry,
   opencodeConfig,
   opencodeEnv,
   opencodeRunEnv,
@@ -50,6 +53,7 @@ import {
   skillSegments,
   toolAdapter,
 } from "./run-agent-lib.mjs";
+import { judgeHtml } from "./judge-html.mjs";
 import { locateSkillDir } from "./stage-archify.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -306,6 +310,28 @@ function finalCheck(sandbox, stats, tool) {
   return spawnSync(process.execPath, [distCli, "check", input], { cwd: sandbox }).status === 0;
 }
 
+/** Judges <sandbox>/diagram.html the same way for every tool; the profile dirs live under the sandbox root. */
+async function judgeRun(sandbox, expectedTerms) {
+  const html = join(sandbox, "diagram.html");
+  if (!existsSync(html)) return { judgeOk: false, judgeIssues: { "no-html": 1 } };
+  const screenshotPath = join(sandbox, "diagram.png");
+  try {
+    const r = await judgeHtml(html, {
+      expectedTerms,
+      browserPath: opts.browser || undefined,
+      screenshotPath,
+      profileRoot: layout.archifyHome,
+    });
+    return {
+      judgeOk: r.ok,
+      judgeIssues: countIssues(r.issues),
+      screenshot: r.screenshot ?? screenshotPath,
+    };
+  } catch (e) {
+    return { judgeOk: null, judgeError: e.message };
+  }
+}
+
 let skipped = 0;
 let done = 0;
 for (const p of plan) {
@@ -336,7 +362,8 @@ for (const p of plan) {
   if (p.condition === "skill") {
     const dest = join(sandbox, ...skillSegments(opts.agent, tool.skillName));
     mkdirSync(dest, { recursive: true });
-    if (tool.name === "archify") cpSync(archifySkillDir, dest, { recursive: true });
+    if (tool.name === "archify")
+      cpSync(archifySkillDir, dest, { recursive: true, filter: keepSkillEntry });
     else copyFileSync(join(root, "skill", "SKILL.md"), join(dest, "SKILL.md"));
   }
   const prompt = buildPrompt(taskById.get(p.task).prompt, tool);
@@ -374,15 +401,26 @@ for (const p of plan) {
     firstTryOk: stats.firstTryOk,
     finalOk,
     seconds,
+    ...(await judgeRun(sandbox, taskById.get(p.task).expect ?? [])),
   };
   if (notes.length) entry.notes = notes.join("; ");
   record.runs.push(entry);
   save();
   done++;
   console.log(
-    `${name}: finalOk=${finalOk} firstTryOk=${stats.firstTryOk} failed=${stats.failedCommands} repairs=${stats.repairs} tokens=${stats.inputTokens}/${stats.outputTokens} ${seconds}s${notes.length ? `  [${notes.join("; ")}]` : ""}`,
+    `${name}: finalOk=${finalOk} firstTryOk=${stats.firstTryOk} judgeOk=${entry.judgeOk} failed=${stats.failedCommands} repairs=${stats.repairs} tokens=${stats.inputTokens}/${stats.outputTokens} ${seconds}s${notes.length ? `  [${notes.join("; ")}]` : ""}`,
   );
 }
 
 console.log(`\n${done} run(s) done, ${skipped} skipped. Results: ${outFile}`);
 console.log(JSON.stringify(summarize(record.runs), null, 2));
+console.log(
+  JSON.stringify(
+    {
+      model: record.model,
+      ...judgeSummary(record.runs, Object.fromEntries(tasksFile.tasks.map((t) => [t.id, t.type]))),
+    },
+    null,
+    2,
+  ),
+);

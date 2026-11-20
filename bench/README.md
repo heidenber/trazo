@@ -131,11 +131,39 @@ What changes when `archify` is in `--tool`:
 
 - The sandbox root defaults to `<os tmp>/trazo-bench` (on Windows `%TEMP%\trazo-bench`) and runs live at `<root>/<model>/<task>-<tool>-<condition>-<n>`. `--sandbox-root` replaces the root and keeps the `<model>` folder. The clone is `<root>/_archify-v3.2.0`.
 - With `--tool`, run names carry the tool (`arch-shop-archify-skill-1`); without it they stay `arch-shop-skill-1`.
-- With several tools the order alternates by run index: the given order on odd run numbers (1, 3, ...), reversed on even ones (2, 4, ...), so neither tool always goes first.
-- The staged skill folder is copied into `<sandbox>/.claude/skills/archify/`. The allowed tools are `Read`, `Write`, `Edit` and `Bash(node <sandbox>/.claude/skills/archify/bin/archify.mjs:*)`. The environment adds `ARCHIFY_UPDATE_CHECK_DISABLED=1` and, when a browser is found, `ARCHIFY_CHROME=<browser path>`.
-- The prompt asks for the `archify` skill and for `diagram.html` in the current directory. There is no `trazo` shim for Archify-only runs.
+- With several tools the order flips on the parity of task index plus run index (both counted from 0): the given order when the sum is even, reversed when it is odd. Across the matrix each tool goes first in half of the runs.
+- The staged skill folder is copied into `<sandbox>/.claude/skills/archify/`. Only that folder is copied, without `.git` and `node_modules`. The allowed tools are `Read`, `Write`, `Edit` and `Bash` rules for `node <sandbox>/.claude/skills/archify/bin/archify.mjs` (forward slashes, also on Windows) and for the relative `.claude/skills/archify/bin/archify.mjs` (with and without `./`), each plain and in double quotes. The environment adds `ARCHIFY_UPDATE_CHECK_DISABLED=1` and, when a browser is found, `ARCHIFY_CHROME=<browser path>`.
+- The prompt asks for the `archify` skill and for `diagram.html` in the current directory, and states the exact command (`node <sandbox>/.claude/skills/archify/bin/archify.mjs <command> <file>`). The trazo prompt keeps naming `trazo`. There is no `trazo` shim for Archify-only runs.
 - Native success (`finalOk`) is `diagram.html` exists and the last `finalize` call exited 0. Failed commands count every `archify.mjs` call that failed; `firstTryOk` is the first `finalize`; repairs are edits to a `.json` or `.html` file after a failure.
 - Each run records `tool`, `toolVersion` (`v3.2.0` for Archify, the package version for trazo) and `agentVersion` (the first line of `claude --version`, or `unknown`). Tokens keep four separate classes: `inputTokens`, `outputTokens`, `cacheReadTokens`, `cacheCreationTokens`. `--resume` matches on tool as well.
+
+### First try per tool
+
+`firstTryOk` means the first call of the tool's own build step exited with 0, and the two tools are not the same step:
+
+- trazo: the first `trazo make`.
+- archify: the first `finalize`.
+
+Compare it across tools with that in mind: `finalize` also runs Archify's own checks.
+
+### Judge
+
+After every run, whatever the tool, the runner opens `<sandbox>/diagram.html` in headless Chrome or Edge with `bench/judge-html.mjs` and writes `<sandbox>/diagram.png`. The judge knows nothing about either tool: it only looks at the visible text. Each task in `tasks.json` has an `expect` list with the names its prompt states (entities, steps, participants) and nothing else; `erd-payments` has none because its prompt names no table.
+
+Each run record gets `judgeOk`, `judgeIssues` (issue kind to count) and `screenshot` (path). A run with no `diagram.html` is `judgeOk: false` with `{"no-html": 1}`. If the browser cannot be started the run gets `judgeOk: null` and `judgeError`, and is left out of the judge rate.
+
+Issue kinds:
+
+- `content-missing`: an expected term (case-insensitive, whitespace-normalized) is not in the visible text.
+- `text-overlap`: the boxes of two different text nodes overlap by more than 2 px on both axes.
+- `text-clipped`: a text box extends past an ancestor with `overflow: hidden` or `clip`, or past its SVG viewport.
+- `outside-page`: a text box has negative coordinates or lies beyond the document size.
+- `js-error`: an uncaught exception or a console error while loading.
+- `render-empty`: there is no visible text.
+
+The summary printed at the end of a run adds, per tool and per task type, `finalRate` next to `judged` and `judgeRate`.
+
+Limits: the judge sees text, not lines, colors or shapes, so a diagram with crossing edges or a wrong structure can still pass. An `expect` term is a plain substring, so an agent that writes `DB` for `database` fails `content-missing` even though the diagram is right. The browser profiles go to `<root>/_judge-*` (the sandbox root, not the system temp folder) and are removed after each judgement.
 
 ## OpenCode runs
 

@@ -114,7 +114,7 @@ describe("deterministic measurements", () => {
 describe("bench/tasks.json", () => {
   const file = JSON.parse(read("bench/tasks.json")) as {
     version: number;
-    tasks: { id: string; type: string; level: number; prompt: string }[];
+    tasks: { id: string; type: string; level: number; prompt: string; expect: string[] }[];
   };
 
   it("has 8 tasks with unique ids, 2 per type", () => {
@@ -131,5 +131,14 @@ describe("bench/tasks.json", () => {
       expect(t.prompt.trim()).not.toBe("");
       if (t.type === "erd") expect(t.prompt.toLowerCase()).not.toContain("composite");
     }
+  });
+
+  it("lists expected terms per task, all taken from the prompt itself", () => {
+    for (const t of file.tasks) {
+      expect(Array.isArray(t.expect), t.id).toBe(true);
+      for (const term of t.expect)
+        expect(t.prompt.toLowerCase(), `${t.id}: ${term}`).toContain(term.toLowerCase());
+    }
+    expect(file.tasks.filter((t) => t.expect.length > 0).length).toBeGreaterThanOrEqual(7);
   });
 });

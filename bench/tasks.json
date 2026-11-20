@@ -1,13 +1,90 @@
 {
   "version": 1,
   "tasks": [
-    { "id": "arch-shop", "type": "architecture", "level": 1, "prompt": "Draw an architecture diagram of an online shop: web app, API, database, job queue and an external payment gateway. About 10 nodes." },
-    { "id": "arch-monorepo", "type": "architecture", "level": 3, "prompt": "Draw an architecture diagram of a monorepo with three nested groups (apps, services, data), about 20 nodes, and a `source` path on four of them." },
-    { "id": "wf-expenses", "type": "workflow", "level": 2, "prompt": "Draw a workflow diagram of expense approval with a manager and a finance lane, one decision and a rejection path." },
-    { "id": "wf-onboarding", "type": "workflow", "level": 3, "prompt": "Draw a workflow diagram of employee onboarding with a retry loop when a check fails and a wait step for documents." },
-    { "id": "erd-blog", "type": "erd", "level": 2, "prompt": "Draw an ERD of a blog: users, posts, comments, tags and post_tags; comments can reply to other comments (self-reference)." },
-    { "id": "erd-payments", "type": "erd", "level": 4, "prompt": "Draw an ERD of a payments schema with 8 tables, optional columns and several single-column foreign keys into the same table." },
-    { "id": "seq-oauth", "type": "sequence", "level": 2, "prompt": "Draw a sequence diagram of logging in with OAuth: browser, app and identity provider, with an `alt` for denied consent." },
-    { "id": "seq-checkout-retry", "type": "sequence", "level": 4, "prompt": "Draw a sequence diagram of a checkout where the app retries a payment call in a `loop`, with a note over the payment provider." }
+    {
+      "id": "arch-shop",
+      "type": "architecture",
+      "level": 1,
+      "prompt": "Draw an architecture diagram of an online shop: web app, API, database, job queue and an external payment gateway. About 10 nodes.",
+      "expect": [
+        "web app",
+        "API",
+        "database",
+        "job queue",
+        "payment gateway"
+      ]
+    },
+    {
+      "id": "arch-monorepo",
+      "type": "architecture",
+      "level": 3,
+      "prompt": "Draw an architecture diagram of a monorepo with three nested groups (apps, services, data), about 20 nodes, and a `source` path on four of them.",
+      "expect": [
+        "apps",
+        "services",
+        "data"
+      ]
+    },
+    {
+      "id": "wf-expenses",
+      "type": "workflow",
+      "level": 2,
+      "prompt": "Draw a workflow diagram of expense approval with a manager and a finance lane, one decision and a rejection path.",
+      "expect": [
+        "manager",
+        "finance"
+      ]
+    },
+    {
+      "id": "wf-onboarding",
+      "type": "workflow",
+      "level": 3,
+      "prompt": "Draw a workflow diagram of employee onboarding with a retry loop when a check fails and a wait step for documents.",
+      "expect": [
+        "onboarding",
+        "documents"
+      ]
+    },
+    {
+      "id": "erd-blog",
+      "type": "erd",
+      "level": 2,
+      "prompt": "Draw an ERD of a blog: users, posts, comments, tags and post_tags; comments can reply to other comments (self-reference).",
+      "expect": [
+        "users",
+        "posts",
+        "comments",
+        "tags",
+        "post_tags"
+      ]
+    },
+    {
+      "id": "erd-payments",
+      "type": "erd",
+      "level": 4,
+      "prompt": "Draw an ERD of a payments schema with 8 tables, optional columns and several single-column foreign keys into the same table.",
+      "expect": []
+    },
+    {
+      "id": "seq-oauth",
+      "type": "sequence",
+      "level": 2,
+      "prompt": "Draw a sequence diagram of logging in with OAuth: browser, app and identity provider, with an `alt` for denied consent.",
+      "expect": [
+        "browser",
+        "app",
+        "identity provider"
+      ]
+    },
+    {
+      "id": "seq-checkout-retry",
+      "type": "sequence",
+      "level": 4,
+      "prompt": "Draw a sequence diagram of a checkout where the app retries a payment call in a `loop`, with a note over the payment provider.",
+      "expect": [
+        "app",
+        "payment provider"
+      ]
+    }
   ]
 }

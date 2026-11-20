@@ -3,7 +3,7 @@
 
 // Pure helpers for bench/run-agent.mjs: no I/O, no clock, no randomness.
 
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 
 export const PROMPT_SUFFIX =
   "\n\nThe `trazo` command is installed and turns a semantic JSON description into an HTML diagram; `trazo --help` explains it. Use the `trazo` command to build the diagram and save it as diagram.html in the current directory.";
@@ -122,8 +122,15 @@ export const ARCHIFY_REPO = "https://github.com/tt-a1i/archify";
 /** Pinned clone of Archify, next to the sandboxes. */
 export const archifyCloneDir = (home) => join(home, `_archify-${ARCHIFY_VERSION}`);
 
-const ARCHIFY_SUFFIX =
-  "\n\nThe `archify` skill is installed in this project. Use it to build the diagram and save it as diagram.html in the current directory.";
+const SKILL_BIN = ".claude/skills/archify/bin/archify.mjs";
+const forwardSlashes = (p) => p.replace(/\\/g, "/");
+
+/** Prompt tail for archify: names the one command the sandbox allows, so the agent does not guess a path. */
+const archifySuffix = (bin) =>
+  `\n\nThe \`archify\` skill is installed in this project. Use it to build the diagram and save it as diagram.html in the current directory. Run its commands exactly as \`node ${bin} <command> <file>\`; \`finalize\` checks the finished file.`;
+
+/** Filter for the skill copy: the clone's history and dependencies stay out of the sandbox. */
+export const keepSkillEntry = (src) => ![".git", "node_modules"].includes(basename(src));
 
 /**
  * Everything the runner and the parser need to know about the tool under test. The Archify
@@ -135,7 +142,7 @@ export function toolAdapter(name, ctx = {}) {
       name,
       version: null,
       promptSuffix: PROMPT_SUFFIX,
-      bashRule: "Bash(trazo:*)",
+      bashRules: ["Bash(trazo:*)"],
       skillName: "trazo",
       env: {},
       shim: true,
@@ -150,14 +157,17 @@ export function toolAdapter(name, ctx = {}) {
       nativeOk: null,
     };
   if (name === "archify") {
-    const skillDir = join(ctx.sandbox ?? "", ...skillSegments("claude-code", "archify"));
+    const bin = forwardSlashes(join(ctx.sandbox ?? "", ...SKILL_BIN.split("/")));
     const env = { ARCHIFY_UPDATE_CHECK_DISABLED: "1" };
     if (ctx.browser) env.ARCHIFY_CHROME = ctx.browser;
     return {
       name,
       version: ARCHIFY_VERSION,
-      promptSuffix: ARCHIFY_SUFFIX,
-      bashRule: `Bash(node ${join(skillDir, "bin", "archify.mjs")}:*)`,
+      promptSuffix: archifySuffix(bin),
+      bashRules: [bin, SKILL_BIN, `./${SKILL_BIN}`].flatMap((f) => [
+        `Bash(node ${f}:*)`,
+        `Bash(node "${f}":*)`,
+      ]),
       skillName: "archify",
       env,
       shim: false,
@@ -194,7 +204,7 @@ export function buildAgentArgs(prompt, model, agent = "claude-code", tool) {
     "Read",
     "Write",
     "Edit",
-    tool ? tool.bashRule : "Bash(trazo:*)",
+    ...(tool ? tool.bashRules : ["Bash(trazo:*)"]),
     "--output-format",
     "stream-json",
     "--verbose",
@@ -202,20 +212,21 @@ export function buildAgentArgs(prompt, model, agent = "claude-code", tool) {
 }
 
 /**
- * With `tools` each run index runs every tool once; the order is the given one on even
- * indexes (run 1 is index 0) and reversed on odd ones, so neither tool always goes first.
+ * With `tools` each run runs every tool once; the order is the given one when task index plus
+ * run index (run 1 is index 0) is even and reversed when odd, so across the matrix each tool
+ * goes first in half of the runs.
  * Archify has no no-skill condition.
  */
 export function planRuns(taskIds, conditions, runs, tools) {
   const plan = [];
-  for (const task of taskIds)
+  for (const [taskIndex, task] of taskIds.entries())
     for (const condition of conditions)
       for (let run = 1; run <= runs; run++) {
         if (!tools) {
           plan.push({ task, condition, run });
           continue;
         }
-        const order = (run - 1) % 2 === 0 ? tools : [...tools].reverse();
+        const order = (taskIndex + run - 1) % 2 === 0 ? tools : [...tools].reverse();
         for (const tool of order)
           if (tool !== "archify" || condition === "skill")
             plan.push({ task, condition, run, tool });
@@ -554,4 +565,39 @@ export function parseOpencodeStream(text) {
   }
   stats.hasResult = closing;
   return stats;
+}
+
+/** Issue kinds of a judge result with how many times each appears. */
+export function countIssues(issues) {
+  const counts = {};
+  for (const i of issues) counts[i.kind] = (counts[i.kind] ?? 0) + 1;
+  return counts;
+}
+
+/**
+ * Final and judge pass rates per tool, overall and per task type. A run the judge could not
+ * evaluate (judgeOk not a boolean, e.g. no browser) is left out of the judge rate.
+ */
+export function judgeSummary(runs, typeOfTask) {
+  const rates = (list) => {
+    const judged = list.filter((r) => typeof r.judgeOk === "boolean");
+    return {
+      runs: list.length,
+      finalRate: list.filter((r) => r.finalOk).length / list.length,
+      judged: judged.length,
+      judgeRate: judged.length ? judged.filter((r) => r.judgeOk).length / judged.length : null,
+    };
+  };
+  const byTool = {};
+  for (const r of runs) (byTool[r.tool ?? "trazo"] ??= []).push(r);
+  const out = {};
+  for (const [tool, list] of Object.entries(byTool)) {
+    const byType = {};
+    for (const r of list) (byType[typeOfTask[r.task] ?? "unknown"] ??= []).push(r);
+    out[tool] = {
+      overall: rates(list),
+      byType: Object.fromEntries(Object.entries(byType).map(([t, l]) => [t, rates(l)])),
+    };
+  }
+  return out;
 }

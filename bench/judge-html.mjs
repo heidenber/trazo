@@ -5,7 +5,7 @@
 // DevTools protocol (Node built-ins only) and reports defects in the rendered text.
 
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -194,6 +194,12 @@ function killTree(child) {
   }
 }
 
+/** Throwaway browser profile under `root` (default: the OS temp dir), named _judge-*. */
+export function createProfileDir(root = tmpdir()) {
+  mkdirSync(root, { recursive: true });
+  return mkdtempSync(join(root, "_judge-"));
+}
+
 async function removeDir(dir) {
   // Chrome releases profile files a moment after it dies, mostly on Windows.
   for (let i = 0; i < 30; i++) {
@@ -214,6 +220,7 @@ export async function judgeHtml(
     screenshotPath,
     viewport = { width: 1440, height: 900 },
     settleMs = 1500,
+    profileRoot,
   } = {},
 ) {
   const file = resolve(htmlPath);
@@ -223,7 +230,7 @@ export async function judgeHtml(
     throw new Error("no browser found: set BENCH_BROWSER or pass a browser path (Chrome or Edge)");
   }
 
-  const profile = mkdtempSync(join(tmpdir(), "trazo-judge-"));
+  const profile = createProfileDir(profileRoot);
   const child = spawn(
     browser,
     [
