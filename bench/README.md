@@ -184,6 +184,16 @@ node bench/run-agent.mjs --model claude-haiku-4-5 --out bench/results/<file>.jso
 
 Each run gets new `judgeOk`, `judgeIssues` and `screenshot` values, using the task's current `expect`. A missing `diagram.html` stays `no-html`; runs with `agentError` are not touched. Nothing else in the record changes. The file is rewritten and the summary is printed.
 
+### Author preference rating
+
+`bench/rate-pairs.mjs` builds a rating page from a results file: one pair per task (the lowest run where both tools produced a final diagram, else run 1, flagged), screenshots side by side with the tool names, a preference (trazo, Archify or tie), a 1-5 score per tool and a note. **Export JSON** downloads the ratings with `"blind": false`: the rater knows which tool made each diagram, so publish these ratings as the author's preference, never as a blind evaluation.
+
+```sh
+node bench/rate-pairs.mjs bench/results/<file>.json --sandbox-root <root>
+```
+
+The page is written to `<root>/_rating/index.html` (default root `<os tmpdir>/trazo-bench`, `--out` overrides the file) and reads the screenshots from the run sandboxes, so it stays outside the repo.
+
 ### Agent errors
 
 When the agent fails before doing the task (for example Claude Code with an expired login: the stream's final `result` has `terminal_reason: api_error`, or Claude Code wrote a synthetic `<synthetic>` assistant message). Max turns, aborts and execution errors are not agent errors: the tool under test can cause them, so they count as tool failures, the run records `agentError: "<short reason>"` and keeps the raw fields. It is not judged, a warning is printed, and it is left out of every rate (`finalRate`, `judgeRate`, `firstTryRate` and the medians). The summary counts them apart as `agentErrors` per tool. `--resume` runs them again instead of skipping them.
