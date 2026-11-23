@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" class="diagram" viewBox="0 0 917 1009" role="img" aria-labelledby="t-title t-desc">
 <title id="t-title">Purchase Request</title>
 <desc id="t-desc">From a team&apos;s request to a paid vendor invoice.</desc>
-<defs><marker id="t-arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow" d="M0 1L10 5L0 9z"/></marker></defs>
+<defs><marker id="t-arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow" d="M0 1L10 5L0 9z"/></marker><marker id="t-arrowhead-async" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow t-arrow-async" d="M0 1L10 5L0 9z"/></marker></defs>
 <style>
 .t-text { font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; font-kerning: none; font-variant-ligatures: none; font-feature-settings: "kern" 0, "liga" 0, "calt" 0; fill: var(--t-text, #1f2933); }
 .t-group-title { fill: var(--t-muted, #52606d); }
@@ -10,12 +10,16 @@
 .t-node:focus { outline: none; }
 .t-node:focus-visible .t-node-box { stroke: var(--t-accent, #2f6fdb); stroke-width: 2.5; }
 .t-icon { color: var(--t-icon, #52606d); }
-.t-icon-database, .t-icon-storage, .t-icon-cache { color: var(--t-icon-data, #2f6f6f); }
-.t-icon-client, .t-icon-user, .t-icon-external { color: var(--t-icon-edge, #8a5a2b); }
 .t-edge { fill: none; stroke: var(--t-edge, #2f6fdb); stroke-width: 1.5; stroke-linejoin: round; }
+.t-edge-async { stroke: var(--t-edge-async, #7c4ddb); }
+.t-edge-data { stroke: var(--t-edge-data, #1f8a7a); }
+.t-edge-reply { stroke: var(--t-edge-reply, #66727f); }
 .t-edge-async { stroke-dasharray: 7 5; }
 .t-edge-data { stroke-dasharray: 1.5 4.5; stroke-linecap: round; }
 .t-arrow { fill: var(--t-edge, #2f6fdb); }
+.t-arrow-async { fill: var(--t-edge-async, #7c4ddb); }
+.t-arrow-data { fill: var(--t-edge-data, #1f8a7a); }
+.t-arrow-reply { fill: var(--t-edge-reply, #66727f); }
 .t-label-bg { fill: var(--t-bg, #ffffff); stroke: none; }
 .t-label { fill: var(--t-muted, #52606d); }
 
@@ -26,6 +30,22 @@
 .t-lane-header { fill: var(--t-lane-header, rgba(120, 130, 145, 0.12)); stroke: none; }
 .t-lane-rule { stroke: var(--t-group-stroke, #cbd2d9); stroke-width: 1; }
 .t-lane-title { fill: var(--t-muted, #52606d); }
+.t-fam-start .t-node-box { fill: var(--t-fam-start-fill, #e6f1e9); stroke: var(--t-fam-start-stroke, #2f8a45); }
+.t-fam-start .t-node-rule { stroke: var(--t-fam-start-stroke, #2f8a45); }
+.t-fam-start .t-icon { color: var(--t-fam-start-stroke, #2f8a45); }
+.t-fam-end .t-node-box { fill: var(--t-fam-end-fill, #f8e9e7); stroke: var(--t-fam-end-stroke, #c2453a); }
+.t-fam-end .t-node-inner { fill: none; }
+.t-fam-end .t-node-rule { stroke: var(--t-fam-end-stroke, #c2453a); }
+.t-fam-end .t-icon { color: var(--t-fam-end-stroke, #c2453a); }
+.t-fam-decision .t-node-box { fill: var(--t-fam-decision-fill, #f5efe2); stroke: var(--t-fam-decision-stroke, #a87a0a); }
+.t-fam-decision .t-node-rule { stroke: var(--t-fam-decision-stroke, #a87a0a); }
+.t-fam-decision .t-icon { color: var(--t-fam-decision-stroke, #a87a0a); }
+.t-fam-wait .t-node-box { fill: var(--t-fam-wait-fill, #efedeb); stroke: var(--t-fam-wait-stroke, #7a6a5a); }
+.t-fam-wait .t-node-rule { stroke: var(--t-fam-wait-stroke, #7a6a5a); }
+.t-fam-wait .t-icon { color: var(--t-fam-wait-stroke, #7a6a5a); }
+.t-fam-task .t-node-box { fill: var(--t-fam-task-fill, #e7eefa); stroke: var(--t-fam-task-stroke, #3b6fd4); }
+.t-fam-task .t-node-rule { stroke: var(--t-fam-task-stroke, #3b6fd4); }
+.t-fam-task .t-icon { color: var(--t-fam-task-stroke, #3b6fd4); }
 </style>
 <g class="t-lane" data-id="requester"><rect class="t-lane-band" x="0" y="0" width="208.5" height="1009"/><rect class="t-lane-header" x="0" y="0" width="208.5" height="40"/><line class="t-lane-rule" x1="208.5" y1="0" x2="208.5" y2="1009"/><text class="t-text t-lane-title" x="104.25" y="24.5" font-size="12" font-weight="600" text-anchor="middle"><tspan x="104.25" dy="0">Requester</tspan></text></g>
 <g class="t-lane t-lane-odd" data-id="procurement"><rect class="t-lane-band" x="208.5" y="0" width="459" height="1009"/><rect class="t-lane-header" x="208.5" y="0" width="459" height="40"/><line class="t-lane-rule" x1="667.5" y1="0" x2="667.5" y2="1009"/><text class="t-text t-lane-title" x="438" y="24.5" font-size="12" font-weight="600" text-anchor="middle"><tspan x="438" dy="0">Procurement</tspan></text></g>
@@ -37,7 +57,7 @@
 <path class="t-edge t-edge-sync" data-from="reject" data-to="end" d="M332 441 L332 451 L108 451 L108 949" marker-end="url(#t-arrowhead)" data-edge="e4"/>
 <path class="t-edge t-edge-sync" data-from="vendor" data-to="order" d="M544 441 L544 461 L332 461 L332 501" marker-end="url(#t-arrowhead)" data-edge="e5"/>
 <path class="t-edge t-edge-sync" data-from="order" data-to="delivery" d="M332 545 L332 605" marker-end="url(#t-arrowhead)" data-edge="e6"/>
-<path class="t-edge t-edge-async" data-from="order" data-to="pay" d="M351.5 545 L351.5 555 L803 555 L803 709" marker-end="url(#t-arrowhead)" data-edge="e7"/>
+<path class="t-edge t-edge-async" data-from="order" data-to="pay" d="M351.5 545 L351.5 555 L803 555 L803 709" marker-end="url(#t-arrowhead-async)" data-edge="e7"/>
 <path class="t-edge t-edge-sync" data-from="delivery" data-to="pay" d="M332 649 L332 669 L757 669 L757 709" marker-end="url(#t-arrowhead)" data-edge="e8"/>
 <path class="t-edge t-edge-sync" data-from="pay" data-to="paid" d="M780 753 L780 813" marker-end="url(#t-arrowhead)" data-edge="e9"/>
 <path class="t-edge t-edge-sync" data-from="paid" data-to="pay" d="M780 889 L780 905 L875.5 905 L875.5 731 L849 731" marker-end="url(#t-arrowhead)" data-edge="e10"/>
@@ -47,14 +67,14 @@
 <g class="t-edge-label" data-edge="e7"><rect class="t-label-bg" x="553" y="543" width="49" height="24" rx="3"/><text class="t-text t-label" x="577.5" y="559" font-size="12" font-weight="400" text-anchor="middle"><tspan x="577.5" dy="0">invoice</tspan></text></g>
 <g class="t-edge-label" data-edge="e10"><rect class="t-label-bg" x="858" y="806" width="35" height="24" rx="3"/><text class="t-text t-label" x="875.5" y="822" font-size="12" font-weight="400" text-anchor="middle"><tspan x="875.5" dy="0">retry</tspan></text></g>
 <g class="t-edge-label" data-edge="e11"><rect class="t-label-bg" x="408.5" y="887" width="47" height="24" rx="3"/><text class="t-text t-label" x="432" y="903" font-size="12" font-weight="400" text-anchor="middle"><tspan x="432" dy="0">settled</tspan></text></g>
-<g class="t-node t-shape-pill" data-id="start" data-kind="start" tabindex="0"><rect class="t-node-box" x="60" y="64" width="72" height="36" rx="18"/><text class="t-text t-node-label" x="96" y="86.5" font-size="13" font-weight="600" text-anchor="middle"><tspan x="96" dy="0">Start</tspan></text></g>
-<g class="t-node" data-id="submit" data-kind="task" tabindex="0"><desc>Item, quantity and cost center.</desc><rect class="t-node-box" x="24" y="160" width="144" height="44" rx="8"/><text class="t-text t-node-label" x="96" y="187" font-size="14" font-weight="600" text-anchor="middle"><tspan x="96" dy="0">Submit request</tspan></text></g>
-<g class="t-node t-shape-diamond" data-id="check" data-kind="decision" tabindex="0"><polygon class="t-node-box" points="332,264 405,300.5 332,337 259,300.5"/><text class="t-text t-node-label" x="332" y="305" font-size="13" font-weight="600" text-anchor="middle"><tspan x="332" dy="0">Within budget?</tspan></text></g>
-<g class="t-node" data-id="reject" data-kind="task" tabindex="0"><rect class="t-node-box" x="259.5" y="397" width="145" height="44" rx="8"/><text class="t-text t-node-label" x="332" y="424" font-size="14" font-weight="600" text-anchor="middle"><tspan x="332" dy="0">Notify rejection</tspan></text></g>
-<g class="t-node t-shape-subprocess" data-id="vendor" data-kind="subprocess" tabindex="0"><desc>Skipped for vendors already approved.</desc><rect class="t-node-box" x="458" y="397" width="172" height="44" rx="8"/><line class="t-node-rule" x1="466" y1="397" x2="466" y2="441"/><line class="t-node-rule" x1="622" y1="397" x2="622" y2="441"/><text class="t-text t-node-label" x="544" y="424" font-size="14" font-weight="600" text-anchor="middle"><tspan x="544" dy="0">Vendor onboarding</tspan></text></g>
-<g class="t-node" data-id="order" data-kind="task" tabindex="0"><rect class="t-node-box" x="273" y="501" width="118" height="44" rx="8"/><text class="t-text t-node-label" x="332" y="528" font-size="14" font-weight="600" text-anchor="middle"><tspan x="332" dy="0">Place order</tspan></text></g>
-<g class="t-node" data-id="delivery" data-kind="wait" tabindex="0"><rect class="t-node-box" x="248.5" y="605" width="167" height="44" rx="8"/><svg class="t-icon t-icon-wait" x="260.5" y="617" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg><text class="t-text t-node-label" x="290.5" y="632" font-size="14" font-weight="600"><tspan x="290.5" dy="0">Wait for delivery</tspan></text></g>
-<g class="t-node" data-id="pay" data-kind="task" tabindex="0"><rect class="t-node-box" x="711" y="709" width="138" height="44" rx="8"/><text class="t-text t-node-label" x="780" y="736" font-size="14" font-weight="600" text-anchor="middle"><tspan x="780" dy="0">Send payment</tspan></text></g>
-<g class="t-node t-shape-diamond" data-id="paid" data-kind="decision" tabindex="0"><polygon class="t-node-box" points="780,813 855.5,851 780,889 704.5,851"/><text class="t-text t-node-label" x="780" y="855.5" font-size="13" font-weight="600" text-anchor="middle"><tspan x="780" dy="0">Bank accepted?</tspan></text></g>
-<g class="t-node t-shape-end" data-id="end" data-kind="end" tabindex="0"><rect class="t-node-box" x="60" y="949" width="72" height="36" rx="18"/><rect class="t-node-box t-node-inner" x="63" y="952" width="66" height="30" rx="15"/><text class="t-text t-node-label" x="96" y="971.5" font-size="13" font-weight="600" text-anchor="middle"><tspan x="96" dy="0">End</tspan></text></g>
+<g class="t-node t-fam-start t-shape-pill" data-id="start" data-kind="start" tabindex="0"><rect class="t-node-box" x="60" y="64" width="72" height="36" rx="18"/><text class="t-text t-node-label" x="96" y="86.5" font-size="13" font-weight="600" text-anchor="middle"><tspan x="96" dy="0">Start</tspan></text></g>
+<g class="t-node t-fam-task" data-id="submit" data-kind="task" tabindex="0"><desc>Item, quantity and cost center.</desc><rect class="t-node-box" x="24" y="160" width="144" height="44" rx="8"/><text class="t-text t-node-label" x="96" y="187" font-size="14" font-weight="600" text-anchor="middle"><tspan x="96" dy="0">Submit request</tspan></text></g>
+<g class="t-node t-fam-decision t-shape-diamond" data-id="check" data-kind="decision" tabindex="0"><polygon class="t-node-box" points="332,264 405,300.5 332,337 259,300.5"/><text class="t-text t-node-label" x="332" y="305" font-size="13" font-weight="600" text-anchor="middle"><tspan x="332" dy="0">Within budget?</tspan></text></g>
+<g class="t-node t-fam-task" data-id="reject" data-kind="task" tabindex="0"><rect class="t-node-box" x="259.5" y="397" width="145" height="44" rx="8"/><text class="t-text t-node-label" x="332" y="424" font-size="14" font-weight="600" text-anchor="middle"><tspan x="332" dy="0">Notify rejection</tspan></text></g>
+<g class="t-node t-fam-task t-shape-subprocess" data-id="vendor" data-kind="subprocess" tabindex="0"><desc>Skipped for vendors already approved.</desc><rect class="t-node-box" x="458" y="397" width="172" height="44" rx="8"/><line class="t-node-rule" x1="466" y1="397" x2="466" y2="441"/><line class="t-node-rule" x1="622" y1="397" x2="622" y2="441"/><text class="t-text t-node-label" x="544" y="424" font-size="14" font-weight="600" text-anchor="middle"><tspan x="544" dy="0">Vendor onboarding</tspan></text></g>
+<g class="t-node t-fam-task" data-id="order" data-kind="task" tabindex="0"><rect class="t-node-box" x="273" y="501" width="118" height="44" rx="8"/><text class="t-text t-node-label" x="332" y="528" font-size="14" font-weight="600" text-anchor="middle"><tspan x="332" dy="0">Place order</tspan></text></g>
+<g class="t-node t-fam-wait" data-id="delivery" data-kind="wait" tabindex="0"><rect class="t-node-box" x="248.5" y="605" width="167" height="44" rx="8"/><svg class="t-icon t-icon-wait" x="260.5" y="617" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg><text class="t-text t-node-label" x="290.5" y="632" font-size="14" font-weight="600"><tspan x="290.5" dy="0">Wait for delivery</tspan></text></g>
+<g class="t-node t-fam-task" data-id="pay" data-kind="task" tabindex="0"><rect class="t-node-box" x="711" y="709" width="138" height="44" rx="8"/><text class="t-text t-node-label" x="780" y="736" font-size="14" font-weight="600" text-anchor="middle"><tspan x="780" dy="0">Send payment</tspan></text></g>
+<g class="t-node t-fam-decision t-shape-diamond" data-id="paid" data-kind="decision" tabindex="0"><polygon class="t-node-box" points="780,813 855.5,851 780,889 704.5,851"/><text class="t-text t-node-label" x="780" y="855.5" font-size="13" font-weight="600" text-anchor="middle"><tspan x="780" dy="0">Bank accepted?</tspan></text></g>
+<g class="t-node t-fam-end t-shape-end" data-id="end" data-kind="end" tabindex="0"><rect class="t-node-box" x="60" y="949" width="72" height="36" rx="18"/><rect class="t-node-box t-node-inner" x="63" y="952" width="66" height="30" rx="15"/><text class="t-text t-node-label" x="96" y="971.5" font-size="13" font-weight="600" text-anchor="middle"><tspan x="96" dy="0">End</tspan></text></g>
 </svg>

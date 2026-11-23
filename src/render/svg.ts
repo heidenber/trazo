@@ -14,8 +14,9 @@ import type {
 } from "../scene.js";
 import { lineHeight } from "../text/measure.js";
 import { ICONS } from "./generated/icons.js";
+import { familyOf, type Family } from "./families.js";
 import { laneMarkup, num, rect, shapeMarkup } from "./shapes.js";
-import { SEQUENCE_CSS, SHAPE_CSS, SVG_CSS, TABLE_CSS } from "./theme.js";
+import { SEQUENCE_CSS, SHAPE_CSS, SVG_CSS, TABLE_CSS, familyCss } from "./theme.js";
 
 const ICON_SIZE = 20;
 const ICON_PAD = 12;
@@ -80,12 +81,21 @@ const OPEN_STYLES = ["async", "reply"];
 // Set to false to drop the background-colored stroke under erd edges.
 const EDGE_HALO = true;
 
+const STYLES: SceneEdge["style"][] = ["sync", "async", "data", "reply"];
+
+// One marker per style, so each head takes its edge's color. Sync keeps the original id.
+const markerId = (style: SceneEdge["style"], open: boolean) =>
+  open ? `t-arrowhead-open-${style}` : style === "sync" ? "t-arrowhead" : `t-arrowhead-${style}`;
+
+const arrowClass = (style: SceneEdge["style"]) =>
+  style === "sync" ? "t-arrow" : `t-arrow t-arrow-${style}`;
+
 function edge(e: SceneEdge, seq: boolean): string {
   const d = e.points.map((p, i) => `${i === 0 ? "M" : "L"}${num(p.x)} ${num(p.y)}`).join(" ");
   const id = `data-edge="${escapeXml(e.id)}"`;
   const attrs = `class="t-edge t-edge-${e.style}" data-from="${escapeXml(e.from)}" data-to="${escapeXml(e.to)}" d="${d}"`;
   if (!e.ends)
-    return `<path ${attrs} marker-end="url(#${seq && OPEN_STYLES.includes(e.style) ? "t-arrowhead-open" : "t-arrowhead"})" ${id}/>`;
+    return `<path ${attrs} marker-end="url(#${markerId(e.style, seq && OPEN_STYLES.includes(e.style))})" ${id}/>`;
   const halo = EDGE_HALO ? `<path class="t-edge-halo" d="${d}" ${id}/>` : "";
   return `${halo}<path ${attrs} marker-start="url(#t-end-${e.ends.from})" marker-end="url(#t-end-${e.ends.to})" ${id}/>`;
 }
@@ -142,10 +152,11 @@ function tableBody(n: SceneNode): string {
   return band + rows.join("");
 }
 
-function node(n: SceneNode): string {
+function node(n: SceneNode, family: Family | undefined): string {
   const tip = [n.note, n.source].filter((s): s is string => s !== undefined && s !== "").join("\n");
   const desc = tip ? `<desc>${escapeXml(tip)}</desc>` : "";
-  return `<g class="${n.shape === "box" ? "t-node" : `t-node t-shape-${n.shape}`}" data-id="${escapeXml(n.id)}" data-kind="${escapeXml(n.kind)}" tabindex="0">${desc}${shapeMarkup(n.shape, n)}${n.shape === "table" ? tableBody(n) : icon(n)}${text(n.label, "t-node-label")}</g>`;
+  const cls = ["t-node", family && `t-fam-${family}`, n.shape !== "box" && `t-shape-${n.shape}`];
+  return `<g class="${cls.filter(Boolean).join(" ")}" data-id="${escapeXml(n.id)}" data-kind="${escapeXml(n.kind)}" tabindex="0">${desc}${shapeMarkup(n.shape, n)}${n.shape === "table" ? tableBody(n) : icon(n)}${text(n.label, "t-node-label")}</g>`;
 }
 
 const needsShapeCss = (scene: Scene) =>
@@ -161,25 +172,27 @@ export function renderSvg(scene: Scene): string {
   const seq = scene.lifelines !== undefined;
   // Sequence async and reply messages use the open head; ERD edges with crow's-foot ends use none.
   const isOpen = (e: SceneEdge) => seq && OPEN_STYLES.includes(e.style);
-  const needsOpen = scene.edges.some(isOpen);
-  const needsFilled = scene.edges.some((e) => !e.ends && !isOpen(e));
-  const open = needsOpen
-    ? `<marker id="t-arrowhead-open" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow-open" d="M1 1L9 5L1 9"/></marker>`
-    : "";
-  // Outside sequences the filled head is dropped only when every edge has its own ends.
-  const dropFilled = !needsFilled && (seq || ends);
-  const arrow = dropFilled
-    ? ""
-    : `<marker id="t-arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow" d="M0 1L10 5L0 9z"/></marker>`;
+  const heads = STYLES.flatMap((style) => {
+    const own = scene.edges.filter((e) => !e.ends && e.style === style);
+    const filled = own.some((e) => !isOpen(e))
+      ? `<marker id="${markerId(style, false)}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="${arrowClass(style)}" d="M0 1L10 5L0 9z"/></marker>`
+      : "";
+    const open = own.some(isOpen)
+      ? `<marker id="${markerId(style, true)}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow-open t-arrow-open-${style}" d="M1 1L9 5L1 9"/></marker>`
+      : "";
+    return [filled, open];
+  });
+  const families = scene.nodes.map((n) => familyOf(scene, n));
   const css =
     (needsShapeCss(scene) ? SVG_CSS + SHAPE_CSS : SVG_CSS) +
+    familyCss(families.filter((f): f is Family => f !== undefined)) +
     (needsTableCss(scene) ? TABLE_CSS : "") +
     (seq ? SEQUENCE_CSS : "");
   const parts = [
     `<svg xmlns="http://www.w3.org/2000/svg" class="${seq ? "diagram t-seq" : "diagram"}" viewBox="0 0 ${num(scene.width)} ${num(scene.height)}" role="img" aria-labelledby="${labelled}">`,
     `<title id="t-title">${escapeXml(scene.title)}</title>`,
     desc,
-    `<defs>${arrow}${open}${ends ? endMarkers() : ""}</defs>`,
+    `<defs>${heads.join("")}${ends ? endMarkers() : ""}</defs>`,
     `<style>${css}</style>`,
     ...(scene.lifelines ?? []).map(lifeline),
     ...lanes(scene.groups),
@@ -187,7 +200,7 @@ export function renderSvg(scene: Scene): string {
     ...scene.groups.map(fragment),
     ...scene.edges.map((e) => edge(e, seq)),
     ...scene.edges.map(edgeLabel),
-    ...scene.nodes.map(node),
+    ...scene.nodes.map((n, i) => node(n, families[i])),
     "</svg>",
   ];
   return parts.filter(Boolean).join("\n");

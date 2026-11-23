@@ -114,6 +114,8 @@ npm i -g .
 
 `<input>` is a JSON file, or `-` to read stdin. `<type>` is `architecture`, `workflow`, `erd` or `sequence`. Without `-o`, `make` writes `<input>` with a `.html` extension; with `-o -`, or when `<input>` is `-` and there is no `-o`, it writes the HTML to stdout. `--json` prints one JSON line instead of plain text and covers results (`make`, `check`); usage errors (exit 2) are always plain text on stderr.
 
+Nodes are colored by kind (a colored border over a soft tint of it) and edges by style (sync blue, async violet, data teal, reply grey) in both themes; you never write colors in the JSON.
+
 Exit codes: 0 ok, 1 invalid input, 2 usage error, 3 internal error.
 
 ```sh

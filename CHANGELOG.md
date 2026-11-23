@@ -10,6 +10,7 @@ All notable changes to trazo are listed here. The format follows [Keep a Changel
 
 ### Changed
 
+- Nodes are colored by kind: a border in the kind's color over a soft tint of it, in five families for architecture (compute, data, messaging, client, external) and five for workflow (start, end, decision, wait, task); sequence participants reuse the architecture families. Edges are colored by style (sync blue, async violet, data teal, reply grey), dash patterns stay, and each arrowhead matches its edge. Notes and ERD tables keep the neutral look; icons take their family color. Colors are explicit variables in both themes, so exported SVG and PNG look the same.
 - Workflow lanes can be columns: with `direction: "down"` each lane is a column with its label in a row at the top and steps flow down; `direction: "right"` keeps lanes as rows. Without a direction, trazo lays a laned workflow out both ways and keeps the one that fits a 1440x826 screen better, so wide workflows with several lanes are no longer drawn at half size or less. The `workflow/lanes-direction` warning is gone: an explicit direction is honored.
 
 ## [0.1.4] - 2026-11-09
