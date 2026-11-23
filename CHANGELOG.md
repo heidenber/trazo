@@ -8,6 +8,10 @@ All notable changes to trazo are listed here. The format follows [Keep a Changel
 
 - `trazo skill install --agent claude|pi|codex` copies the skill to the agent's user-level location (`~/.claude/skills/trazo`, `~/.pi/agent/skills/trazo`, `~/.agents/skills/trazo`) in any shell and prints `installed <path>` or `updated <path>`. It replaces the per-shell copy commands in the README; trazo still installs nothing on its own.
 
+### Changed
+
+- Workflow lanes can be columns: with `direction: "down"` each lane is a column with its label in a row at the top and steps flow down; `direction: "right"` keeps lanes as rows. Without a direction, trazo lays a laned workflow out both ways and keeps the one that fits a 1440x826 screen better, so wide workflows with several lanes are no longer drawn at half size or less. The `workflow/lanes-direction` warning is gone: an explicit direction is honored.
+
 ## [0.1.4] - 2026-11-09
 
 ### Added

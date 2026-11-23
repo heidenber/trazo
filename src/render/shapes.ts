@@ -73,8 +73,13 @@ export function shapeMarkup(shape: NodeShape, b: Box): string {
 
 export function laneMarkup(g: SceneGroup, odd: boolean, label: string): string {
   const cls = odd ? "t-lane t-lane-odd" : "t-lane";
-  const bottom = g.y + g.h;
   const band = `<rect class="t-lane-band" x="${num(g.x)}" y="${num(g.y)}" width="${num(g.w)}" height="${num(g.h)}"/>`;
+  if (g.columns) {
+    const right = g.x + g.w;
+    const top = `<rect class="t-lane-header" x="${num(g.x)}" y="${num(g.y)}" width="${num(g.w)}" height="${num(g.header ?? 0)}"/>`;
+    return `<g class="${cls}" data-id="${g.id}">${band}${top}${line(right, g.y, right, g.y + g.h, "t-lane-rule")}${label}</g>`;
+  }
+  const bottom = g.y + g.h;
   const header = `<rect class="t-lane-header" x="${num(g.x)}" y="${num(g.y)}" width="${num(g.header ?? 0)}" height="${num(g.h)}"/>`;
   return `<g class="${cls}" data-id="${g.id}">${band}${header}${line(g.x, bottom, g.x + g.w, bottom, "t-lane-rule")}${label}</g>`;
 }

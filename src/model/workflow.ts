@@ -37,7 +37,8 @@ export interface Workflow {
   title: string;
   description?: string;
   theme: "light" | "dark";
-  direction: "right" | "down";
+  /** "auto" (lanes without a direction): the layout keeps the orientation that fits the screen best. */
+  direction: "right" | "down" | "auto";
   lanes: WorkflowLane[];
   steps: WorkflowStep[];
   edges: WorkflowEdge[];
@@ -160,12 +161,7 @@ export function buildWorkflow(input: Parsed): { diagram?: Workflow; issues: Issu
     );
   }
 
-  let direction: "right" | "down" = input.direction ?? "down";
-  if (lanes.length > 0) {
-    if (input.direction === "down")
-      issues.push(warning("workflow/lanes-direction", "direction", "lanes always flow right"));
-    direction = "right";
-  }
+  const direction = input.direction ?? (lanes.length > 0 ? "auto" : "down");
 
   if (issues.some((issue) => issue.severity === "error")) return { issues };
 

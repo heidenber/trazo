@@ -2,7 +2,7 @@
 // Copyright 2026 Heidenber Palacio Garzón
 
 import type { Workflow } from "../model/workflow.js";
-import type { Box, SceneGroup } from "../scene.js";
+import type { Box, SceneGroup, TextBlock } from "../scene.js";
 import { firstBaseline, lineHeight, textWidth } from "../text/measure.js";
 
 const LANE_LABEL_SIZE = 12;
@@ -101,6 +101,23 @@ export function planLanes(
 export function headerWidth(w: Workflow): number {
   const widest = Math.max(...w.lanes.map((l) => textWidth(l.label, LANE_LABEL_SIZE, 600)));
   return Math.max(HEADER_MIN, Math.ceil(widest + HEADER_PAD));
+}
+
+/** Height of the label row above lanes drawn as columns. */
+export function headerHeight(): number {
+  return Math.ceil(lineHeight(LANE_LABEL_SIZE) + HEADER_PAD);
+}
+
+/** Label of a lane column, centred in its header row. */
+export function columnLabel(g: SceneGroup, header: number): TextBlock {
+  return {
+    lines: g.label.lines,
+    x: g.x + g.w / 2,
+    y: half(g.y + (header - lineHeight(LANE_LABEL_SIZE)) / 2 + firstBaseline(LANE_LABEL_SIZE)),
+    size: LANE_LABEL_SIZE,
+    weight: 600,
+    anchor: "middle",
+  };
 }
 
 /**
