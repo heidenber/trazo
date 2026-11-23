@@ -47,9 +47,9 @@ export interface Erd {
 }
 
 // ---------------------------------------------------------------------------
-// Short column syntax: "name type [pk] [fk table.column] [unique] [null]"
+// Short column syntax: "name type [pk] [fk table.column] [unique] [null|nullable]"
 
-const MARKS = ["pk", "fk", "unique", "null"] as const;
+const MARKS = ["pk", "fk", "unique", "null", "nullable"] as const;
 type Mark = (typeof MARKS)[number];
 
 export interface ParsedColumn {
@@ -69,7 +69,7 @@ export interface ColumnError {
 
 export type ColumnResult = { column: ParsedColumn } | { error: ColumnError };
 
-const SHAPE_HINT = 'write "name type [pk] [fk table.column] [unique] [null]"';
+const SHAPE_HINT = 'write "name type [pk] [fk table.column] [unique] [null|nullable]"';
 
 /** Splits "table.column" at the last dot, since table ids may contain dots ("public.users"). */
 export function splitRef(ref: string): { table: string; column: string } | undefined {
@@ -137,9 +137,11 @@ export function parseColumn(text: string): ColumnResult {
   const seen = new Set<Mark>();
   while (i < words.length) {
     const word = words[i++]!;
-    const mark = word.toLowerCase();
-    if (!isMark(mark))
+    const rawMark = word.toLowerCase();
+    if (!isMark(rawMark))
       return fail("column/unknown-mark", `unknown mark "${word}" in ${quoted}`, markHint(word));
+    // Both spellings are one semantic mark, including for duplicate checks.
+    const mark: Mark = rawMark === "nullable" ? "null" : rawMark;
     if (seen.has(mark))
       return fail(
         "column/repeated-mark",

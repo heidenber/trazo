@@ -127,6 +127,7 @@ trazo example erd | trazo make - -o erd.html
 - `architecture`: services, stores, queues and people, grouped in boxes. `trazo example architecture`
 - `workflow`: steps and decisions, optionally in lanes. `trazo example workflow`
 - `erd`: tables, columns and foreign keys, with crow's foot ends. `trazo example erd`
+  Short-form ERD columns accept `null` or `nullable` (for example, `"bio text nullable"`), but not both.
 - `sequence`: messages between participants, with notes and `alt`, `opt` and `loop` fragments. `trazo example sequence`
 
 `trazo schema <type>` prints the fields of each type in about 40 lines.
