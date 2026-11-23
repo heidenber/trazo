@@ -2,6 +2,7 @@
 // Copyright 2026 Heidenber Palacio Garzón
 
 import type { ThemeName } from "../model/common.js";
+import { LOGO_DARK, LOGO_LIGHT } from "./brand.js";
 import { PALETTES } from "./palettes.js";
 import { escapeXml } from "./svg.js";
 
@@ -40,8 +41,6 @@ const UI: Record<string, string> = {
 
 const icon = (name: string, cls: string, size = 18) =>
   `<svg class="ui ${cls}" viewBox="0 0 20 20" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${UI[name]}</svg>`;
-
-const LOGO = `<svg class="logo" width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect width="26" height="26" rx="8" fill="var(--t-accent)"/><path d="M7 8.5h6.5a3 3 0 0 1 0 6H12.5M7 17.5h12" fill="none" stroke="var(--t-surface)" stroke-width="2" stroke-linecap="round"/></svg>`;
 
 /** Small preview of a theme drawn with its own colors, whatever theme the page shows now. */
 function swatch(name: ThemeName): string {
@@ -109,7 +108,7 @@ export function chromeHtml(c: ChromeInput): string {
     ? `\n    <p class="desc" title="${escapeXml(c.description)}">${escapeXml(c.description)}</p>`
     : "";
   return `<header class="top">
-  <div class="brand">${LOGO}<span>trazo</span></div><span class="sep"></span>
+  <div class="brand" role="img" aria-label="trazo">${LOGO_LIGHT}${LOGO_DARK}</div><span class="sep"></span>
   <div class="heading">
     <h1>${escapeXml(c.title)}</h1>${desc}
   </div>
