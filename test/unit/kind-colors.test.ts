@@ -155,11 +155,10 @@ describe("node families", () => {
       messages: ["a -> s: go"],
     });
     expect(svg).toMatch(
-      /\.t-fam-client \.t-node-box \{ fill: var\(--t-fam-client-fill, #[0-9a-f]{6}\); stroke: var\(--t-fam-client-stroke, #[0-9a-f]{6}\);/,
+      /\.t-fam-client \{ --t-f-fill: var\(--t-fam-client-fill, #[0-9a-f]{6}\); --t-f-stroke: var\(--t-fam-client-stroke, #[0-9a-f]{6}\); \}/,
     );
-    expect(svg).toMatch(
-      /\.t-fam-client \.t-icon \{ color: var\(--t-fam-client-stroke, #[0-9a-f]{6}\); \}/,
-    );
+    expect(svg).toContain(".t-icon { color: var(--t-f-stroke, ");
+    expect(svg).toContain(".t-chip { fill: var(--t-f-fill, ");
     expect(svg).not.toContain("t-fam-wait");
   });
 });
@@ -174,7 +173,7 @@ describe("edge colors", () => {
     });
     expect(svg).toContain(".t-edge-async { stroke: var(--t-edge-async, #");
     expect(svg).toContain(".t-edge-data { stroke: var(--t-edge-data, #");
-    expect(svg).toContain(".t-edge-async { stroke-dasharray: 7 5; }");
+    expect(svg).toContain(".t-edge-async { stroke-dasharray: 6 5; }");
     for (const s of ["async", "data"]) {
       expect(svg).toContain(`marker-end="url(#t-arrowhead-${s})"`);
       expect(svg).toContain(`<marker id="t-arrowhead-${s}"`);

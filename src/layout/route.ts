@@ -7,8 +7,8 @@ import type { Box, Point } from "../scene.js";
 const CLEARANCE = 6;
 /** Horizontal run out of a decision vertex before a loop turns. */
 const LOOP_STUB = 16;
-/** Distance between the lowest step a loop passes and its bottom run. */
-const LOOP_GAP = 20;
+/** Distance between the lowest step a loop passes and its bottom run; a short label centred on the run must clear the steps. */
+const LOOP_GAP = 28;
 
 interface Shaped extends Box {
   shape: string;

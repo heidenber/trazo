@@ -116,7 +116,7 @@ npm i -g .
 
 Four themes: `light` and `dark`, plus `lagoon` (light, teal) and `dusk` (dark, violet). Set one with the JSON `theme` field or `--theme`; the toggle in the page flips between the light and the dark member of each pair.
 
-Nodes are colored by kind (a colored border over a soft tint of it) and edges by style (sync blue, async violet, data teal, reply grey) in every theme; you never write colors in the JSON. A legend under the diagram, inside the SVG so PNG and SVG exports keep it, names the kinds and styles the diagram uses; it is left out when there is only one of each.
+Nodes are soft cards with a tinted icon chip in the kind's color (start, end and decision shapes take a tinted fill and outline instead), and edges are rounded and colored by style (sync blue, async violet, data teal, reply grey) in every theme; you never write colors in the JSON. A legend under the diagram, inside the SVG so PNG and SVG exports keep it, names the kinds and styles the diagram uses; it is left out when there is only one of each.
 
 Exit codes: 0 ok, 1 invalid input, 2 usage error, 3 internal error.
 

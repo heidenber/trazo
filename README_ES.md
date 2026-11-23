@@ -116,7 +116,7 @@ npm i -g .
 
 Cuatro temas: `light` y `dark`, más `lagoon` (claro, turquesa) y `dusk` (oscuro, violeta). Se eligen con el campo JSON `theme` o con `--theme`; el botón de la página alterna entre el tema claro y el oscuro de cada par.
 
-Los nodos se colorean por tipo (borde de color sobre un relleno suave del mismo tono) y las aristas por estilo (sync azul, async violeta, data verde azulado, reply gris) en todos los temas; nunca escribes colores en el JSON. Una leyenda bajo el diagrama, dentro del SVG para que las exportaciones PNG y SVG la conserven, nombra los tipos y estilos que usa el diagrama; se omite cuando solo hay un tipo y un estilo.
+Los nodos son tarjetas suaves con un ícono sobre una pastilla del color del tipo (inicio, fin y decisión llevan relleno y borde teñidos), y las aristas son redondeadas y se colorean por estilo (sync azul, async violeta, data verde azulado, reply gris) en todos los temas; nunca escribes colores en el JSON. Una leyenda bajo el diagrama, dentro del SVG para que las exportaciones PNG y SVG la conserven, nombra los tipos y estilos que usa el diagrama; se omite cuando solo hay un tipo y un estilo.
 
 Códigos de salida: 0 correcto, 1 entrada inválida, 2 error de uso, 3 error interno.
 

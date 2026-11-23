@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 Heidenber Palacio Garzón
 
+import { ICON_TEXT_LEFT } from "../render/card.js";
 import type { StepKind, WorkflowStep } from "../model/workflow.js";
 import type { NodeShape, Point } from "../scene.js";
 import { lineHeight, textWidth, wrapText } from "../text/measure.js";
@@ -9,12 +10,9 @@ import { NOTE_SIZE, noteHeight, noteLines } from "./note.js";
 const BOX_SIZE = 14;
 const BOX_WRAP = 160;
 const BOX_MIN_W = 96;
-const BOX_MIN_H = 44;
+const BOX_MIN_H = 48;
 const BOX_PAD_X = 20;
 const BOX_PAD_Y = 10;
-const ICON_SIZE = 20;
-const ICON_PAD = 12;
-const ICON_GAP = 10;
 const RIGHT_PAD = 12;
 const PILL_SIZE = 13;
 const PILL_HEIGHT = 36;
@@ -47,7 +45,7 @@ const SHAPES: Record<StepKind, NodeShape> = {
   decision: "diamond",
 };
 
-export const ICON_TEXT_LEFT = ICON_PAD + ICON_SIZE + ICON_GAP;
+export { ICON_TEXT_LEFT };
 
 const widest = (lines: string[], size: number) =>
   Math.max(0, ...lines.map((l) => textWidth(l, size, 600)));

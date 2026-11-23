@@ -32,93 +32,111 @@ export function familyCss(used: Iterable<Family>): string {
       const [stroke, fill] = FALLBACK.fam[f];
       // The end shape keeps its inner ring unfilled so only the outer band is tinted.
       const ring = f === "end" ? "\n.t-fam-end .t-node-inner { fill: none; }" : "";
-      return `.t-fam-${f} .t-node-box { fill: var(--t-fam-${f}-fill, ${fill}); stroke: var(--t-fam-${f}-stroke, ${stroke}); }${ring}
-.t-fam-${f} .t-node-rule { stroke: var(--t-fam-${f}-stroke, ${stroke}); }
-.t-fam-${f} .t-icon { color: var(--t-fam-${f}-stroke, ${stroke}); }
+      // A wait card keeps the card surface and draws its outline dashed in the family color.
+      const wait =
+        f === "wait"
+          ? `\n.t-fam-wait .t-node-box { stroke: var(--t-f-stroke, ${stroke}); stroke-width: 1.4; stroke-dasharray: 5 4; }`
+          : "";
+      return `.t-fam-${f} { --t-f-fill: var(--t-fam-${f}-fill, ${fill}); --t-f-stroke: var(--t-fam-${f}-stroke, ${stroke}); }${ring}${wait}
 `;
     })
     .join("");
 }
 
-/** Rules for the diagram itself. Fallbacks keep a standalone SVG readable. */
+const B = FALLBACK.base;
+
+/**
+ * Rules for the diagram itself. Every variable carries its light value as a fallback, so a
+ * standalone SVG stays readable. A family sets --t-f-fill and --t-f-stroke (see familyCss).
+ */
 export const SVG_CSS = `
-.t-text { ${TEXT_RESET} fill: var(--t-text, #1f2933); }
-.t-group-title { fill: var(--t-muted, #52606d); }
-.t-group-box { fill: var(--t-group-fill, #f5f7fa); stroke: var(--t-group-stroke, #cbd2d9); stroke-width: 1; }
-.t-node-box { fill: var(--t-node-fill, #ffffff); stroke: var(--t-node-stroke, #9aa5b1); stroke-width: 1.25; }
+.t-text { ${TEXT_RESET} fill: var(--t-text, ${B.text}); }
+.t-group-title { fill: var(--t-muted, ${B.muted}); }
+.t-group-box { fill: var(--t-group-fill, ${B["group-fill"]}); stroke: var(--t-group-stroke, ${B["group-stroke"]}); stroke-width: 1; }
+.t-node-box { fill: var(--t-card, ${B.card}); stroke: var(--t-card-stroke, ${B["card-stroke"]}); stroke-width: 1; stroke-linejoin: round; }
+.t-tint .t-node-box { fill: var(--t-f-fill, ${B.card}); stroke: var(--t-f-stroke, ${B["node-stroke"]}); stroke-width: 1.5; }
+.t-tint .t-node-rule { stroke: var(--t-f-stroke, ${B["node-stroke"]}); }
+.t-chip { fill: var(--t-f-fill, ${B["group-fill"]}); stroke: var(--t-f-stroke, ${B["node-stroke"]}); stroke-opacity: 0.35; stroke-width: 1; }
 .t-node:focus { outline: none; }
-.t-node:focus-visible .t-node-box { stroke: var(--t-accent, #2f6fdb); stroke-width: 2.5; }
-.t-icon { color: var(--t-icon, #52606d); }
-.t-edge { fill: none; stroke: var(--t-edge, #2f6fdb); stroke-width: 1.5; stroke-linejoin: round; }
+.t-node:focus-visible .t-node-box { stroke: var(--t-accent, ${B.accent}); stroke-width: 2.5; }
+.t-icon { color: var(--t-f-stroke, var(--t-icon, ${B.icon})); }
+.t-edge { fill: none; stroke: var(--t-edge, ${EDGE_LIGHT.sync}); stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
 .t-edge-async { stroke: var(--t-edge-async, ${EDGE_LIGHT.async}); }
 .t-edge-data { stroke: var(--t-edge-data, ${EDGE_LIGHT.data}); }
 .t-edge-reply { stroke: var(--t-edge-reply, ${EDGE_LIGHT.reply}); }
-.t-edge-async { stroke-dasharray: 7 5; }
-.t-edge-data { stroke-dasharray: 1.5 4.5; stroke-linecap: round; }
-.t-arrow { fill: var(--t-edge, #2f6fdb); }
-.t-arrow-async { fill: var(--t-edge-async, ${EDGE_LIGHT.async}); }
-.t-arrow-data { fill: var(--t-edge-data, ${EDGE_LIGHT.data}); }
-.t-arrow-reply { fill: var(--t-edge-reply, ${EDGE_LIGHT.reply}); }
-.t-label-bg { fill: var(--t-bg, #ffffff); stroke: none; }
-.t-label { fill: var(--t-muted, #52606d); }
+.t-edge-async { stroke-dasharray: 6 5; }
+.t-edge-data { stroke-dasharray: 0.1 5.2; stroke-width: 2.4; }
+.t-arrow { fill: var(--t-edge, ${EDGE_LIGHT.sync}); stroke: var(--t-edge, ${EDGE_LIGHT.sync}); stroke-width: 1.4; stroke-linejoin: round; }
+.t-arrow-async { fill: var(--t-edge-async, ${EDGE_LIGHT.async}); stroke: var(--t-edge-async, ${EDGE_LIGHT.async}); }
+.t-arrow-data { fill: var(--t-edge-data, ${EDGE_LIGHT.data}); stroke: var(--t-edge-data, ${EDGE_LIGHT.data}); }
+.t-arrow-reply { fill: var(--t-edge-reply, ${EDGE_LIGHT.reply}); stroke: var(--t-edge-reply, ${EDGE_LIGHT.reply}); }
+.t-label-bg { fill: var(--t-label-bg, ${B["label-bg"]}); stroke: var(--t-border, ${B.border}); stroke-width: 1; }
+.t-label { fill: var(--t-muted, ${B.muted}); }
+`;
+
+/** Appended only when a shape uses the soft shadow, so the filter is defined once and only then. */
+export const SHADOW_CSS = `
+.t-shadow-near { flood-color: var(--t-shadow, ${B.shadow}); flood-opacity: 0.35; }
+.t-shadow-far { flood-color: var(--t-shadow, ${B.shadow}); flood-opacity: 0.5; }
 `;
 
 /** Appended only when a scene uses non-box shapes or lanes, so architecture output stays unchanged. */
 export const SHAPE_CSS = `
 .t-node-inner { fill: none; }
-.t-node-rule { stroke: var(--t-node-stroke, #9aa5b1); stroke-width: 1.25; }
+.t-node-rule { stroke: var(--t-node-stroke, ${B["node-stroke"]}); stroke-width: 1.25; }
 .t-lane-band { fill: var(--t-lane-fill, transparent); stroke: none; }
-.t-lane-odd .t-lane-band { fill: var(--t-lane-fill-odd, rgba(120, 130, 145, 0.08)); }
-.t-lane-header { fill: var(--t-lane-header, rgba(120, 130, 145, 0.12)); stroke: none; }
-.t-lane-rule { stroke: var(--t-group-stroke, #cbd2d9); stroke-width: 1; }
-.t-lane-title { fill: var(--t-muted, #52606d); }
+.t-lane-odd .t-lane-band { fill: var(--t-lane-fill-odd, ${B["lane-fill-odd"]}); }
+.t-lane-header { fill: var(--t-lane-header, ${B["lane-header"]}); stroke: none; }
+.t-lane-rule { stroke: var(--t-group-stroke, ${B["group-stroke"]}); stroke-width: 1; }
+.t-lane-title { fill: var(--t-muted, ${B.muted}); }
 `;
 
 /** Appended only when a scene has table nodes or edges with crow's foot ends. */
 export const TABLE_CSS = `
-.t-table { fill: var(--t-node-fill, #ffffff); stroke: var(--t-node-stroke, #9aa5b1); stroke-width: 1.25; }
-.t-table-head { fill: var(--t-table-head, #eceff3); stroke: none; }
-.t-row { stroke: var(--t-group-stroke, #cbd2d9); stroke-width: 1; }
-.t-col-type { fill: var(--t-muted, #52606d); }
-.t-col-marks { fill: var(--t-muted, #52606d); }
-.t-edge-halo { fill: none; stroke: var(--t-bg, #ffffff); stroke-width: 5; stroke-linejoin: round; }
-.t-end { fill: none; stroke: var(--t-edge, #2f6fdb); stroke-width: 1.5; stroke-linecap: round; }
-.t-end-dot { fill: var(--t-bg, #ffffff); }
+.t-table { fill: var(--t-card, ${B.card}); stroke: var(--t-card-stroke, ${B["card-stroke"]}); stroke-width: 1; }
+.t-table-head { fill: var(--t-table-head, ${B["table-head"]}); stroke: none; }
+.t-row { stroke: var(--t-group-stroke, ${B["group-stroke"]}); stroke-width: 1; }
+.t-col-type { fill: var(--t-muted, ${B.muted}); }
+.t-col-marks { fill: var(--t-muted, ${B.muted}); }
+.t-edge-halo { fill: none; stroke: var(--t-bg, ${B.bg}); stroke-width: 5; stroke-linejoin: round; }
+.t-end { fill: none; stroke: var(--t-edge, ${EDGE_LIGHT.sync}); stroke-width: 1.5; stroke-linecap: round; }
+.t-end-dot { fill: var(--t-bg, ${B.bg}); }
 `;
 
 /**
  * Appended only when a node shows its note, so diagrams without notes stay byte-identical.
- * Text at 75% keeps at least 5.8:1 on every family tint in both themes; --t-muted falls under 4.5:1 in dark.
+ * The muted color is checked at 4.5:1 on every card, tint and table header in every theme.
  */
 export const NOTE_CSS = `
-.t-node-note { fill: var(--t-text, #1f2933); fill-opacity: 0.75; }
+.t-node-note { fill: var(--t-muted, ${B.muted}); }
 `;
 
 /** Appended only to scenes with a legend. */
 export const LEGEND_CSS = `
-.t-legend-label { fill: var(--t-muted, #52606d); }
-.t-legend-line { fill: none; stroke: var(--t-edge, #2f6fdb); stroke-width: 1.5; stroke-linecap: round; }
+.t-legend-label { fill: var(--t-muted, ${B.muted}); }
+.t-legend-item .t-legend-swatch { fill: var(--t-f-fill, ${B["group-fill"]}); stroke: var(--t-f-stroke, ${B["node-stroke"]}); stroke-width: 1.25; }
+.t-legend-line { fill: none; stroke: var(--t-edge, ${EDGE_LIGHT.sync}); stroke-width: 1.7; stroke-linecap: round; }
 .t-legend-async { stroke: var(--t-edge-async, ${EDGE_LIGHT.async}); }
 .t-legend-data { stroke: var(--t-edge-data, ${EDGE_LIGHT.data}); }
 .t-legend-reply { stroke: var(--t-edge-reply, ${EDGE_LIGHT.reply}); }
-.t-legend-async { stroke-dasharray: 7 5; }
-.t-legend-data { stroke-dasharray: 1.5 4.5; }
+.t-legend-async { stroke-dasharray: 6 5; }
+.t-legend-data { stroke-dasharray: 0.1 5.2; stroke-width: 2.4; }
 .t-legend-reply { stroke-dasharray: 5 4; }
 `;
 
 /** Appended only to scenes with lifelines (sequence). */
 export const SEQUENCE_CSS = `
-.t-lifeline { stroke: var(--t-group-stroke, #cbd2d9); stroke-width: 1; stroke-dasharray: 4 4; }
-.t-frag { fill: none; stroke: var(--t-node-stroke, #9aa5b1); stroke-width: 1; }
-.t-frag-tab { fill: var(--t-bg, #ffffff); stroke: var(--t-node-stroke, #9aa5b1); stroke-width: 1; }
-.t-frag-divider { stroke: var(--t-node-stroke, #9aa5b1); stroke-width: 1; stroke-dasharray: 5 4; }
-.t-frag-tag { fill: var(--t-text, #1f2933); }
-.t-frag-guard { fill: var(--t-muted, #52606d); }
-.t-note { fill: var(--t-note-fill, var(--t-group-fill, #f5f7fa)); }
-.t-note-fold { fill: none; stroke: var(--t-node-stroke, #9aa5b1); stroke-width: 1.25; stroke-linejoin: round; }
+.t-lifeline { stroke: var(--t-node-stroke, ${B["node-stroke"]}); stroke-opacity: 0.55; stroke-width: 1; stroke-dasharray: 4 4; }
+.t-frag { fill: none; stroke: var(--t-node-stroke, ${B["node-stroke"]}); stroke-width: 1; }
+.t-frag-tab { fill: var(--t-group-fill, ${B["group-fill"]}); stroke: var(--t-node-stroke, ${B["node-stroke"]}); stroke-width: 1; stroke-linejoin: round; }
+.t-frag-divider { stroke: var(--t-node-stroke, ${B["node-stroke"]}); stroke-width: 1; stroke-dasharray: 5 4; }
+.t-frag-tag { fill: var(--t-text, ${B.text}); }
+.t-frag-guard { fill: var(--t-muted, ${B.muted}); }
+.t-note { fill: var(--t-note-fill, ${B["note-fill"]}); }
+.t-note-fold { fill: none; stroke: var(--t-node-stroke, ${B["node-stroke"]}); stroke-width: 1.25; stroke-linejoin: round; }
 .t-edge-reply { stroke-dasharray: 5 4; }
 .t-seq .t-edge-async { stroke-dasharray: none; }
-.t-arrow-open { fill: none; stroke: var(--t-edge, #2f6fdb); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.t-arrow-open { fill: none; stroke: var(--t-edge, ${EDGE_LIGHT.sync}); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .t-seq .t-legend-async { stroke-dasharray: none; }
 .t-arrow-open-async { stroke: var(--t-edge-async, ${EDGE_LIGHT.async}); }
 .t-arrow-open-reply { stroke: var(--t-edge-reply, ${EDGE_LIGHT.reply}); }

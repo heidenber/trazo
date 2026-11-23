@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 Heidenber Palacio Garzón
 
+import { ICON_TEXT_LEFT, LABEL_PAD_X } from "../render/card.js";
 import type { Architecture, ArchNode, NodeKind } from "../model/architecture.js";
 import type { Box, Scene, SceneEdge, SceneGroup, SceneNode, TextBlock } from "../scene.js";
 import { firstBaseline, lineHeight, textWidth, wrapText } from "../text/measure.js";
@@ -22,12 +23,9 @@ const ICONS: Record<NodeKind, string> = {
 
 const NODE_LABEL_SIZE = 14;
 const NODE_WRAP = 150;
-const ICON_SIZE = 20;
-const ICON_PAD = 12;
-const ICON_GAP = 10;
 const RIGHT_PAD = 12;
 const NODE_MIN_W = 120;
-const NODE_MIN_H = 44;
+const NODE_MIN_H = 48;
 const NODE_PAD_Y = 10;
 const GROUP_TITLE_SIZE = 12;
 const GROUP_TITLE_X = 12;
@@ -48,9 +46,8 @@ function sizeNode(node: ArchNode): {
 } {
   const lines = wrapText(node.label, NODE_WRAP, NODE_LABEL_SIZE, 600);
   const note = node.note === undefined ? [] : noteLines(node.note, NODE_WRAP);
-  const textLeft = ICON_PAD + ICON_SIZE + ICON_GAP;
   const text = Math.max(widest(lines, NODE_LABEL_SIZE, 600), widest(note, NOTE_SIZE, 400));
-  const width = Math.max(NODE_MIN_W, Math.ceil(textLeft + text + RIGHT_PAD));
+  const width = Math.max(NODE_MIN_W, Math.ceil(ICON_TEXT_LEFT + text + RIGHT_PAD));
   const height = Math.max(
     NODE_MIN_H,
     Math.ceil(lines.length * lineHeight(NODE_LABEL_SIZE) + noteHeight(note) + 2 * NODE_PAD_Y),
@@ -88,7 +85,7 @@ export async function layoutArchitecture(d: Architecture): Promise<Scene> {
       return {
         ...edge,
         label: {
-          width: Math.ceil(widest(lines, EDGE_LABEL_SIZE, 400)) + 2 * EDGE_LABEL_PAD,
+          width: Math.ceil(widest(lines, EDGE_LABEL_SIZE, 400)) + 2 * LABEL_PAD_X,
           height: Math.ceil(lines.length * lineHeight(EDGE_LABEL_SIZE)) + 2 * EDGE_LABEL_PAD,
         },
       };
@@ -103,7 +100,7 @@ export async function layoutArchitecture(d: Architecture): Promise<Scene> {
     const box = boxOf(n.id);
     const size = sizes.get(n.id)!;
     const at = stackBaselines(box.y, box.h, size.lines.length, NODE_LABEL_SIZE, size.note);
-    const x = half(box.x + ICON_PAD + ICON_SIZE + ICON_GAP);
+    const x = half(box.x + ICON_TEXT_LEFT);
     const label: TextBlock = {
       lines: size.lines,
       x,
