@@ -1,92 +1,90 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="diagram" viewBox="0 0 930 1117" role="img" aria-labelledby="t-title t-desc">
+<svg xmlns="http://www.w3.org/2000/svg" class="diagram" viewBox="0 0 957 1129" role="img" aria-labelledby="t-title t-desc">
 <title id="t-title">Purchase Request</title>
 <desc id="t-desc">From a team&apos;s request to a paid vendor invoice.</desc>
-<defs><marker id="t-arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow" d="M0 1L10 5L0 9z"/></marker><marker id="t-arrowhead-async" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow t-arrow-async" d="M0 1L10 5L0 9z"/></marker></defs>
+<defs><marker id="t-arrowhead" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow" d="M1.8 1.8L8.4 5L1.8 8.2z"/></marker><marker id="t-arrowhead-async" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow t-arrow-async" d="M1.8 1.8L8.4 5L1.8 8.2z"/></marker><filter id="t-shadow" x="-30%" y="-40%" width="160%" height="220%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="1" stdDeviation="1" class="t-shadow-near"/><feDropShadow dx="0" dy="6" stdDeviation="8" class="t-shadow-far"/></filter></defs>
 <style>
-.t-text { font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; font-kerning: none; font-variant-ligatures: none; font-feature-settings: "kern" 0, "liga" 0, "calt" 0; fill: var(--t-text, #1f2933); }
-.t-group-title { fill: var(--t-muted, #52606d); }
-.t-group-box { fill: var(--t-group-fill, #f5f7fa); stroke: var(--t-group-stroke, #cbd2d9); stroke-width: 1; }
-.t-node-box { fill: var(--t-node-fill, #ffffff); stroke: var(--t-node-stroke, #9aa5b1); stroke-width: 1.25; }
+.t-text { font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; font-kerning: none; font-variant-ligatures: none; font-feature-settings: "kern" 0, "liga" 0, "calt" 0; fill: var(--t-text, #151a2b); }
+.t-group-title { fill: var(--t-muted, #5a6379); }
+.t-group-box { fill: var(--t-group-fill, #edf0f9); stroke: var(--t-group-stroke, #d3d9ea); stroke-width: 1; }
+.t-node-box { fill: var(--t-card, #ffffff); stroke: var(--t-card-stroke, #dde2ee); stroke-width: 1; stroke-linejoin: round; }
+.t-tint .t-node-box { fill: var(--t-f-fill, #ffffff); stroke: var(--t-f-stroke, #818694); stroke-width: 1.5; }
+.t-tint .t-node-rule { stroke: var(--t-f-stroke, #818694); }
+.t-chip { fill: var(--t-f-fill, #edf0f9); stroke: var(--t-f-stroke, #818694); stroke-opacity: 0.35; stroke-width: 1; }
 .t-node:focus { outline: none; }
-.t-node:focus-visible .t-node-box { stroke: var(--t-accent, #2f6fdb); stroke-width: 2.5; }
-.t-icon { color: var(--t-icon, #52606d); }
-.t-edge { fill: none; stroke: var(--t-edge, #2f6fdb); stroke-width: 1.5; stroke-linejoin: round; }
-.t-edge-async { stroke: var(--t-edge-async, #7c4ddb); }
-.t-edge-data { stroke: var(--t-edge-data, #1f8a7a); }
-.t-edge-reply { stroke: var(--t-edge-reply, #66727f); }
-.t-edge-async { stroke-dasharray: 7 5; }
-.t-edge-data { stroke-dasharray: 1.5 4.5; stroke-linecap: round; }
-.t-arrow { fill: var(--t-edge, #2f6fdb); }
-.t-arrow-async { fill: var(--t-edge-async, #7c4ddb); }
-.t-arrow-data { fill: var(--t-edge-data, #1f8a7a); }
-.t-arrow-reply { fill: var(--t-edge-reply, #66727f); }
-.t-label-bg { fill: var(--t-bg, #ffffff); stroke: none; }
-.t-label { fill: var(--t-muted, #52606d); }
+.t-node:focus-visible .t-node-box { stroke: var(--t-accent, #4457e8); stroke-width: 2.5; }
+.t-icon { color: var(--t-f-stroke, var(--t-icon, #5a6379)); }
+.t-edge { fill: none; stroke: var(--t-edge, #1b5eda); stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+.t-edge-async { stroke: var(--t-edge-async, #803bce); }
+.t-edge-data { stroke: var(--t-edge-data, #1a9386); }
+.t-edge-reply { stroke: var(--t-edge-reply, #606e80); }
+.t-edge-async { stroke-dasharray: 6 5; }
+.t-edge-data { stroke-dasharray: 0.1 5.2; stroke-width: 2.4; }
+.t-arrow { fill: var(--t-edge, #1b5eda); stroke: var(--t-edge, #1b5eda); stroke-width: 1.4; stroke-linejoin: round; }
+.t-arrow-async { fill: var(--t-edge-async, #803bce); stroke: var(--t-edge-async, #803bce); }
+.t-arrow-data { fill: var(--t-edge-data, #1a9386); stroke: var(--t-edge-data, #1a9386); }
+.t-arrow-reply { fill: var(--t-edge-reply, #606e80); stroke: var(--t-edge-reply, #606e80); }
+.t-label-bg { fill: var(--t-label-bg, #ffffff); stroke: var(--t-border, #dde2ee); stroke-width: 1; }
+.t-label { fill: var(--t-muted, #5a6379); }
 
 .t-node-inner { fill: none; }
-.t-node-rule { stroke: var(--t-node-stroke, #9aa5b1); stroke-width: 1.25; }
+.t-node-rule { stroke: var(--t-node-stroke, #818694); stroke-width: 1.25; }
 .t-lane-band { fill: var(--t-lane-fill, transparent); stroke: none; }
-.t-lane-odd .t-lane-band { fill: var(--t-lane-fill-odd, rgba(120, 130, 145, 0.08)); }
-.t-lane-header { fill: var(--t-lane-header, rgba(120, 130, 145, 0.12)); stroke: none; }
-.t-lane-rule { stroke: var(--t-group-stroke, #cbd2d9); stroke-width: 1; }
-.t-lane-title { fill: var(--t-muted, #52606d); }
-.t-fam-start .t-node-box { fill: var(--t-fam-start-fill, #e6f1e9); stroke: var(--t-fam-start-stroke, #2f8a45); }
-.t-fam-start .t-node-rule { stroke: var(--t-fam-start-stroke, #2f8a45); }
-.t-fam-start .t-icon { color: var(--t-fam-start-stroke, #2f8a45); }
-.t-fam-end .t-node-box { fill: var(--t-fam-end-fill, #f8e9e7); stroke: var(--t-fam-end-stroke, #c2453a); }
-.t-fam-end .t-node-inner { fill: none; }
-.t-fam-end .t-node-rule { stroke: var(--t-fam-end-stroke, #c2453a); }
-.t-fam-end .t-icon { color: var(--t-fam-end-stroke, #c2453a); }
-.t-fam-decision .t-node-box { fill: var(--t-fam-decision-fill, #f5efe2); stroke: var(--t-fam-decision-stroke, #a87a0a); }
-.t-fam-decision .t-node-rule { stroke: var(--t-fam-decision-stroke, #a87a0a); }
-.t-fam-decision .t-icon { color: var(--t-fam-decision-stroke, #a87a0a); }
-.t-fam-wait .t-node-box { fill: var(--t-fam-wait-fill, #efedeb); stroke: var(--t-fam-wait-stroke, #7a6a5a); }
-.t-fam-wait .t-node-rule { stroke: var(--t-fam-wait-stroke, #7a6a5a); }
-.t-fam-wait .t-icon { color: var(--t-fam-wait-stroke, #7a6a5a); }
-.t-fam-task .t-node-box { fill: var(--t-fam-task-fill, #e7eefa); stroke: var(--t-fam-task-stroke, #3b6fd4); }
-.t-fam-task .t-node-rule { stroke: var(--t-fam-task-stroke, #3b6fd4); }
-.t-fam-task .t-icon { color: var(--t-fam-task-stroke, #3b6fd4); }
+.t-lane-odd .t-lane-band { fill: var(--t-lane-fill-odd, #edf0f9); }
+.t-lane-header { fill: var(--t-lane-header, #e9edf5); stroke: none; }
+.t-lane-rule { stroke: var(--t-group-stroke, #d3d9ea); stroke-width: 1; }
+.t-lane-title { fill: var(--t-muted, #5a6379); }
 
-.t-legend-label { fill: var(--t-muted, #52606d); }
-.t-legend-line { fill: none; stroke: var(--t-edge, #2f6fdb); stroke-width: 1.5; stroke-linecap: round; }
-.t-legend-async { stroke: var(--t-edge-async, #7c4ddb); }
-.t-legend-data { stroke: var(--t-edge-data, #1f8a7a); }
-.t-legend-reply { stroke: var(--t-edge-reply, #66727f); }
-.t-legend-async { stroke-dasharray: 7 5; }
-.t-legend-data { stroke-dasharray: 1.5 4.5; }
+.t-shadow-near { flood-color: var(--t-shadow, rgba(30, 41, 80, 0.16)); flood-opacity: 0.35; }
+.t-shadow-far { flood-color: var(--t-shadow, rgba(30, 41, 80, 0.16)); flood-opacity: 0.5; }
+.t-fam-start { --t-f-fill: var(--t-fam-start-fill, #e6f9ed); --t-f-stroke: var(--t-fam-start-stroke, #259c4c); }
+.t-fam-end { --t-f-fill: var(--t-fam-end-fill, #f9e7e6); --t-f-stroke: var(--t-fam-end-stroke, #be362d); }
+.t-fam-end .t-node-inner { fill: none; }
+.t-fam-decision { --t-f-fill: var(--t-fam-decision-fill, #f9f4e6); --t-f-stroke: var(--t-fam-decision-stroke, #a48227); }
+.t-fam-wait { --t-f-fill: var(--t-fam-wait-fill, #f4efeb); --t-f-stroke: var(--t-fam-wait-stroke, #966f55); }
+.t-fam-wait .t-node-box { stroke: var(--t-f-stroke, #966f55); stroke-width: 1.4; stroke-dasharray: 5 4; }
+.t-fam-task { --t-f-fill: var(--t-fam-task-fill, #e6eef9); --t-f-stroke: var(--t-fam-task-stroke, #2d6cbe); }
+
+.t-legend-label { fill: var(--t-muted, #5a6379); }
+.t-legend-item .t-legend-swatch { fill: var(--t-f-fill, #edf0f9); stroke: var(--t-f-stroke, #818694); stroke-width: 1.25; }
+.t-legend-line { fill: none; stroke: var(--t-edge, #1b5eda); stroke-width: 1.7; stroke-linecap: round; }
+.t-legend-async { stroke: var(--t-edge-async, #803bce); }
+.t-legend-data { stroke: var(--t-edge-data, #1a9386); }
+.t-legend-reply { stroke: var(--t-edge-reply, #606e80); }
+.t-legend-async { stroke-dasharray: 6 5; }
+.t-legend-data { stroke-dasharray: 0.1 5.2; stroke-width: 2.4; }
 .t-legend-reply { stroke-dasharray: 5 4; }
 
-.t-node-note { fill: var(--t-text, #1f2933); fill-opacity: 0.75; }
+.t-node-note { fill: var(--t-muted, #5a6379); }
 </style>
-<g class="t-lane" data-id="requester"><rect class="t-lane-band" x="0" y="0" width="228" height="1065"/><rect class="t-lane-header" x="0" y="0" width="228" height="40"/><line class="t-lane-rule" x1="228" y1="0" x2="228" y2="1065"/><text class="t-text t-lane-title" x="114" y="24.5" font-size="12" font-weight="600" text-anchor="middle"><tspan x="114" dy="0">Requester</tspan></text></g>
-<g class="t-lane t-lane-odd" data-id="procurement"><rect class="t-lane-band" x="228" y="0" width="452.5" height="1065"/><rect class="t-lane-header" x="228" y="0" width="452.5" height="40"/><line class="t-lane-rule" x1="680.5" y1="0" x2="680.5" y2="1065"/><text class="t-text t-lane-title" x="454.25" y="24.5" font-size="12" font-weight="600" text-anchor="middle"><tspan x="454.25" dy="0">Procurement</tspan></text></g>
-<g class="t-lane" data-id="finance"><rect class="t-lane-band" x="680.5" y="0" width="249.5" height="1065"/><rect class="t-lane-header" x="680.5" y="0" width="249.5" height="40"/><line class="t-lane-rule" x1="930" y1="0" x2="930" y2="1065"/><text class="t-text t-lane-title" x="805.25" y="24.5" font-size="12" font-weight="600" text-anchor="middle"><tspan x="805.25" dy="0">Finance</tspan></text></g>
+<g class="t-lane" data-id="requester"><rect class="t-lane-band" x="0" y="0" width="228" height="1077"/><rect class="t-lane-header" x="0" y="0" width="228" height="40"/><line class="t-lane-rule" x1="228" y1="0" x2="228" y2="1077"/><text class="t-text t-lane-title" x="114" y="24.5" font-size="12" font-weight="600" text-anchor="middle"><tspan x="114" dy="0">Requester</tspan></text></g>
+<g class="t-lane t-lane-odd" data-id="procurement"><rect class="t-lane-band" x="228" y="0" width="465" height="1077"/><rect class="t-lane-header" x="228" y="0" width="465" height="40"/><line class="t-lane-rule" x1="693" y1="0" x2="693" y2="1077"/><text class="t-text t-lane-title" x="460.5" y="24.5" font-size="12" font-weight="600" text-anchor="middle"><tspan x="460.5" dy="0">Procurement</tspan></text></g>
+<g class="t-lane" data-id="finance"><rect class="t-lane-band" x="693" y="0" width="264" height="1077"/><rect class="t-lane-header" x="693" y="0" width="264" height="40"/><line class="t-lane-rule" x1="957" y1="0" x2="957" y2="1077"/><text class="t-text t-lane-title" x="825" y="24.5" font-size="12" font-weight="600" text-anchor="middle"><tspan x="825" dy="0">Finance</tspan></text></g>
 <path class="t-edge t-edge-sync" data-from="start" data-to="submit" d="M109 100 L109 160" marker-end="url(#t-arrowhead)" data-edge="e0"/>
-<path class="t-edge t-edge-sync" data-from="submit" data-to="check" d="M109 232 L109 242 L345 242 L345 292" marker-end="url(#t-arrowhead)" data-edge="e1"/>
-<path class="t-edge t-edge-sync" data-from="check" data-to="vendor" d="M345 365 L345 375 L557 375 L557 425" marker-end="url(#t-arrowhead)" data-edge="e2"/>
-<path class="t-edge t-edge-sync" data-from="check" data-to="reject" d="M345 365 L345 439" marker-end="url(#t-arrowhead)" data-edge="e3"/>
-<path class="t-edge t-edge-sync" data-from="reject" data-to="end" d="M345 483 L345 507 L121 507 L121 1005" marker-end="url(#t-arrowhead)" data-edge="e4"/>
-<path class="t-edge t-edge-sync" data-from="vendor" data-to="order" d="M557 497 L557 517 L345 517 L345 557" marker-end="url(#t-arrowhead)" data-edge="e5"/>
-<path class="t-edge t-edge-sync" data-from="order" data-to="delivery" d="M345 601 L345 661" marker-end="url(#t-arrowhead)" data-edge="e6"/>
-<path class="t-edge t-edge-async" data-from="order" data-to="pay" d="M364.5 601 L364.5 611 L816 611 L816 765" marker-end="url(#t-arrowhead-async)" data-edge="e7"/>
-<path class="t-edge t-edge-sync" data-from="delivery" data-to="pay" d="M345 705 L345 725 L770 725 L770 765" marker-end="url(#t-arrowhead)" data-edge="e8"/>
-<path class="t-edge t-edge-sync" data-from="pay" data-to="paid" d="M793 809 L793 869" marker-end="url(#t-arrowhead)" data-edge="e9"/>
-<path class="t-edge t-edge-sync" data-from="paid" data-to="pay" d="M793 945 L793 961 L888.5 961 L888.5 787 L862 787" marker-end="url(#t-arrowhead)" data-edge="e10"/>
-<path class="t-edge t-edge-sync" data-from="paid" data-to="end" d="M793 945 L793 955 L97 955 L97 1005" marker-end="url(#t-arrowhead)" data-edge="e11"/>
-<g class="t-edge-label" data-edge="e2"><rect class="t-label-bg" x="420" y="363" width="62" height="24" rx="3"/><text class="t-text t-label" x="451" y="379" font-size="12" font-weight="400" text-anchor="middle"><tspan x="451" dy="0">in budget</tspan></text></g>
-<g class="t-edge-label" data-edge="e3"><rect class="t-label-bg" x="306.5" y="390" width="77" height="24" rx="3"/><text class="t-text t-label" x="345" y="406" font-size="12" font-weight="400" text-anchor="middle"><tspan x="345" dy="0">over budget</tspan></text></g>
-<g class="t-edge-label" data-edge="e7"><rect class="t-label-bg" x="566" y="599" width="49" height="24" rx="3"/><text class="t-text t-label" x="590.5" y="615" font-size="12" font-weight="400" text-anchor="middle"><tspan x="590.5" dy="0">invoice</tspan></text></g>
-<g class="t-edge-label" data-edge="e10"><rect class="t-label-bg" x="871" y="862" width="35" height="24" rx="3"/><text class="t-text t-label" x="888.5" y="878" font-size="12" font-weight="400" text-anchor="middle"><tspan x="888.5" dy="0">retry</tspan></text></g>
-<g class="t-edge-label" data-edge="e11"><rect class="t-label-bg" x="421.5" y="943" width="47" height="24" rx="3"/><text class="t-text t-label" x="445" y="959" font-size="12" font-weight="400" text-anchor="middle"><tspan x="445" dy="0">settled</tspan></text></g>
-<g class="t-node t-fam-start t-shape-pill" data-id="start" data-kind="start" tabindex="0"><rect class="t-node-box" x="73" y="64" width="72" height="36" rx="18"/><text class="t-text t-node-label" x="109" y="86.5" font-size="13" font-weight="600" text-anchor="middle"><tspan x="109" dy="0">Start</tspan></text></g>
-<g class="t-node t-fam-task" data-id="submit" data-kind="task" tabindex="0"><desc>Item, quantity and cost center.</desc><rect class="t-node-box" x="24" y="160" width="170" height="72" rx="8"/><text class="t-text t-node-label" x="109" y="184.5" font-size="14" font-weight="600" text-anchor="middle"><tspan x="109" dy="0">Submit request</tspan></text><text class="t-text t-node-note" x="109" y="202.5" font-size="12" font-weight="400" text-anchor="middle"><tspan x="109" dy="0">Item, quantity and cost</tspan><tspan x="109" dy="15.6">center.</tspan></text></g>
-<g class="t-node t-fam-decision t-shape-diamond" data-id="check" data-kind="decision" tabindex="0"><polygon class="t-node-box" points="345,292 418,328.5 345,365 272,328.5"/><text class="t-text t-node-label" x="345" y="333" font-size="13" font-weight="600" text-anchor="middle"><tspan x="345" dy="0">Within budget?</tspan></text></g>
-<g class="t-node t-fam-task" data-id="reject" data-kind="task" tabindex="0"><rect class="t-node-box" x="272.5" y="439" width="145" height="44" rx="8"/><text class="t-text t-node-label" x="345" y="466" font-size="14" font-weight="600" text-anchor="middle"><tspan x="345" dy="0">Notify rejection</tspan></text></g>
-<g class="t-node t-fam-task t-shape-subprocess" data-id="vendor" data-kind="subprocess" tabindex="0"><desc>Skipped for vendors already approved.</desc><rect class="t-node-box" x="471" y="425" width="172" height="72" rx="8"/><line class="t-node-rule" x1="479" y1="425" x2="479" y2="497"/><line class="t-node-rule" x1="635" y1="425" x2="635" y2="497"/><text class="t-text t-node-label" x="557" y="449.5" font-size="14" font-weight="600" text-anchor="middle"><tspan x="557" dy="0">Vendor onboarding</tspan></text><text class="t-text t-node-note" x="557" y="467.5" font-size="12" font-weight="400" text-anchor="middle"><tspan x="557" dy="0">Skipped for vendors</tspan><tspan x="557" dy="15.6">already approved.</tspan></text></g>
-<g class="t-node t-fam-task" data-id="order" data-kind="task" tabindex="0"><rect class="t-node-box" x="286" y="557" width="118" height="44" rx="8"/><text class="t-text t-node-label" x="345" y="584" font-size="14" font-weight="600" text-anchor="middle"><tspan x="345" dy="0">Place order</tspan></text></g>
-<g class="t-node t-fam-wait" data-id="delivery" data-kind="wait" tabindex="0"><rect class="t-node-box" x="261.5" y="661" width="167" height="44" rx="8"/><svg class="t-icon t-icon-wait" x="273.5" y="673" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg><text class="t-text t-node-label" x="303.5" y="688" font-size="14" font-weight="600"><tspan x="303.5" dy="0">Wait for delivery</tspan></text></g>
-<g class="t-node t-fam-task" data-id="pay" data-kind="task" tabindex="0"><rect class="t-node-box" x="724" y="765" width="138" height="44" rx="8"/><text class="t-text t-node-label" x="793" y="792" font-size="14" font-weight="600" text-anchor="middle"><tspan x="793" dy="0">Send payment</tspan></text></g>
-<g class="t-node t-fam-decision t-shape-diamond" data-id="paid" data-kind="decision" tabindex="0"><polygon class="t-node-box" points="793,869 868.5,907 793,945 717.5,907"/><text class="t-text t-node-label" x="793" y="911.5" font-size="13" font-weight="600" text-anchor="middle"><tspan x="793" dy="0">Bank accepted?</tspan></text></g>
-<g class="t-node t-fam-end t-shape-end" data-id="end" data-kind="end" tabindex="0"><rect class="t-node-box" x="73" y="1005" width="72" height="36" rx="18"/><rect class="t-node-box t-node-inner" x="76" y="1008" width="66" height="30" rx="15"/><text class="t-text t-node-label" x="109" y="1027.5" font-size="13" font-weight="600" text-anchor="middle"><tspan x="109" dy="0">End</tspan></text></g>
-<g class="t-legend"><g class="t-legend-item t-fam-start"><rect class="t-node-box" x="24" y="1084" width="24" height="14" rx="3"/><text class="t-text t-legend-label" x="56" y="1095.37" font-size="12" font-weight="400"><tspan x="56" dy="0">Start</tspan></text></g><g class="t-legend-item t-fam-end"><rect class="t-node-box" x="102.81" y="1084" width="24" height="14" rx="3"/><text class="t-text t-legend-label" x="134.81" y="1095.37" font-size="12" font-weight="400"><tspan x="134.81" dy="0">End</tspan></text></g><g class="t-legend-item t-fam-decision"><rect class="t-node-box" x="176.46" y="1084" width="24" height="14" rx="3"/><text class="t-text t-legend-label" x="208.46" y="1095.37" font-size="12" font-weight="400"><tspan x="208.46" dy="0">Decision</tspan></text></g><g class="t-legend-item t-fam-wait"><rect class="t-node-box" x="277.4" y="1084" width="24" height="14" rx="3"/><text class="t-text t-legend-label" x="309.4" y="1095.37" font-size="12" font-weight="400"><tspan x="309.4" dy="0">Wait</tspan></text></g><g class="t-legend-item t-fam-task"><rect class="t-node-box" x="354.79" y="1084" width="24" height="14" rx="3"/><text class="t-text t-legend-label" x="386.79" y="1095.37" font-size="12" font-weight="400"><tspan x="386.79" dy="0">Task</tspan></text></g><g class="t-legend-item"><line class="t-legend-line t-legend-sync" x1="434.2" y1="1091" x2="458.2" y2="1091"/><text class="t-text t-legend-label" x="466.2" y="1095.37" font-size="12" font-weight="400"><tspan x="466.2" dy="0">Sync</tspan></text></g><g class="t-legend-item"><line class="t-legend-line t-legend-async" x1="514.59" y1="1091" x2="538.59" y2="1091"/><text class="t-text t-legend-label" x="546.59" y="1095.37" font-size="12" font-weight="400"><tspan x="546.59" dy="0">Async</tspan></text></g></g>
+<path class="t-edge t-edge-sync" data-from="submit" data-to="check" d="M109 232 L109 237 Q109 242 114 242 L340 242 Q350 242 350 252 L350 292" marker-end="url(#t-arrowhead)" data-edge="e1"/>
+<path class="t-edge t-edge-sync" data-from="check" data-to="vendor" d="M350 365 L350 370 Q350 375 355 375 L557 375 Q567 375 567 385 L567 425" marker-end="url(#t-arrowhead)" data-edge="e2"/>
+<path class="t-edge t-edge-sync" data-from="check" data-to="reject" d="M350 365 L350 437" marker-end="url(#t-arrowhead)" data-edge="e3"/>
+<path class="t-edge t-edge-sync" data-from="reject" data-to="end" d="M350 485 L350 497 Q350 507 340 507 L131 507 Q121 507 121 517 L121 1017" marker-end="url(#t-arrowhead)" data-edge="e4"/>
+<path class="t-edge t-edge-sync" data-from="vendor" data-to="order" d="M567 497 L567 507 Q567 517 557 517 L360 517 Q350 517 350 527 L350 557" marker-end="url(#t-arrowhead)" data-edge="e5"/>
+<path class="t-edge t-edge-sync" data-from="order" data-to="delivery" d="M350 605 L350 665" marker-end="url(#t-arrowhead)" data-edge="e6"/>
+<path class="t-edge t-edge-async" data-from="order" data-to="pay" d="M369.5 605 L369.5 610 Q369.5 615 374.5 615 L821 615 Q831 615 831 625 L831 773" marker-end="url(#t-arrowhead-async)" data-edge="e7"/>
+<path class="t-edge t-edge-sync" data-from="delivery" data-to="pay" d="M350 713 L350 723 Q350 733 360 733 L775 733 Q785 733 785 743 L785 773" marker-end="url(#t-arrowhead)" data-edge="e8"/>
+<path class="t-edge t-edge-sync" data-from="pay" data-to="paid" d="M808 821 L808 881" marker-end="url(#t-arrowhead)" data-edge="e9"/>
+<path class="t-edge t-edge-sync" data-from="paid" data-to="pay" d="M808 957 L808 965 Q808 973 816 973 L901.5 973 Q911.5 973 911.5 963 L911.5 807 Q911.5 797 901.5 797 L877 797" marker-end="url(#t-arrowhead)" data-edge="e10"/>
+<path class="t-edge t-edge-sync" data-from="paid" data-to="end" d="M808 957 L808 962 Q808 967 803 967 L107 967 Q97 967 97 977 L97 1017" marker-end="url(#t-arrowhead)" data-edge="e11"/>
+<g class="t-edge-label" data-edge="e2"><rect class="t-label-bg" x="423.5" y="363" width="70" height="24" rx="11"/><text class="t-text t-label" x="458.5" y="379" font-size="12" font-weight="400" text-anchor="middle"><tspan x="458.5" dy="0">in budget</tspan></text></g>
+<g class="t-edge-label" data-edge="e3"><rect class="t-label-bg" x="307.5" y="389" width="85" height="24" rx="11"/><text class="t-text t-label" x="350" y="405" font-size="12" font-weight="400" text-anchor="middle"><tspan x="350" dy="0">over budget</tspan></text></g>
+<g class="t-edge-label" data-edge="e7"><rect class="t-label-bg" x="572" y="603" width="57" height="24" rx="11"/><text class="t-text t-label" x="600.5" y="619" font-size="12" font-weight="400" text-anchor="middle"><tspan x="600.5" dy="0">invoice</tspan></text></g>
+<g class="t-edge-label" data-edge="e10"><rect class="t-label-bg" x="890" y="873" width="43" height="24" rx="11"/><text class="t-text t-label" x="911.5" y="889" font-size="12" font-weight="400" text-anchor="middle"><tspan x="911.5" dy="0">retry</tspan></text></g>
+<g class="t-edge-label" data-edge="e11"><rect class="t-label-bg" x="425" y="955" width="55" height="24" rx="11"/><text class="t-text t-label" x="452.5" y="971" font-size="12" font-weight="400" text-anchor="middle"><tspan x="452.5" dy="0">settled</tspan></text></g>
+<g class="t-node t-fam-start t-shape-pill t-tint" data-id="start" data-kind="start" tabindex="0"><rect class="t-node-box" x="73" y="64" width="72" height="36" rx="18"/><text class="t-text t-node-label" x="109" y="86.5" font-size="13" font-weight="600" text-anchor="middle"><tspan x="109" dy="0">Start</tspan></text></g>
+<g class="t-node t-fam-task t-tint" data-id="submit" data-kind="task" tabindex="0"><desc>Item, quantity and cost center.</desc><rect class="t-node-box" x="24" y="160" width="170" height="72" rx="12" filter="url(#t-shadow)"/><text class="t-text t-node-label" x="109" y="184.5" font-size="14" font-weight="600" text-anchor="middle"><tspan x="109" dy="0">Submit request</tspan></text><text class="t-text t-node-note" x="109" y="202.5" font-size="12" font-weight="400" text-anchor="middle"><tspan x="109" dy="0">Item, quantity and cost</tspan><tspan x="109" dy="15.6">center.</tspan></text></g>
+<g class="t-node t-fam-decision t-shape-diamond t-tint" data-id="check" data-kind="decision" tabindex="0"><polygon class="t-node-box" points="350,292 423,328.5 350,365 277,328.5" filter="url(#t-shadow)"/><text class="t-text t-node-label" x="350" y="333" font-size="13" font-weight="600" text-anchor="middle"><tspan x="350" dy="0">Within budget?</tspan></text></g>
+<g class="t-node t-fam-task t-tint" data-id="reject" data-kind="task" tabindex="0"><rect class="t-node-box" x="277.5" y="437" width="145" height="48" rx="12" filter="url(#t-shadow)"/><text class="t-text t-node-label" x="350" y="466" font-size="14" font-weight="600" text-anchor="middle"><tspan x="350" dy="0">Notify rejection</tspan></text></g>
+<g class="t-node t-fam-task t-shape-subprocess t-tint" data-id="vendor" data-kind="subprocess" tabindex="0"><desc>Skipped for vendors already approved.</desc><rect class="t-node-box" x="481" y="425" width="172" height="72" rx="12" filter="url(#t-shadow)"/><line class="t-node-rule" x1="489" y1="425" x2="489" y2="497"/><line class="t-node-rule" x1="645" y1="425" x2="645" y2="497"/><text class="t-text t-node-label" x="567" y="449.5" font-size="14" font-weight="600" text-anchor="middle"><tspan x="567" dy="0">Vendor onboarding</tspan></text><text class="t-text t-node-note" x="567" y="467.5" font-size="12" font-weight="400" text-anchor="middle"><tspan x="567" dy="0">Skipped for vendors</tspan><tspan x="567" dy="15.6">already approved.</tspan></text></g>
+<g class="t-node t-fam-task t-tint" data-id="order" data-kind="task" tabindex="0"><rect class="t-node-box" x="291" y="557" width="118" height="48" rx="12" filter="url(#t-shadow)"/><text class="t-text t-node-label" x="350" y="586" font-size="14" font-weight="600" text-anchor="middle"><tspan x="350" dy="0">Place order</tspan></text></g>
+<g class="t-node t-fam-wait" data-id="delivery" data-kind="wait" tabindex="0"><rect class="t-node-box" x="261.5" y="665" width="177" height="48" rx="12" filter="url(#t-shadow)"/><rect class="t-chip" x="273.5" y="674" width="30" height="30" rx="9"/><svg class="t-icon t-icon-wait" x="280.5" y="681" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg><text class="t-text t-node-label" x="313.5" y="694" font-size="14" font-weight="600"><tspan x="313.5" dy="0">Wait for delivery</tspan></text></g>
+<g class="t-node t-fam-task t-tint" data-id="pay" data-kind="task" tabindex="0"><rect class="t-node-box" x="739" y="773" width="138" height="48" rx="12" filter="url(#t-shadow)"/><text class="t-text t-node-label" x="808" y="802" font-size="14" font-weight="600" text-anchor="middle"><tspan x="808" dy="0">Send payment</tspan></text></g>
+<g class="t-node t-fam-decision t-shape-diamond t-tint" data-id="paid" data-kind="decision" tabindex="0"><polygon class="t-node-box" points="808,881 883.5,919 808,957 732.5,919" filter="url(#t-shadow)"/><text class="t-text t-node-label" x="808" y="923.5" font-size="13" font-weight="600" text-anchor="middle"><tspan x="808" dy="0">Bank accepted?</tspan></text></g>
+<g class="t-node t-fam-end t-shape-end t-tint" data-id="end" data-kind="end" tabindex="0"><rect class="t-node-box" x="73" y="1017" width="72" height="36" rx="18"/><rect class="t-node-box t-node-inner" x="76" y="1020" width="66" height="30" rx="15"/><text class="t-text t-node-label" x="109" y="1039.5" font-size="13" font-weight="600" text-anchor="middle"><tspan x="109" dy="0">End</tspan></text></g>
+<g class="t-legend"><g class="t-legend-item t-fam-start"><rect class="t-legend-swatch" x="24" y="1096" width="24" height="14" rx="5"/><text class="t-text t-legend-label" x="56" y="1107.37" font-size="12" font-weight="400"><tspan x="56" dy="0">Start</tspan></text></g><g class="t-legend-item t-fam-end"><rect class="t-legend-swatch" x="102.81" y="1096" width="24" height="14" rx="5"/><text class="t-text t-legend-label" x="134.81" y="1107.37" font-size="12" font-weight="400"><tspan x="134.81" dy="0">End</tspan></text></g><g class="t-legend-item t-fam-decision"><rect class="t-legend-swatch" x="176.46" y="1096" width="24" height="14" rx="5"/><text class="t-text t-legend-label" x="208.46" y="1107.37" font-size="12" font-weight="400"><tspan x="208.46" dy="0">Decision</tspan></text></g><g class="t-legend-item t-fam-wait"><rect class="t-legend-swatch" x="277.4" y="1096" width="24" height="14" rx="5"/><text class="t-text t-legend-label" x="309.4" y="1107.37" font-size="12" font-weight="400"><tspan x="309.4" dy="0">Wait</tspan></text></g><g class="t-legend-item t-fam-task"><rect class="t-legend-swatch" x="354.79" y="1096" width="24" height="14" rx="5"/><text class="t-text t-legend-label" x="386.79" y="1107.37" font-size="12" font-weight="400"><tspan x="386.79" dy="0">Task</tspan></text></g><g class="t-legend-item"><line class="t-legend-line t-legend-sync" x1="434.2" y1="1103" x2="458.2" y2="1103"/><text class="t-text t-legend-label" x="466.2" y="1107.37" font-size="12" font-weight="400"><tspan x="466.2" dy="0">Sync</tspan></text></g><g class="t-legend-item"><line class="t-legend-line t-legend-async" x1="514.59" y1="1103" x2="538.59" y2="1103"/><text class="t-text t-legend-label" x="546.59" y="1107.37" font-size="12" font-weight="400"><tspan x="546.59" dy="0">Async</tspan></text></g></g>
 </svg>

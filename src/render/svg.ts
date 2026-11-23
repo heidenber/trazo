@@ -14,21 +14,36 @@ import type {
   TextBlock,
 } from "../scene.js";
 import { lineHeight } from "../text/measure.js";
+import { CHIP_PAD, CHIP_RADIUS, CHIP_SIZE, GLYPH_SIZE } from "./card.js";
 import { ICONS } from "./generated/icons.js";
 import { familyOf, type Family } from "./families.js";
-import { laneMarkup, num, rect, shapeMarkup } from "./shapes.js";
+import {
+  SHADOWED,
+  SHADOW_ID,
+  TABLE_RADIUS,
+  laneMarkup,
+  num,
+  pathData,
+  rect,
+  shapeMarkup,
+} from "./shapes.js";
 import {
   LEGEND_CSS,
   NOTE_CSS,
   SEQUENCE_CSS,
+  SHADOW_CSS,
   SHAPE_CSS,
   SVG_CSS,
   TABLE_CSS,
   familyCss,
 } from "./theme.js";
 
-const ICON_SIZE = 20;
-const ICON_PAD = 12;
+const GROUP_RADIUS = 16;
+const FRAGMENT_RADIUS = 8;
+const LEGEND_SWATCH_RADIUS = 5;
+const LABEL_RADIUS = 11;
+/** Shapes whose box takes the family tint; cards with a chip keep the card surface. */
+const TINTED_SHAPES = ["pill", "end", "diamond"];
 
 export function escapeXml(text: string): string {
   return text
@@ -53,7 +68,7 @@ function text(block: TextBlock, cls: string): string {
 
 function group(g: SceneGroup): string {
   if (g.variant !== "group") return "";
-  return `<g class="t-group" data-id="${escapeXml(g.id)}">${rect(g, "t-group-box")}${text(g.label, "t-group-title")}</g>`;
+  return `<g class="t-group" data-id="${escapeXml(g.id)}">${rect(g, "t-group-box", GROUP_RADIUS)}${text(g.label, "t-group-title")}</g>`;
 }
 
 const bracket = (b: TextBlock): TextBlock => {
@@ -78,7 +93,7 @@ function fragment(g: SceneGroup): string {
         `<line class="t-frag-divider" x1="${num(g.x)}" y1="${num(d.y)}" x2="${num(g.x + g.w)}" y2="${num(d.y)}"/>${text(bracket(d.guard), "t-frag-guard")}`,
     )
     .join("");
-  return `<g class="t-fragment" data-id="${escapeXml(g.id)}">${rect(g, "t-frag", 4)}${dividers}${tab}${tag}${guard}</g>`;
+  return `<g class="t-fragment" data-id="${escapeXml(g.id)}">${rect(g, "t-frag", FRAGMENT_RADIUS)}${dividers}${tab}${tag}${guard}</g>`;
 }
 
 const lifeline = (l: SceneLifeline) =>
@@ -100,7 +115,7 @@ const arrowClass = (style: SceneEdge["style"]) =>
   style === "sync" ? "t-arrow" : `t-arrow t-arrow-${style}`;
 
 function edge(e: SceneEdge, seq: boolean): string {
-  const d = e.points.map((p, i) => `${i === 0 ? "M" : "L"}${num(p.x)} ${num(p.y)}`).join(" ");
+  const d = pathData(e.points, undefined, e.ends !== undefined);
   const id = `data-edge="${escapeXml(e.id)}"`;
   const attrs = `class="t-edge t-edge-${e.style}" data-from="${escapeXml(e.from)}" data-to="${escapeXml(e.to)}" d="${d}"`;
   if (!e.ends)
@@ -125,16 +140,28 @@ const endMarkers = () =>
     )
     .join("");
 
+// Two layers: a tight contact shadow and a wide soft one. The region is generous because the
+// blur of the far layer reaches well past a short card.
+const shadowFilter = () =>
+  `<filter id="${SHADOW_ID}" x="-30%" y="-40%" width="160%" height="220%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="1" stdDeviation="1" class="t-shadow-near"/><feDropShadow dx="0" dy="6" stdDeviation="8" class="t-shadow-far"/></filter>`;
+
 function edgeLabel(e: SceneEdge): string {
   if (!e.label) return "";
-  return `<g class="t-edge-label" data-edge="${escapeXml(e.id)}">${rect(e.label.box, "t-label-bg", 3)}${text(e.label.text, "t-label")}</g>`;
+  return `<g class="t-edge-label" data-edge="${escapeXml(e.id)}">${rect(e.label.box, "t-label-bg", Math.min(e.label.box.h / 2, LABEL_RADIUS))}${text(e.label.text, "t-label")}</g>`;
 }
 
-function icon(node: SceneNode): string {
+const hasChip = (node: SceneNode) =>
+  node.icon !== undefined && ICONS[node.icon] !== undefined && node.shape !== "table";
+
+/** A tinted chip on the left of the card with the kind's icon on it. */
+function chip(node: SceneNode): string {
   const markup = node.icon === undefined ? undefined : ICONS[node.icon];
   if (markup === undefined) return "";
-  const y = node.y + (node.h - ICON_SIZE) / 2;
-  return `<svg class="t-icon t-icon-${escapeXml(node.kind)}" x="${num(node.x + ICON_PAD)}" y="${num(y)}" width="${ICON_SIZE}" height="${ICON_SIZE}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${markup}</svg>`;
+  const x = node.x + CHIP_PAD;
+  const y = node.y + (node.h - CHIP_SIZE) / 2;
+  const inset = (CHIP_SIZE - GLYPH_SIZE) / 2;
+  const box: Box = { x, y, w: CHIP_SIZE, h: CHIP_SIZE };
+  return `${rect(box, "t-chip", CHIP_RADIUS)}<svg class="t-icon t-icon-${escapeXml(node.kind)}" x="${num(x + inset)}" y="${num(y + inset)}" width="${GLYPH_SIZE}" height="${GLYPH_SIZE}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">${markup}</svg>`;
 }
 
 function legend(items: SceneLegendItem[]): string {
@@ -142,7 +169,7 @@ function legend(items: SceneLegendItem[]): string {
     const s = item.swatch;
     const mid = s.y + s.h / 2;
     const mark = item.family
-      ? rect(s, "t-node-box", 3)
+      ? rect(s, "t-legend-swatch", LEGEND_SWATCH_RADIUS)
       : `<line class="t-legend-line t-legend-${item.style}" x1="${num(s.x)}" y1="${num(mid)}" x2="${num(s.x + s.w)}" y2="${num(mid)}"/>`;
     const cls = item.family ? `t-legend-item t-fam-${item.family}` : "t-legend-item";
     return `<g class="${cls}">${mark}${text(item.label, "t-legend-label")}</g>`;
@@ -161,7 +188,7 @@ function lanes(groups: SceneGroup[]): string[] {
 
 function tableBody(n: SceneNode): string {
   const head = n.header ?? 0;
-  const r = 8;
+  const r = TABLE_RADIUS;
   const right = n.x + n.w;
   const band = `<path class="t-table-head" d="M${num(n.x)} ${num(n.y + head)}V${num(n.y + r)}Q${num(n.x)} ${num(n.y)} ${num(n.x + r)} ${num(n.y)}H${num(right - r)}Q${num(right)} ${num(n.y)} ${num(right)} ${num(n.y + r)}V${num(n.y + head)}z"/>`;
   const rows = (n.rows ?? []).map((row: SceneRow) => {
@@ -177,8 +204,14 @@ function tableBody(n: SceneNode): string {
 function node(n: SceneNode, family: Family | undefined): string {
   const tip = [n.note, n.source].filter((s): s is string => s !== undefined && s !== "").join("\n");
   const desc = tip ? `<desc>${escapeXml(tip)}</desc>` : "";
-  const cls = ["t-node", family && `t-fam-${family}`, n.shape !== "box" && `t-shape-${n.shape}`];
-  return `<g class="${cls.filter(Boolean).join(" ")}" data-id="${escapeXml(n.id)}" data-kind="${escapeXml(n.kind)}" tabindex="0">${desc}${shapeMarkup(n.shape, n)}${n.shape === "table" ? tableBody(n) : icon(n)}${text(n.label, "t-node-label")}${n.subtitle ? text(n.subtitle, "t-node-note") : ""}</g>`;
+  const tint = family !== undefined && (TINTED_SHAPES.includes(n.shape) || !hasChip(n));
+  const cls = [
+    "t-node",
+    family && `t-fam-${family}`,
+    n.shape !== "box" && `t-shape-${n.shape}`,
+    tint && "t-tint",
+  ];
+  return `<g class="${cls.filter(Boolean).join(" ")}" data-id="${escapeXml(n.id)}" data-kind="${escapeXml(n.kind)}"${n.source ? ` data-source="${escapeXml(n.source)}"` : ""} tabindex="0">${desc}${shapeMarkup(n.shape, n)}${n.shape === "table" ? tableBody(n) : chip(n)}${text(n.label, "t-node-label")}${n.subtitle ? text(n.subtitle, "t-node-note") : ""}</g>`;
 }
 
 const needsShapeCss = (scene: Scene) =>
@@ -197,16 +230,18 @@ export function renderSvg(scene: Scene): string {
   const heads = STYLES.flatMap((style) => {
     const own = scene.edges.filter((e) => !e.ends && e.style === style);
     const filled = own.some((e) => !isOpen(e))
-      ? `<marker id="${markerId(style, false)}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="${arrowClass(style)}" d="M0 1L10 5L0 9z"/></marker>`
+      ? `<marker id="${markerId(style, false)}" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path class="${arrowClass(style)}" d="M1.8 1.8L8.4 5L1.8 8.2z"/></marker>`
       : "";
     const open = own.some(isOpen)
-      ? `<marker id="${markerId(style, true)}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow-open t-arrow-open-${style}" d="M1 1L9 5L1 9"/></marker>`
+      ? `<marker id="${markerId(style, true)}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow-open t-arrow-open-${style}" d="M1 1L9 5L1 9"/></marker>`
       : "";
     return [filled, open];
   });
   const families = scene.nodes.map((n) => familyOf(scene, n));
+  const shadowed = scene.nodes.some((n) => SHADOWED.includes(n.shape));
   const css =
     (needsShapeCss(scene) ? SVG_CSS + SHAPE_CSS : SVG_CSS) +
+    (shadowed ? SHADOW_CSS : "") +
     familyCss([
       ...families.filter((f): f is Family => f !== undefined),
       ...(scene.legend ?? []).flatMap((i) => (i.family ? [i.family as Family] : [])),
@@ -219,7 +254,7 @@ export function renderSvg(scene: Scene): string {
     `<svg xmlns="http://www.w3.org/2000/svg" class="${seq ? "diagram t-seq" : "diagram"}" viewBox="0 0 ${num(scene.width)} ${num(scene.height)}" role="img" aria-labelledby="${labelled}">`,
     `<title id="t-title">${escapeXml(scene.title)}</title>`,
     desc,
-    `<defs>${heads.join("")}${ends ? endMarkers() : ""}</defs>`,
+    `<defs>${heads.join("")}${ends ? endMarkers() : ""}${shadowed ? shadowFilter() : ""}</defs>`,
     `<style>${css}</style>`,
     ...(scene.lifelines ?? []).map(lifeline),
     ...lanes(scene.groups),

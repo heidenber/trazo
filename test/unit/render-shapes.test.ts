@@ -57,20 +57,24 @@ describe("node shapes", () => {
   it("emits exactly one t-shape group per non-box shape", () => {
     const svg = renderSvg(scene(shapes.map((s) => node(s, s))));
     for (const s of shapes)
-      expect(count(svg, new RegExp(`class="t-node( t-fam-[a-z]+)? t-shape-${s}"`, "g"))).toBe(1);
+      expect(
+        count(svg, new RegExp(`class="t-node( t-fam-[a-z]+)? t-shape-${s}( t-tint)?"`, "g")),
+      ).toBe(1);
   });
 
   it("keeps the plain t-node group for box", () => {
     const svg = renderSvg(scene([node("b", "box")]));
-    expect(count(svg, /class="t-node( t-fam-[a-z]+)?"/g)).toBe(1);
+    expect(count(svg, /class="t-node( t-fam-[a-z]+)?( t-tint)?"/g)).toBe(1);
     expect(svg).toContain(
-      '<rect class="t-node-box" x="10" y="20" width="120" height="40" rx="8"/>',
+      '<rect class="t-node-box" x="10" y="20" width="120" height="40" rx="12" filter="url(#t-shadow)"/>',
     );
   });
 
   it("draws the diamond through the edge midpoints", () => {
     const svg = renderSvg(scene([node("d", "diamond")]));
-    expect(svg).toContain('<polygon class="t-node-box" points="70,20 130,40 70,60 10,40"/>');
+    expect(svg).toContain(
+      '<polygon class="t-node-box" points="70,20 130,40 70,60 10,40" filter="url(#t-shadow)"/>',
+    );
   });
 
   it("rounds pills with rx = h/2", () => {

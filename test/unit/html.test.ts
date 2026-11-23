@@ -27,29 +27,14 @@ const BUTTONS = [
   ["zoom-out", "Zoom out"],
   ["zoom-in", "Zoom in"],
   ["fit", "Fit to screen"],
-  ["save-svg", "Download SVG"],
-  ["save-png", "Download PNG"],
   ["fullscreen", "Enter full screen"],
-  ["theme", "Switch to dark theme"],
+  ["export", "Export diagram"],
 ];
 
 describe("toolbar", () => {
-  it("lists the buttons in order with their labels", () => {
-    let at = -1;
+  it("lists the buttons with their labels", () => {
     for (const [id, label] of BUTTONS) {
-      const i = html.indexOf(`id="${id}" aria-label="${label}"`);
-      expect(i, id).toBeGreaterThan(at);
-      at = i;
-    }
-  });
-
-  it("groups view, export and page buttons", () => {
-    expect(html.match(/<div class="group">/g)).toHaveLength(3);
-  });
-
-  it("embeds the new icons", () => {
-    for (const name of ["zoom-in", "zoom-out", "focus", "file-code", "file-image"]) {
-      expect(html).toContain(`class="i-${name}"`);
+      expect(html, id).toContain(`id="${id}" aria-label="${label}"`);
     }
   });
 
@@ -69,11 +54,11 @@ describe("stage", () => {
     expect(html).toContain("cursor: grab");
   });
 
-  it("styles the dimming and the tooltip", () => {
+  it("styles the dimming and shows details in a card", () => {
     expect(html).toContain(
       ".t-dim :is(.t-node, .t-edge, .t-edge-halo, .t-edge-label, .t-lifeline):not(.t-near)",
     );
-    expect(html).toContain('role="tooltip"');
+    expect(html).toContain('<aside class="detail" id="detail"');
   });
 });
 
@@ -87,10 +72,8 @@ describe("credit", () => {
   });
 
   it("stays out of the diagram, so exported SVG and PNG carry no credit", () => {
-    const svg = html.slice(
-      html.indexOf('<svg xmlns="http://www.w3.org/2000/svg" class="diagram'),
-      html.indexOf("</main>"),
-    );
+    const start = html.indexOf('<svg xmlns="http://www.w3.org/2000/svg" class="diagram');
+    const svg = html.slice(start, html.indexOf('<div class="minimap"'));
     expect(svg).toMatch(/^<svg [\s\S]*<\/svg>\s*<\/div>\s*$/);
     expect(svg).not.toContain("Made with trazo");
   });

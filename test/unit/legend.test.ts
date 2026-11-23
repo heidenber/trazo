@@ -151,7 +151,7 @@ describe("legend markup", () => {
 
   it("colors family swatches like nodes and style swatches like edges", async () => {
     const svg = renderSvg(await sceneOf(example("architecture")));
-    expect(svg).toMatch(/<g class="t-legend-item t-fam-compute"><rect class="t-node-box"/);
+    expect(svg).toMatch(/<g class="t-legend-item t-fam-compute"><rect class="t-legend-swatch"/);
     expect(svg).toMatch(/<line class="t-legend-line t-legend-async"/);
     expect(svg).toContain(".t-legend-async { stroke: var(--t-edge-async");
   });

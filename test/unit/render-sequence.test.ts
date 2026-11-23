@@ -168,6 +168,6 @@ describe("sequence render", () => {
     expect(svg).not.toContain("t-arrowhead-open");
     expect(svg).not.toContain(SEQUENCE_CSS);
     expect(svg).toContain('marker-end="url(#t-arrowhead-async)"');
-    expect(svg).toContain(".t-edge-async { stroke-dasharray: 7 5; }");
+    expect(svg).toContain(".t-edge-async { stroke-dasharray: 6 5; }");
   });
 });

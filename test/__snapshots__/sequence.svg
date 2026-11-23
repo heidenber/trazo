@@ -1,115 +1,112 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="diagram t-seq" viewBox="0 0 977 804" role="img" aria-labelledby="t-title t-desc">
+<svg xmlns="http://www.w3.org/2000/svg" class="diagram t-seq" viewBox="0 0 1025 804" role="img" aria-labelledby="t-title t-desc">
 <title id="t-title">Checkout</title>
 <desc id="t-desc">How a cart becomes a paid order.</desc>
-<defs><marker id="t-arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow" d="M0 1L10 5L0 9z"/></marker><marker id="t-arrowhead-open-async" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow-open t-arrow-open-async" d="M1 1L9 5L1 9"/></marker><marker id="t-arrowhead-open-reply" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow-open t-arrow-open-reply" d="M1 1L9 5L1 9"/></marker></defs>
+<defs><marker id="t-arrowhead" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow" d="M1.8 1.8L8.4 5L1.8 8.2z"/></marker><marker id="t-arrowhead-open-async" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow-open t-arrow-open-async" d="M1 1L9 5L1 9"/></marker><marker id="t-arrowhead-open-reply" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow-open t-arrow-open-reply" d="M1 1L9 5L1 9"/></marker><filter id="t-shadow" x="-30%" y="-40%" width="160%" height="220%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="1" stdDeviation="1" class="t-shadow-near"/><feDropShadow dx="0" dy="6" stdDeviation="8" class="t-shadow-far"/></filter></defs>
 <style>
-.t-text { font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; font-kerning: none; font-variant-ligatures: none; font-feature-settings: "kern" 0, "liga" 0, "calt" 0; fill: var(--t-text, #1f2933); }
-.t-group-title { fill: var(--t-muted, #52606d); }
-.t-group-box { fill: var(--t-group-fill, #f5f7fa); stroke: var(--t-group-stroke, #cbd2d9); stroke-width: 1; }
-.t-node-box { fill: var(--t-node-fill, #ffffff); stroke: var(--t-node-stroke, #9aa5b1); stroke-width: 1.25; }
+.t-text { font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; font-kerning: none; font-variant-ligatures: none; font-feature-settings: "kern" 0, "liga" 0, "calt" 0; fill: var(--t-text, #151a2b); }
+.t-group-title { fill: var(--t-muted, #5a6379); }
+.t-group-box { fill: var(--t-group-fill, #edf0f9); stroke: var(--t-group-stroke, #d3d9ea); stroke-width: 1; }
+.t-node-box { fill: var(--t-card, #ffffff); stroke: var(--t-card-stroke, #dde2ee); stroke-width: 1; stroke-linejoin: round; }
+.t-tint .t-node-box { fill: var(--t-f-fill, #ffffff); stroke: var(--t-f-stroke, #818694); stroke-width: 1.5; }
+.t-tint .t-node-rule { stroke: var(--t-f-stroke, #818694); }
+.t-chip { fill: var(--t-f-fill, #edf0f9); stroke: var(--t-f-stroke, #818694); stroke-opacity: 0.35; stroke-width: 1; }
 .t-node:focus { outline: none; }
-.t-node:focus-visible .t-node-box { stroke: var(--t-accent, #2f6fdb); stroke-width: 2.5; }
-.t-icon { color: var(--t-icon, #52606d); }
-.t-edge { fill: none; stroke: var(--t-edge, #2f6fdb); stroke-width: 1.5; stroke-linejoin: round; }
-.t-edge-async { stroke: var(--t-edge-async, #7c4ddb); }
-.t-edge-data { stroke: var(--t-edge-data, #1f8a7a); }
-.t-edge-reply { stroke: var(--t-edge-reply, #66727f); }
-.t-edge-async { stroke-dasharray: 7 5; }
-.t-edge-data { stroke-dasharray: 1.5 4.5; stroke-linecap: round; }
-.t-arrow { fill: var(--t-edge, #2f6fdb); }
-.t-arrow-async { fill: var(--t-edge-async, #7c4ddb); }
-.t-arrow-data { fill: var(--t-edge-data, #1f8a7a); }
-.t-arrow-reply { fill: var(--t-edge-reply, #66727f); }
-.t-label-bg { fill: var(--t-bg, #ffffff); stroke: none; }
-.t-label { fill: var(--t-muted, #52606d); }
+.t-node:focus-visible .t-node-box { stroke: var(--t-accent, #4457e8); stroke-width: 2.5; }
+.t-icon { color: var(--t-f-stroke, var(--t-icon, #5a6379)); }
+.t-edge { fill: none; stroke: var(--t-edge, #1b5eda); stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+.t-edge-async { stroke: var(--t-edge-async, #803bce); }
+.t-edge-data { stroke: var(--t-edge-data, #1a9386); }
+.t-edge-reply { stroke: var(--t-edge-reply, #606e80); }
+.t-edge-async { stroke-dasharray: 6 5; }
+.t-edge-data { stroke-dasharray: 0.1 5.2; stroke-width: 2.4; }
+.t-arrow { fill: var(--t-edge, #1b5eda); stroke: var(--t-edge, #1b5eda); stroke-width: 1.4; stroke-linejoin: round; }
+.t-arrow-async { fill: var(--t-edge-async, #803bce); stroke: var(--t-edge-async, #803bce); }
+.t-arrow-data { fill: var(--t-edge-data, #1a9386); stroke: var(--t-edge-data, #1a9386); }
+.t-arrow-reply { fill: var(--t-edge-reply, #606e80); stroke: var(--t-edge-reply, #606e80); }
+.t-label-bg { fill: var(--t-label-bg, #ffffff); stroke: var(--t-border, #dde2ee); stroke-width: 1; }
+.t-label { fill: var(--t-muted, #5a6379); }
 
 .t-node-inner { fill: none; }
-.t-node-rule { stroke: var(--t-node-stroke, #9aa5b1); stroke-width: 1.25; }
+.t-node-rule { stroke: var(--t-node-stroke, #818694); stroke-width: 1.25; }
 .t-lane-band { fill: var(--t-lane-fill, transparent); stroke: none; }
-.t-lane-odd .t-lane-band { fill: var(--t-lane-fill-odd, rgba(120, 130, 145, 0.08)); }
-.t-lane-header { fill: var(--t-lane-header, rgba(120, 130, 145, 0.12)); stroke: none; }
-.t-lane-rule { stroke: var(--t-group-stroke, #cbd2d9); stroke-width: 1; }
-.t-lane-title { fill: var(--t-muted, #52606d); }
-.t-fam-compute .t-node-box { fill: var(--t-fam-compute-fill, #eaebfa); stroke: var(--t-fam-compute-stroke, #4f5bd5); }
-.t-fam-compute .t-node-rule { stroke: var(--t-fam-compute-stroke, #4f5bd5); }
-.t-fam-compute .t-icon { color: var(--t-fam-compute-stroke, #4f5bd5); }
-.t-fam-data .t-node-box { fill: var(--t-fam-data-fill, #e4f1ef); stroke: var(--t-fam-data-stroke, #1f8a7a); }
-.t-fam-data .t-node-rule { stroke: var(--t-fam-data-stroke, #1f8a7a); }
-.t-fam-data .t-icon { color: var(--t-fam-data-stroke, #1f8a7a); }
-.t-fam-messaging .t-node-box { fill: var(--t-fam-messaging-fill, #f8ede2); stroke: var(--t-fam-messaging-stroke, #c2670f); }
-.t-fam-messaging .t-node-rule { stroke: var(--t-fam-messaging-stroke, #c2670f); }
-.t-fam-messaging .t-icon { color: var(--t-fam-messaging-stroke, #c2670f); }
-.t-fam-client .t-node-box { fill: var(--t-fam-client-fill, #e6f1e9); stroke: var(--t-fam-client-stroke, #2f8a45); }
-.t-fam-client .t-node-rule { stroke: var(--t-fam-client-stroke, #2f8a45); }
-.t-fam-client .t-icon { color: var(--t-fam-client-stroke, #2f8a45); }
-.t-fam-external .t-node-box { fill: var(--t-fam-external-fill, #f6e9ee); stroke: var(--t-fam-external-stroke, #b5476f); }
-.t-fam-external .t-node-rule { stroke: var(--t-fam-external-stroke, #b5476f); }
-.t-fam-external .t-icon { color: var(--t-fam-external-stroke, #b5476f); }
+.t-lane-odd .t-lane-band { fill: var(--t-lane-fill-odd, #edf0f9); }
+.t-lane-header { fill: var(--t-lane-header, #e9edf5); stroke: none; }
+.t-lane-rule { stroke: var(--t-group-stroke, #d3d9ea); stroke-width: 1; }
+.t-lane-title { fill: var(--t-muted, #5a6379); }
 
-.t-legend-label { fill: var(--t-muted, #52606d); }
-.t-legend-line { fill: none; stroke: var(--t-edge, #2f6fdb); stroke-width: 1.5; stroke-linecap: round; }
-.t-legend-async { stroke: var(--t-edge-async, #7c4ddb); }
-.t-legend-data { stroke: var(--t-edge-data, #1f8a7a); }
-.t-legend-reply { stroke: var(--t-edge-reply, #66727f); }
-.t-legend-async { stroke-dasharray: 7 5; }
-.t-legend-data { stroke-dasharray: 1.5 4.5; }
+.t-shadow-near { flood-color: var(--t-shadow, rgba(30, 41, 80, 0.16)); flood-opacity: 0.35; }
+.t-shadow-far { flood-color: var(--t-shadow, rgba(30, 41, 80, 0.16)); flood-opacity: 0.5; }
+.t-fam-compute { --t-f-fill: var(--t-fam-compute-fill, #e6e7f9); --t-f-stroke: var(--t-fam-compute-stroke, #2d36be); }
+.t-fam-data { --t-f-fill: var(--t-fam-data-fill, #e6f9f7); --t-f-stroke: var(--t-fam-data-stroke, #249889); }
+.t-fam-messaging { --t-f-fill: var(--t-fam-messaging-fill, #f9efe6); --t-f-stroke: var(--t-fam-messaging-stroke, #be702d); }
+.t-fam-client { --t-f-fill: var(--t-fam-client-fill, #e6f9ed); --t-f-stroke: var(--t-fam-client-stroke, #259c4c); }
+.t-fam-external { --t-f-fill: var(--t-fam-external-fill, #f9e6ee); --t-f-stroke: var(--t-fam-external-stroke, #be2d6c); }
+
+.t-legend-label { fill: var(--t-muted, #5a6379); }
+.t-legend-item .t-legend-swatch { fill: var(--t-f-fill, #edf0f9); stroke: var(--t-f-stroke, #818694); stroke-width: 1.25; }
+.t-legend-line { fill: none; stroke: var(--t-edge, #1b5eda); stroke-width: 1.7; stroke-linecap: round; }
+.t-legend-async { stroke: var(--t-edge-async, #803bce); }
+.t-legend-data { stroke: var(--t-edge-data, #1a9386); }
+.t-legend-reply { stroke: var(--t-edge-reply, #606e80); }
+.t-legend-async { stroke-dasharray: 6 5; }
+.t-legend-data { stroke-dasharray: 0.1 5.2; stroke-width: 2.4; }
 .t-legend-reply { stroke-dasharray: 5 4; }
 
-.t-lifeline { stroke: var(--t-group-stroke, #cbd2d9); stroke-width: 1; stroke-dasharray: 4 4; }
-.t-frag { fill: none; stroke: var(--t-node-stroke, #9aa5b1); stroke-width: 1; }
-.t-frag-tab { fill: var(--t-bg, #ffffff); stroke: var(--t-node-stroke, #9aa5b1); stroke-width: 1; }
-.t-frag-divider { stroke: var(--t-node-stroke, #9aa5b1); stroke-width: 1; stroke-dasharray: 5 4; }
-.t-frag-tag { fill: var(--t-text, #1f2933); }
-.t-frag-guard { fill: var(--t-muted, #52606d); }
-.t-note { fill: var(--t-note-fill, var(--t-group-fill, #f5f7fa)); }
-.t-note-fold { fill: none; stroke: var(--t-node-stroke, #9aa5b1); stroke-width: 1.25; stroke-linejoin: round; }
+.t-lifeline { stroke: var(--t-node-stroke, #818694); stroke-opacity: 0.55; stroke-width: 1; stroke-dasharray: 4 4; }
+.t-frag { fill: none; stroke: var(--t-node-stroke, #818694); stroke-width: 1; }
+.t-frag-tab { fill: var(--t-group-fill, #edf0f9); stroke: var(--t-node-stroke, #818694); stroke-width: 1; stroke-linejoin: round; }
+.t-frag-divider { stroke: var(--t-node-stroke, #818694); stroke-width: 1; stroke-dasharray: 5 4; }
+.t-frag-tag { fill: var(--t-text, #151a2b); }
+.t-frag-guard { fill: var(--t-muted, #5a6379); }
+.t-note { fill: var(--t-note-fill, #edf0f9); }
+.t-note-fold { fill: none; stroke: var(--t-node-stroke, #818694); stroke-width: 1.25; stroke-linejoin: round; }
 .t-edge-reply { stroke-dasharray: 5 4; }
 .t-seq .t-edge-async { stroke-dasharray: none; }
-.t-arrow-open { fill: none; stroke: var(--t-edge, #2f6fdb); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.t-arrow-open { fill: none; stroke: var(--t-edge, #1b5eda); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .t-seq .t-legend-async { stroke-dasharray: none; }
-.t-arrow-open-async { stroke: var(--t-edge-async, #7c4ddb); }
-.t-arrow-open-reply { stroke: var(--t-edge-reply, #66727f); }
+.t-arrow-open-async { stroke: var(--t-edge-async, #803bce); }
+.t-arrow-open-reply { stroke: var(--t-edge-reply, #606e80); }
 </style>
 <line class="t-lifeline" data-id="shopper" x1="84" y1="64" x2="84" y2="728"/>
-<line class="t-lifeline" data-id="web" x1="233" y1="64" x2="233" y2="728"/>
-<line class="t-lifeline" data-id="orders" x1="378" y1="64" x2="378" y2="728"/>
-<line class="t-lifeline" data-id="stock" x1="542" y1="64" x2="542" y2="728"/>
-<line class="t-lifeline" data-id="psp" x1="709" y1="64" x2="709" y2="728"/>
-<line class="t-lifeline" data-id="events" x1="884.5" y1="64" x2="884.5" y2="728"/>
-<g class="t-fragment" data-id="#f0"><rect class="t-frag" x="217" y="196" width="684" height="392" rx="4"/><line class="t-frag-divider" x1="217" y1="480" x2="901" y2="480"/><text class="t-text t-frag-guard" x="225" y="495" font-size="11" font-weight="400"><tspan x="225" dy="0">[missing items]</tspan></text><path class="t-frag-tab" d="M217 196H247V208L241 214H217z"/><text class="t-text t-frag-tag" x="225" y="209" font-size="11" font-weight="600"><tspan x="225" dy="0">alt</tspan></text><text class="t-text t-frag-guard" x="255" y="209" font-size="11" font-weight="400"><tspan x="255" dy="0">[all items in stock]</tspan></text></g>
-<g class="t-fragment" data-id="#f1"><rect class="t-frag" x="362" y="294" width="363" height="114" rx="4"/><path class="t-frag-tab" d="M362 294H402V306L396 312H362z"/><text class="t-text t-frag-tag" x="370" y="307" font-size="11" font-weight="600"><tspan x="370" dy="0">loop</tspan></text><text class="t-text t-frag-guard" x="410" y="307" font-size="11" font-weight="400"><tspan x="410" dy="0">[until settled, max 3]</tspan></text></g>
-<path class="t-edge t-edge-sync" data-from="shopper" data-to="web" d="M84 118 L233 118" marker-end="url(#t-arrowhead)" data-edge="#m0"/>
-<path class="t-edge t-edge-sync" data-from="web" data-to="orders" d="M233 154 L378 154" marker-end="url(#t-arrowhead)" data-edge="#m1"/>
-<path class="t-edge t-edge-sync" data-from="orders" data-to="stock" d="M378 190 L542 190" marker-end="url(#t-arrowhead)" data-edge="#m2"/>
-<path class="t-edge t-edge-reply" data-from="stock" data-to="orders" d="M542 252 L378 252" marker-end="url(#t-arrowhead-open-reply)" data-edge="#m3"/>
-<path class="t-edge t-edge-sync" data-from="orders" data-to="psp" d="M378 288 L709 288" marker-end="url(#t-arrowhead)" data-edge="#m4"/>
-<path class="t-edge t-edge-reply" data-from="psp" data-to="orders" d="M709 350 L378 350" marker-end="url(#t-arrowhead-open-reply)" data-edge="#m5"/>
-<path class="t-edge t-edge-sync" data-from="orders" data-to="orders" d="M378 364 L406 364 L406 388 L378 388" marker-end="url(#t-arrowhead)" data-edge="#m6"/>
-<path class="t-edge t-edge-reply" data-from="psp" data-to="orders" d="M709 438 L378 438" marker-end="url(#t-arrowhead-open-reply)" data-edge="#m7"/>
-<path class="t-edge t-edge-async" data-from="orders" data-to="events" d="M378 474 L884.5 474" marker-end="url(#t-arrowhead-open-async)" data-edge="#m8"/>
-<path class="t-edge t-edge-reply" data-from="stock" data-to="orders" d="M542 534 L378 534" marker-end="url(#t-arrowhead-open-reply)" data-edge="#m9"/>
-<path class="t-edge t-edge-reply" data-from="orders" data-to="web" d="M378 570 L233 570" marker-end="url(#t-arrowhead-open-reply)" data-edge="#m10"/>
-<path class="t-edge t-edge-reply" data-from="orders" data-to="web" d="M378 674 L233 674" marker-end="url(#t-arrowhead-open-reply)" data-edge="#m11"/>
-<path class="t-edge t-edge-reply" data-from="web" data-to="shopper" d="M233 710 L84 710" marker-end="url(#t-arrowhead-open-reply)" data-edge="#m12"/>
-<g class="t-edge-label" data-edge="#m0"><rect class="t-label-bg" x="119" y="94" width="79" height="21" rx="3"/><text class="t-text t-label" x="158.5" y="109" font-size="13" font-weight="400" text-anchor="middle"><tspan x="158.5" dy="0">Place order</tspan></text></g>
-<g class="t-edge-label" data-edge="#m1"><rect class="t-label-bg" x="259.5" y="130" width="92" height="21" rx="3"/><text class="t-text t-label" x="305.5" y="145" font-size="13" font-weight="400" text-anchor="middle"><tspan x="305.5" dy="0">POST /orders</tspan></text></g>
-<g class="t-edge-label" data-edge="#m2"><rect class="t-label-bg" x="412" y="166" width="96" height="21" rx="3"/><text class="t-text t-label" x="460" y="181" font-size="13" font-weight="400" text-anchor="middle"><tspan x="460" dy="0">Reserve items</tspan></text></g>
-<g class="t-edge-label" data-edge="#m3"><rect class="t-label-bg" x="412" y="228" width="96" height="21" rx="3"/><text class="t-text t-label" x="460" y="243" font-size="13" font-weight="400" text-anchor="middle"><tspan x="460" dy="0">Reservation id</tspan></text></g>
-<g class="t-edge-label" data-edge="#m4"><rect class="t-label-bg" x="501" y="264" width="85" height="21" rx="3"/><text class="t-text t-label" x="543.5" y="279" font-size="13" font-weight="400" text-anchor="middle"><tspan x="543.5" dy="0">Charge card</tspan></text></g>
-<g class="t-edge-label" data-edge="#m5"><rect class="t-label-bg" x="514" y="326" width="59" height="21" rx="3"/><text class="t-text t-label" x="543.5" y="341" font-size="13" font-weight="400" text-anchor="middle"><tspan x="543.5" dy="0">Pending</tspan></text></g>
-<g class="t-edge-label" data-edge="#m6"><rect class="t-label-bg" x="414" y="365.5" width="116" height="21" rx="3"/><text class="t-text t-label" x="418" y="380.5" font-size="13" font-weight="400"><tspan x="418" dy="0">Wait with backoff</tspan></text></g>
-<g class="t-edge-label" data-edge="#m7"><rect class="t-label-bg" x="510.5" y="414" width="66" height="21" rx="3"/><text class="t-text t-label" x="543.5" y="429" font-size="13" font-weight="400" text-anchor="middle"><tspan x="543.5" dy="0">Captured</tspan></text></g>
-<g class="t-edge-label" data-edge="#m8"><rect class="t-label-bg" x="595.5" y="450" width="72" height="21" rx="3"/><text class="t-text t-label" x="631.5" y="465" font-size="13" font-weight="400" text-anchor="middle"><tspan x="631.5" dy="0">order.paid</tspan></text></g>
-<g class="t-edge-label" data-edge="#m9"><rect class="t-label-bg" x="418" y="510" width="84" height="21" rx="3"/><text class="t-text t-label" x="460" y="525" font-size="13" font-weight="400" text-anchor="middle"><tspan x="460" dy="0">Out of stock</tspan></text></g>
-<g class="t-edge-label" data-edge="#m10"><rect class="t-label-bg" x="263" y="546" width="85" height="21" rx="3"/><text class="t-text t-label" x="305.5" y="561" font-size="13" font-weight="400" text-anchor="middle"><tspan x="305.5" dy="0">409 Conflict</tspan></text></g>
-<g class="t-edge-label" data-edge="#m11"><rect class="t-label-bg" x="264" y="650" width="83" height="21" rx="3"/><text class="t-text t-label" x="305.5" y="665" font-size="13" font-weight="400" text-anchor="middle"><tspan x="305.5" dy="0">201 Created</tspan></text></g>
-<g class="t-edge-label" data-edge="#m12"><rect class="t-label-bg" x="96" y="686" width="125" height="21" rx="3"/><text class="t-text t-label" x="158.5" y="701" font-size="13" font-weight="400" text-anchor="middle"><tspan x="158.5" dy="0">Order confirmation</tspan></text></g>
-<g class="t-node t-fam-client" data-id="shopper" data-kind="actor" tabindex="0"><rect class="t-node-box" x="24" y="24" width="120" height="40" rx="8"/><svg class="t-icon t-icon-actor" x="36" y="34" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg><text class="t-text t-node-label" x="66" y="48.5" font-size="13" font-weight="600"><tspan x="66" dy="0">Shopper</tspan></text></g>
-<g class="t-node t-fam-compute" data-id="web" data-kind="service" tabindex="0"><rect class="t-node-box" x="173" y="24" width="120" height="40" rx="8"/><svg class="t-icon t-icon-service" x="185" y="34" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /><rect width="20" height="8" x="2" y="14" rx="2" ry="2" /><line x1="6" x2="6.01" y1="6" y2="6" /><line x1="6" x2="6.01" y1="18" y2="18" /></svg><text class="t-text t-node-label" x="215" y="48.5" font-size="13" font-weight="600"><tspan x="215" dy="0">Storefront</tspan></text></g>
-<g class="t-node t-fam-compute" data-id="orders" data-kind="service" tabindex="0"><rect class="t-node-box" x="317" y="24" width="122" height="40" rx="8"/><svg class="t-icon t-icon-service" x="329" y="34" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /><rect width="20" height="8" x="2" y="14" rx="2" ry="2" /><line x1="6" x2="6.01" y1="6" y2="6" /><line x1="6" x2="6.01" y1="18" y2="18" /></svg><text class="t-text t-node-label" x="359" y="48.5" font-size="13" font-weight="600"><tspan x="359" dy="0">Orders API</tspan></text></g>
-<g class="t-node t-fam-data" data-id="stock" data-kind="database" tabindex="0"><rect class="t-node-box" x="482" y="24" width="120" height="40" rx="8"/><svg class="t-icon t-icon-database" x="494" y="34" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5V19A9 3 0 0 0 21 19V5" /><path d="M3 12A9 3 0 0 0 21 12" /></svg><text class="t-text t-node-label" x="524" y="48.5" font-size="13" font-weight="600"><tspan x="524" dy="0">Inventory</tspan></text></g>
-<g class="t-node t-fam-external" data-id="psp" data-kind="external" tabindex="0"><rect class="t-node-box" x="626" y="24" width="166" height="40" rx="8"/><svg class="t-icon t-icon-external" x="638" y="34" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" /></svg><text class="t-text t-node-label" x="668" y="48.5" font-size="13" font-weight="600"><tspan x="668" dy="0">Payment provider</tspan></text></g>
-<g class="t-node t-fam-messaging" data-id="events" data-kind="queue" tabindex="0"><rect class="t-node-box" x="816" y="24" width="137" height="40" rx="8"/><svg class="t-icon t-icon-queue" x="828" y="34" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12" /><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /></svg><text class="t-text t-node-label" x="858" y="48.5" font-size="13" font-weight="600"><tspan x="858" dy="0">Order events</tspan></text></g>
-<g class="t-node t-shape-note" data-id="#n0" data-kind="note" tabindex="0"><polygon class="t-node-box t-note" points="338,600 572,600 582,610 582,632 338,632"/><path class="t-note-fold" d="M572 600V610H582"/><text class="t-text t-node-label" x="346" y="620" font-size="12" font-weight="400"><tspan x="346" dy="0">Reservations expire after 15 minutes.</tspan></text></g>
-<g class="t-legend"><g class="t-legend-item t-fam-compute"><rect class="t-node-box" x="24" y="771" width="24" height="14" rx="3"/><text class="t-text t-legend-label" x="56" y="782.37" font-size="12" font-weight="400"><tspan x="56" dy="0">Compute</tspan></text></g><g class="t-legend-item t-fam-data"><rect class="t-node-box" x="127.84" y="771" width="24" height="14" rx="3"/><text class="t-text t-legend-label" x="159.84" y="782.37" font-size="12" font-weight="400"><tspan x="159.84" dy="0">Data</tspan></text></g><g class="t-legend-item t-fam-messaging"><rect class="t-node-box" x="205.9" y="771" width="24" height="14" rx="3"/><text class="t-text t-legend-label" x="237.9" y="782.37" font-size="12" font-weight="400"><tspan x="237.9" dy="0">Messaging</tspan></text></g><g class="t-legend-item t-fam-client"><rect class="t-node-box" x="319.86" y="771" width="24" height="14" rx="3"/><text class="t-text t-legend-label" x="351.86" y="782.37" font-size="12" font-weight="400"><tspan x="351.86" dy="0">Client</tspan></text></g><g class="t-legend-item t-fam-external"><rect class="t-node-box" x="404.45" y="771" width="24" height="14" rx="3"/><text class="t-text t-legend-label" x="436.45" y="782.37" font-size="12" font-weight="400"><tspan x="436.45" dy="0">External</tspan></text></g><g class="t-legend-item"><line class="t-legend-line t-legend-sync" x1="502.38" y1="778" x2="526.38" y2="778"/><text class="t-text t-legend-label" x="534.38" y="782.37" font-size="12" font-weight="400"><tspan x="534.38" dy="0">Sync</tspan></text></g><g class="t-legend-item"><line class="t-legend-line t-legend-async" x1="582.77" y1="778" x2="606.77" y2="778"/><text class="t-text t-legend-label" x="614.77" y="782.37" font-size="12" font-weight="400"><tspan x="614.77" dy="0">Async</tspan></text></g><g class="t-legend-item"><line class="t-legend-line t-legend-reply" x1="670.08" y1="778" x2="694.08" y2="778"/><text class="t-text t-legend-label" x="702.08" y="782.37" font-size="12" font-weight="400"><tspan x="702.08" dy="0">Reply</tspan></text></g></g>
+<line class="t-lifeline" data-id="web" x1="241" y1="64" x2="241" y2="728"/>
+<line class="t-lifeline" data-id="orders" x1="395.5" y1="64" x2="395.5" y2="728"/>
+<line class="t-lifeline" data-id="stock" x1="567.5" y1="64" x2="567.5" y2="728"/>
+<line class="t-lifeline" data-id="psp" x1="742" y1="64" x2="742" y2="728"/>
+<line class="t-lifeline" data-id="events" x1="927.5" y1="64" x2="927.5" y2="728"/>
+<g class="t-fragment" data-id="#f0"><rect class="t-frag" x="225" y="196" width="719" height="392" rx="8"/><line class="t-frag-divider" x1="225" y1="480" x2="944" y2="480"/><text class="t-text t-frag-guard" x="233" y="495" font-size="11" font-weight="400"><tspan x="233" dy="0">[missing items]</tspan></text><path class="t-frag-tab" d="M225 196H255V208L249 214H225z"/><text class="t-text t-frag-tag" x="233" y="209" font-size="11" font-weight="600"><tspan x="233" dy="0">alt</tspan></text><text class="t-text t-frag-guard" x="263" y="209" font-size="11" font-weight="400"><tspan x="263" dy="0">[all items in stock]</tspan></text></g>
+<g class="t-fragment" data-id="#f1"><rect class="t-frag" x="379.5" y="294" width="379" height="114" rx="8"/><path class="t-frag-tab" d="M379.5 294H419.5V306L413.5 312H379.5z"/><text class="t-text t-frag-tag" x="387.5" y="307" font-size="11" font-weight="600"><tspan x="387.5" dy="0">loop</tspan></text><text class="t-text t-frag-guard" x="427.5" y="307" font-size="11" font-weight="400"><tspan x="427.5" dy="0">[until settled, max 3]</tspan></text></g>
+<path class="t-edge t-edge-sync" data-from="shopper" data-to="web" d="M84 118 L241 118" marker-end="url(#t-arrowhead)" data-edge="#m0"/>
+<path class="t-edge t-edge-sync" data-from="web" data-to="orders" d="M241 154 L395.5 154" marker-end="url(#t-arrowhead)" data-edge="#m1"/>
+<path class="t-edge t-edge-sync" data-from="orders" data-to="stock" d="M395.5 190 L567.5 190" marker-end="url(#t-arrowhead)" data-edge="#m2"/>
+<path class="t-edge t-edge-reply" data-from="stock" data-to="orders" d="M567.5 252 L395.5 252" marker-end="url(#t-arrowhead-open-reply)" data-edge="#m3"/>
+<path class="t-edge t-edge-sync" data-from="orders" data-to="psp" d="M395.5 288 L742 288" marker-end="url(#t-arrowhead)" data-edge="#m4"/>
+<path class="t-edge t-edge-reply" data-from="psp" data-to="orders" d="M742 350 L395.5 350" marker-end="url(#t-arrowhead-open-reply)" data-edge="#m5"/>
+<path class="t-edge t-edge-sync" data-from="orders" data-to="orders" d="M395.5 364 L413.5 364 Q423.5 364 423.5 374 L423.5 378 Q423.5 388 413.5 388 L395.5 388" marker-end="url(#t-arrowhead)" data-edge="#m6"/>
+<path class="t-edge t-edge-reply" data-from="psp" data-to="orders" d="M742 438 L395.5 438" marker-end="url(#t-arrowhead-open-reply)" data-edge="#m7"/>
+<path class="t-edge t-edge-async" data-from="orders" data-to="events" d="M395.5 474 L927.5 474" marker-end="url(#t-arrowhead-open-async)" data-edge="#m8"/>
+<path class="t-edge t-edge-reply" data-from="stock" data-to="orders" d="M567.5 534 L395.5 534" marker-end="url(#t-arrowhead-open-reply)" data-edge="#m9"/>
+<path class="t-edge t-edge-reply" data-from="orders" data-to="web" d="M395.5 570 L241 570" marker-end="url(#t-arrowhead-open-reply)" data-edge="#m10"/>
+<path class="t-edge t-edge-reply" data-from="orders" data-to="web" d="M395.5 674 L241 674" marker-end="url(#t-arrowhead-open-reply)" data-edge="#m11"/>
+<path class="t-edge t-edge-reply" data-from="web" data-to="shopper" d="M241 710 L84 710" marker-end="url(#t-arrowhead-open-reply)" data-edge="#m12"/>
+<g class="t-edge-label" data-edge="#m0"><rect class="t-label-bg" x="119" y="94" width="87" height="21" rx="10.5"/><text class="t-text t-label" x="162.5" y="109" font-size="13" font-weight="400" text-anchor="middle"><tspan x="162.5" dy="0">Place order</tspan></text></g>
+<g class="t-edge-label" data-edge="#m1"><rect class="t-label-bg" x="268.5" y="130" width="100" height="21" rx="10.5"/><text class="t-text t-label" x="318.5" y="145" font-size="13" font-weight="400" text-anchor="middle"><tspan x="318.5" dy="0">POST /orders</tspan></text></g>
+<g class="t-edge-label" data-edge="#m2"><rect class="t-label-bg" x="429.5" y="166" width="104" height="21" rx="10.5"/><text class="t-text t-label" x="481.5" y="181" font-size="13" font-weight="400" text-anchor="middle"><tspan x="481.5" dy="0">Reserve items</tspan></text></g>
+<g class="t-edge-label" data-edge="#m3"><rect class="t-label-bg" x="429.5" y="228" width="104" height="21" rx="10.5"/><text class="t-text t-label" x="481.5" y="243" font-size="13" font-weight="400" text-anchor="middle"><tspan x="481.5" dy="0">Reservation id</tspan></text></g>
+<g class="t-edge-label" data-edge="#m4"><rect class="t-label-bg" x="522.5" y="264" width="93" height="21" rx="10.5"/><text class="t-text t-label" x="569" y="279" font-size="13" font-weight="400" text-anchor="middle"><tspan x="569" dy="0">Charge card</tspan></text></g>
+<g class="t-edge-label" data-edge="#m5"><rect class="t-label-bg" x="535.5" y="326" width="67" height="21" rx="10.5"/><text class="t-text t-label" x="569" y="341" font-size="13" font-weight="400" text-anchor="middle"><tspan x="569" dy="0">Pending</tspan></text></g>
+<g class="t-edge-label" data-edge="#m6"><rect class="t-label-bg" x="431.5" y="365.5" width="124" height="21" rx="10.5"/><text class="t-text t-label" x="439.5" y="380.5" font-size="13" font-weight="400"><tspan x="439.5" dy="0">Wait with backoff</tspan></text></g>
+<g class="t-edge-label" data-edge="#m7"><rect class="t-label-bg" x="532" y="414" width="74" height="21" rx="10.5"/><text class="t-text t-label" x="569" y="429" font-size="13" font-weight="400" text-anchor="middle"><tspan x="569" dy="0">Captured</tspan></text></g>
+<g class="t-edge-label" data-edge="#m8"><rect class="t-label-bg" x="621.5" y="450" width="80" height="21" rx="10.5"/><text class="t-text t-label" x="661.5" y="465" font-size="13" font-weight="400" text-anchor="middle"><tspan x="661.5" dy="0">order.paid</tspan></text></g>
+<g class="t-edge-label" data-edge="#m9"><rect class="t-label-bg" x="435.5" y="510" width="92" height="21" rx="10.5"/><text class="t-text t-label" x="481.5" y="525" font-size="13" font-weight="400" text-anchor="middle"><tspan x="481.5" dy="0">Out of stock</tspan></text></g>
+<g class="t-edge-label" data-edge="#m10"><rect class="t-label-bg" x="272" y="546" width="93" height="21" rx="10.5"/><text class="t-text t-label" x="318.5" y="561" font-size="13" font-weight="400" text-anchor="middle"><tspan x="318.5" dy="0">409 Conflict</tspan></text></g>
+<g class="t-edge-label" data-edge="#m11"><rect class="t-label-bg" x="273" y="650" width="91" height="21" rx="10.5"/><text class="t-text t-label" x="318.5" y="665" font-size="13" font-weight="400" text-anchor="middle"><tspan x="318.5" dy="0">201 Created</tspan></text></g>
+<g class="t-edge-label" data-edge="#m12"><rect class="t-label-bg" x="96" y="686" width="133" height="21" rx="10.5"/><text class="t-text t-label" x="162.5" y="701" font-size="13" font-weight="400" text-anchor="middle"><tspan x="162.5" dy="0">Order confirmation</tspan></text></g>
+<g class="t-node t-fam-client" data-id="shopper" data-kind="actor" tabindex="0"><rect class="t-node-box" x="24" y="24" width="120" height="40" rx="12" filter="url(#t-shadow)"/><rect class="t-chip" x="36" y="29" width="30" height="30" rx="9"/><svg class="t-icon t-icon-actor" x="43" y="36" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg><text class="t-text t-node-label" x="76" y="48.5" font-size="13" font-weight="600"><tspan x="76" dy="0">Shopper</tspan></text></g>
+<g class="t-node t-fam-compute" data-id="web" data-kind="service" tabindex="0"><rect class="t-node-box" x="176.5" y="24" width="129" height="40" rx="12" filter="url(#t-shadow)"/><rect class="t-chip" x="188.5" y="29" width="30" height="30" rx="9"/><svg class="t-icon t-icon-service" x="195.5" y="36" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /><rect width="20" height="8" x="2" y="14" rx="2" ry="2" /><line x1="6" x2="6.01" y1="6" y2="6" /><line x1="6" x2="6.01" y1="18" y2="18" /></svg><text class="t-text t-node-label" x="228.5" y="48.5" font-size="13" font-weight="600"><tspan x="228.5" dy="0">Storefront</tspan></text></g>
+<g class="t-node t-fam-compute" data-id="orders" data-kind="service" tabindex="0"><rect class="t-node-box" x="329.5" y="24" width="132" height="40" rx="12" filter="url(#t-shadow)"/><rect class="t-chip" x="341.5" y="29" width="30" height="30" rx="9"/><svg class="t-icon t-icon-service" x="348.5" y="36" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2" /><rect width="20" height="8" x="2" y="14" rx="2" ry="2" /><line x1="6" x2="6.01" y1="6" y2="6" /><line x1="6" x2="6.01" y1="18" y2="18" /></svg><text class="t-text t-node-label" x="381.5" y="48.5" font-size="13" font-weight="600"><tspan x="381.5" dy="0">Orders API</tspan></text></g>
+<g class="t-node t-fam-data" data-id="stock" data-kind="database" tabindex="0"><rect class="t-node-box" x="505" y="24" width="125" height="40" rx="12" filter="url(#t-shadow)"/><rect class="t-chip" x="517" y="29" width="30" height="30" rx="9"/><svg class="t-icon t-icon-database" x="524" y="36" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5V19A9 3 0 0 0 21 19V5" /><path d="M3 12A9 3 0 0 0 21 12" /></svg><text class="t-text t-node-label" x="557" y="48.5" font-size="13" font-weight="600"><tspan x="557" dy="0">Inventory</tspan></text></g>
+<g class="t-node t-fam-external" data-id="psp" data-kind="external" tabindex="0"><rect class="t-node-box" x="654" y="24" width="176" height="40" rx="12" filter="url(#t-shadow)"/><rect class="t-chip" x="666" y="29" width="30" height="30" rx="9"/><svg class="t-icon t-icon-external" x="673" y="36" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" /></svg><text class="t-text t-node-label" x="706" y="48.5" font-size="13" font-weight="600"><tspan x="706" dy="0">Payment provider</tspan></text></g>
+<g class="t-node t-fam-messaging" data-id="events" data-kind="queue" tabindex="0"><rect class="t-node-box" x="854" y="24" width="147" height="40" rx="12" filter="url(#t-shadow)"/><rect class="t-chip" x="866" y="29" width="30" height="30" rx="9"/><svg class="t-icon t-icon-queue" x="873" y="36" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12" /><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /></svg><text class="t-text t-node-label" x="906" y="48.5" font-size="13" font-weight="600"><tspan x="906" dy="0">Order events</tspan></text></g>
+<g class="t-node t-shape-note" data-id="#n0" data-kind="note" tabindex="0"><polygon class="t-node-box t-note" points="355.5,600 597.5,600 607.5,610 607.5,632 355.5,632"/><path class="t-note-fold" d="M597.5 600V610H607.5"/><text class="t-text t-node-label" x="363.5" y="620" font-size="12" font-weight="400"><tspan x="363.5" dy="0">Reservations expire after 15 minutes.</tspan></text></g>
+<g class="t-legend"><g class="t-legend-item t-fam-compute"><rect class="t-legend-swatch" x="24" y="771" width="24" height="14" rx="5"/><text class="t-text t-legend-label" x="56" y="782.37" font-size="12" font-weight="400"><tspan x="56" dy="0">Compute</tspan></text></g><g class="t-legend-item t-fam-data"><rect class="t-legend-swatch" x="127.84" y="771" width="24" height="14" rx="5"/><text class="t-text t-legend-label" x="159.84" y="782.37" font-size="12" font-weight="400"><tspan x="159.84" dy="0">Data</tspan></text></g><g class="t-legend-item t-fam-messaging"><rect class="t-legend-swatch" x="205.9" y="771" width="24" height="14" rx="5"/><text class="t-text t-legend-label" x="237.9" y="782.37" font-size="12" font-weight="400"><tspan x="237.9" dy="0">Messaging</tspan></text></g><g class="t-legend-item t-fam-client"><rect class="t-legend-swatch" x="319.86" y="771" width="24" height="14" rx="5"/><text class="t-text t-legend-label" x="351.86" y="782.37" font-size="12" font-weight="400"><tspan x="351.86" dy="0">Client</tspan></text></g><g class="t-legend-item t-fam-external"><rect class="t-legend-swatch" x="404.45" y="771" width="24" height="14" rx="5"/><text class="t-text t-legend-label" x="436.45" y="782.37" font-size="12" font-weight="400"><tspan x="436.45" dy="0">External</tspan></text></g><g class="t-legend-item"><line class="t-legend-line t-legend-sync" x1="502.38" y1="778" x2="526.38" y2="778"/><text class="t-text t-legend-label" x="534.38" y="782.37" font-size="12" font-weight="400"><tspan x="534.38" dy="0">Sync</tspan></text></g><g class="t-legend-item"><line class="t-legend-line t-legend-async" x1="582.77" y1="778" x2="606.77" y2="778"/><text class="t-text t-legend-label" x="614.77" y="782.37" font-size="12" font-weight="400"><tspan x="614.77" dy="0">Async</tspan></text></g><g class="t-legend-item"><line class="t-legend-line t-legend-reply" x1="670.08" y1="778" x2="694.08" y2="778"/><text class="t-text t-legend-label" x="702.08" y="782.37" font-size="12" font-weight="400"><tspan x="702.08" dy="0">Reply</tspan></text></g></g>
 </svg>

@@ -39,8 +39,12 @@ function block(css: string, head: string): Record<string, string> {
 }
 
 const css = pageCss("", "");
-const light = block(css, ':root, [data-theme="light"]');
-const dark = block(css, '[data-theme="dark"]');
+const palettes = {
+  light: block(css, ':root, [data-theme="light"]'),
+  dark: block(css, '[data-theme="dark"]'),
+  lagoon: block(css, '[data-theme="lagoon"]'),
+  dusk: block(css, '[data-theme="dusk"]'),
+};
 
 const lum = (hex: string) => {
   const c = [1, 3, 5]
@@ -151,11 +155,10 @@ describe("node families", () => {
       messages: ["a -> s: go"],
     });
     expect(svg).toMatch(
-      /\.t-fam-client \.t-node-box \{ fill: var\(--t-fam-client-fill, #[0-9a-f]{6}\); stroke: var\(--t-fam-client-stroke, #[0-9a-f]{6}\);/,
+      /\.t-fam-client \{ --t-f-fill: var\(--t-fam-client-fill, #[0-9a-f]{6}\); --t-f-stroke: var\(--t-fam-client-stroke, #[0-9a-f]{6}\); \}/,
     );
-    expect(svg).toMatch(
-      /\.t-fam-client \.t-icon \{ color: var\(--t-fam-client-stroke, #[0-9a-f]{6}\); \}/,
-    );
+    expect(svg).toContain(".t-icon { color: var(--t-f-stroke, ");
+    expect(svg).toContain(".t-chip { fill: var(--t-f-fill, ");
     expect(svg).not.toContain("t-fam-wait");
   });
 });
@@ -170,7 +173,7 @@ describe("edge colors", () => {
     });
     expect(svg).toContain(".t-edge-async { stroke: var(--t-edge-async, #");
     expect(svg).toContain(".t-edge-data { stroke: var(--t-edge-data, #");
-    expect(svg).toContain(".t-edge-async { stroke-dasharray: 7 5; }");
+    expect(svg).toContain(".t-edge-async { stroke-dasharray: 6 5; }");
     for (const s of ["async", "data"]) {
       expect(svg).toContain(`marker-end="url(#t-arrowhead-${s})"`);
       expect(svg).toContain(`<marker id="t-arrowhead-${s}"`);
@@ -199,10 +202,10 @@ describe("palette", () => {
     ...EDGE_VARS,
   ];
 
-  it("defines every color variable in both themes and exports them", () => {
+  it("defines every color variable in all four themes and exports them", () => {
     for (const v of vars) {
-      expect(light[v], v).toBeDefined();
-      expect(dark[v], v).toBeDefined();
+      for (const [theme, p] of Object.entries(palettes))
+        expect(p[v], `${theme} ${v}`).toBeDefined();
       expect(THEME_VARS).toContain(v);
     }
   });
@@ -212,10 +215,7 @@ describe("palette", () => {
   });
 
   it("keeps labels readable on every tint (>= 4.5:1)", () => {
-    for (const [theme, p] of [
-      ["light", light],
-      ["dark", dark],
-    ] as const)
+    for (const [theme, p] of Object.entries(palettes))
       for (const f of FAMILIES)
         expect(
           ratio(p["--t-text"]!, p[`--t-fam-${f}-fill`]!),
@@ -224,10 +224,7 @@ describe("palette", () => {
   });
 
   it("keeps strokes and edges visible on the background (>= 3:1)", () => {
-    for (const [theme, p] of [
-      ["light", light],
-      ["dark", dark],
-    ] as const) {
+    for (const [theme, p] of Object.entries(palettes)) {
       for (const f of FAMILIES)
         expect(
           ratio(p[`--t-fam-${f}-stroke`]!, p["--t-bg"]!),

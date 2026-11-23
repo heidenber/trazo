@@ -51,7 +51,7 @@ trazo make demo.json
 
 ![The demo diagram: web, api and db connected left to right by HTTPS and SQL arrows](https://raw.githubusercontent.com/heidenber/trazo/main/docs/demo-light.png)
 
-This writes `demo.html` next to the input and prints its path. Open it in a browser: pan, zoom, hover or focus a node to see its whole note and source and highlight its connections, export to SVG or PNG. A node's note is also shown under its label, up to three lines. No server and no network requests. A small "Made with trazo" link sits at the bottom of the page; exported SVG and PNG files do not include it.
+This writes `demo.html` next to the input and prints its path. Open it in a browser: pan, zoom (the toolbar shows the zoom level; `+`, `-` and `0` also work), hover or focus a node to see a detail card with its kind, whole note, source and connections (click to pin it, Esc to close), search nodes by label or note with `/`, and move around with the minimap. A node's note is also shown under its label, up to three lines. The theme menu switches between the four themes in the page, and the Export menu offers PNG (1x, 2x or transparent), SVG, PDF through the print dialog (it prints only the diagram), and copy as PNG, SVG or JSON. Exports use the theme you are looking at. Copying an image needs clipboard access, which some browsers block on pages opened from a file; the menu says so and you can download instead. "Copy JSON source" works when the input is at most 64 KB, because the page embeds it as JSON. No server and no network requests. A small "Made with trazo" link sits at the bottom of the page; exported files, the minimap and the toolbar are not part of the diagram you export or print.
 
 ## Why not just ask the agent for a diagram?
 
@@ -107,14 +107,16 @@ npm i -g .
 
 | Command | What it does |
 |---|---|
-| `trazo make <input> [-o, --out <file>] [--theme light\|dark] [--json]` | Validate, lay out and write a self-contained HTML file. |
+| `trazo make <input> [-o, --out <file>] [--theme light\|dark\|lagoon\|dusk] [--json]` | Validate, lay out and write a self-contained HTML file. |
 | `trazo check <input> [--json]` | Validate only; writes nothing. |
 | `trazo schema <type>` | Print the compact field reference for a diagram type. |
 | `trazo example <type>` | Print a complete example diagram, valid input for `make`. |
 
 `<input>` is a JSON file, or `-` to read stdin. `<type>` is `architecture`, `workflow`, `erd` or `sequence`. Without `-o`, `make` writes `<input>` with a `.html` extension; with `-o -`, or when `<input>` is `-` and there is no `-o`, it writes the HTML to stdout. `--json` prints one JSON line instead of plain text and covers results (`make`, `check`); usage errors (exit 2) are always plain text on stderr.
 
-Nodes are colored by kind (a colored border over a soft tint of it) and edges by style (sync blue, async violet, data teal, reply grey) in both themes; you never write colors in the JSON. A legend under the diagram, inside the SVG so PNG and SVG exports keep it, names the kinds and styles the diagram uses; it is left out when there is only one of each.
+Four themes: `light` and `dark`, plus `lagoon` (light, teal) and `dusk` (dark, violet). Set one with the JSON `theme` field or `--theme`; the toggle in the page flips between the light and the dark member of each pair.
+
+Nodes are soft cards with a tinted icon chip in the kind's color (start, end and decision shapes take a tinted fill and outline instead), and edges are rounded and colored by style (sync blue, async violet, data teal, reply grey) in every theme; you never write colors in the JSON. A legend under the diagram, inside the SVG so PNG and SVG exports keep it, names the kinds and styles the diagram uses; it is left out when there is only one of each.
 
 Exit codes: 0 ok, 1 invalid input, 2 usage error, 3 internal error.
 

@@ -59,6 +59,11 @@ describe("make", () => {
     expect(result.html).toContain('data-theme="dark"');
   });
 
+  it("accepts the lagoon and dusk themes as an option", async () => {
+    expect((await make(valid, { theme: "lagoon" })).html).toContain('data-theme="lagoon"');
+    expect((await make(valid, { theme: "dusk" })).html).toContain('data-theme="dusk"');
+  });
+
   it("stops at the first failing stage and returns no html", async () => {
     const result = await make("{");
     expect(result.ok).toBe(false);

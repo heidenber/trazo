@@ -8,7 +8,10 @@ const ID_PATTERN = /^[A-Za-z_][A-Za-z0-9_.-]*$/;
 
 export const idSchema = z.string().regex(ID_PATTERN);
 export const textSchema = z.string().min(1);
-export const themeSchema = z.enum(["light", "dark"]);
+/** Light and dark keep their names; lagoon (light) and dusk (dark) are extra looks. */
+export const THEMES = ["light", "dark", "lagoon", "dusk"] as const;
+export type ThemeName = (typeof THEMES)[number];
+export const themeSchema = z.enum(THEMES);
 
 /** Detail carried by custom issues so they survive the zod round trip. */
 interface CustomParams {

@@ -2,6 +2,7 @@
 // Copyright 2026 Heidenber Palacio Garzón
 
 import type { Workflow } from "../model/workflow.js";
+import { LABEL_PAD_X } from "../render/card.js";
 import type { Box, Point, Scene, SceneEdge, SceneGroup, SceneNode, TextBlock } from "../scene.js";
 import { firstBaseline, lineHeight, textWidth, wrapText } from "../text/measure.js";
 import {
@@ -92,7 +93,7 @@ function labelOnRoute(points: Point[], lines: string[]): Box | undefined {
     }
   }
   if (!best) return undefined;
-  const w = Math.ceil(widest(lines, EDGE_LABEL_SIZE, 400)) + 2 * EDGE_LABEL_PAD;
+  const w = Math.ceil(widest(lines, EDGE_LABEL_SIZE, 400)) + 2 * LABEL_PAD_X;
   const h = Math.ceil(lines.length * lineHeight(EDGE_LABEL_SIZE)) + 2 * EDGE_LABEL_PAD;
   return {
     x: half((best[0].x + best[1].x) / 2 - w / 2),
@@ -163,7 +164,7 @@ async function layoutFlow(w: Workflow, columns: boolean): Promise<Scene> {
   );
   const plan = lanes ? planLanes(w, frameSizes, COLUMN_GAP, NODE_SPACING) : undefined;
   const labelBox = (lines: string[]) => ({
-    width: Math.ceil(widest(lines, EDGE_LABEL_SIZE, 400)) + 2 * EDGE_LABEL_PAD,
+    width: Math.ceil(widest(lines, EDGE_LABEL_SIZE, 400)) + 2 * LABEL_PAD_X,
     height: Math.ceil(lines.length * lineHeight(EDGE_LABEL_SIZE)) + 2 * EDGE_LABEL_PAD,
   });
 

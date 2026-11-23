@@ -53,7 +53,7 @@ describe("visible notes", () => {
 
     const svg = renderSvg(withNote);
     expect(noteText(nodeMarkup(svg, "api"))).toEqual([["Handles checkout"]]);
-    expect(svg).toContain(".t-node-note { fill: var(--t-text, #1f2933); fill-opacity: 0.75; }");
+    expect(svg).toContain(".t-node-note { fill: var(--t-muted, #5a6379); }");
     expect(nodeMarkup(svg, "api")).toContain("<desc>Handles checkout</desc>");
   });
 
@@ -161,7 +161,7 @@ describe("visible notes", () => {
       edges: [],
     });
     expect(nodeOf(s, "api").subtitle).toBeUndefined();
-    expect(nodeOf(s, "api").h).toBe(44);
+    expect(nodeOf(s, "api").h).toBe(48);
     expect(renderSvg(s)).not.toContain('t-node-note"');
   });
 
@@ -172,7 +172,7 @@ describe("visible notes", () => {
       edges: [],
     });
     expect(nodeOf(s, "api").subtitle).toBeUndefined();
-    expect(nodeOf(s, "api").h).toBe(44);
+    expect(nodeOf(s, "api").h).toBe(48);
     expect(renderSvg(s)).not.toContain('t-node-note"');
   });
 });

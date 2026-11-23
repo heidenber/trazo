@@ -11,7 +11,7 @@ Top level
   type          "architecture"
   title         text
   description?  text
-  theme?        light | dark
+  theme?        light | dark | lagoon | dusk
   direction?    right | down
   nodes         node[], at least 1
   groups?       group[]
@@ -53,7 +53,7 @@ Top level
   type          "workflow"
   title         text
   description?  text
-  theme?        light | dark
+  theme?        light | dark | lagoon | dusk
   direction?    down | right
   steps         step[], at least 1
   lanes?        lane[]
@@ -94,7 +94,7 @@ Top level
   type          "erd"
   title         text
   description?  text
-  theme?        light | dark
+  theme?        light | dark | lagoon | dusk
   tables        table[], at least 1
 
 table
@@ -135,7 +135,7 @@ Top level
   type          "sequence"
   title         text
   description?  text
-  theme?        light | dark
+  theme?        light | dark | lagoon | dusk
   participants  participant[], at least 1
   messages      element[], at least 1
 
