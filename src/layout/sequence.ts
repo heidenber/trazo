@@ -2,6 +2,7 @@
 // Copyright 2026 Heidenber Palacio Garzón
 
 import type { SeqFragment, SeqItem, SeqMessage, SeqNote, Sequence } from "../model/sequence.js";
+import { LABEL_PAD_X } from "../render/card.js";
 import type { Box, Scene, SceneEdge, SceneGroup, SceneNode, TextBlock } from "../scene.js";
 import { firstBaseline, lineHeight, textWidth, wrapText } from "../text/measure.js";
 import {
@@ -97,7 +98,7 @@ function build(
   function message(m: SeqMessage, y: number, ext: Extent): number {
     const { lines, width } = sizeLabel(m.label);
     const textH = lines.length * lh;
-    const boxW = width + 2 * LABEL_PAD;
+    const boxW = width + 2 * LABEL_PAD_X;
     const boxH = Math.ceil(textH + LABEL_PAD);
     const a = col(m.from);
     const b = col(m.to);
@@ -126,7 +127,7 @@ function build(
         const box = { x: x + LOOP_LABEL_GAP, y: half(y + (h - boxH) / 2), w: boxW, h: boxH };
         edge.label = {
           box,
-          text: block(lines, box.x + LABEL_PAD, box.y + LABEL_PAD / 2, LABEL_SIZE, 400, "start"),
+          text: block(lines, box.x + LABEL_PAD_X, box.y + LABEL_PAD / 2, LABEL_SIZE, 400, "start"),
         };
         hi = box.x + box.w;
       }

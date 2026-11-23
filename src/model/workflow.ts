@@ -4,7 +4,15 @@
 import { z } from "zod";
 import type { Issue } from "../validate/issues.js";
 import { IdRegistry } from "../validate/refs.js";
-import { edgeSchema, error_, idSchema, textSchema, themeSchema, warning } from "./common.js";
+import {
+  edgeSchema,
+  error_,
+  idSchema,
+  textSchema,
+  themeSchema,
+  warning,
+  type ThemeName,
+} from "./common.js";
 
 export const STEP_KINDS = ["task", "start", "end", "decision", "wait", "subprocess"] as const;
 
@@ -36,8 +44,9 @@ export interface Workflow {
   type: "workflow";
   title: string;
   description?: string;
-  theme: "light" | "dark";
-  direction: "right" | "down";
+  theme: ThemeName;
+  /** "auto" (lanes without a direction): the layout keeps the orientation that fits the screen best. */
+  direction: "right" | "down" | "auto";
   lanes: WorkflowLane[];
   steps: WorkflowStep[];
   edges: WorkflowEdge[];
@@ -160,12 +169,7 @@ export function buildWorkflow(input: Parsed): { diagram?: Workflow; issues: Issu
     );
   }
 
-  let direction: "right" | "down" = input.direction ?? "down";
-  if (lanes.length > 0) {
-    if (input.direction === "down")
-      issues.push(warning("workflow/lanes-direction", "direction", "lanes always flow right"));
-    direction = "right";
-  }
+  const direction = input.direction ?? (lanes.length > 0 ? "auto" : "down");
 
   if (issues.some((issue) => issue.severity === "error")) return { issues };
 

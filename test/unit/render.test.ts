@@ -42,7 +42,7 @@ const count = (s: string, re: RegExp) => (s.match(re) ?? []).length;
 describe("renderSvg", () => {
   it("emits one t-node per node with its id and kind", () => {
     const svg = renderSvg(scene);
-    expect(count(svg, /class="t-node"/g)).toBe(scene.nodes.length);
+    expect(count(svg, /class="t-node( t-fam-[a-z]+)?"/g)).toBe(scene.nodes.length);
     for (const n of scene.nodes) expect(svg).toContain(`data-id="${n.id}" data-kind="${n.kind}"`);
   });
 
@@ -50,7 +50,7 @@ describe("renderSvg", () => {
     const svg = renderSvg(scene);
     expect(count(svg, /class="t-group"/g)).toBe(1);
     expect(svg.indexOf('class="t-group"')).toBeLessThan(svg.indexOf('class="t-edge '));
-    expect(svg.indexOf('class="t-edge ')).toBeLessThan(svg.indexOf('class="t-node"'));
+    expect(svg.indexOf('class="t-edge ')).toBeLessThan(svg.indexOf('class="t-node '));
   });
 
   it("tags every edge path with the edge id", () => {
@@ -65,7 +65,7 @@ describe("renderSvg", () => {
     expect(count(svg, /class="t-edge t-edge-sync"/g)).toBe(2);
     expect(count(svg, /class="t-edge t-edge-async"/g)).toBe(1);
     expect(svg).toContain('data-from="api" data-to="queue"');
-    expect(count(svg, /<marker /g)).toBe(1);
+    expect(count(svg, /<marker /g)).toBe(2);
   });
 
   it("renders edge labels", () => {
@@ -149,26 +149,19 @@ describe("renderHtml", () => {
     expect(html).toContain("requestFullscreen");
   });
 
-  it("labels the theme button with the theme it switches to", () => {
+  it("names the current theme on the theme button", () => {
     expect(renderHtml({ ...scene, theme: "dark" })).toContain(
-      'id="theme" aria-label="Switch to light theme"',
+      'id="theme" aria-label="Change theme (current: Graphite)"',
     );
     expect(renderHtml({ ...scene, theme: "light" })).toContain(
-      'id="theme" aria-label="Switch to dark theme"',
-    );
-  });
-
-  it("shows the sun in dark mode and the moon in light mode", () => {
-    const html = renderHtml(scene);
-    expect(html).toContain(
-      '[data-theme="dark"] .i-moon, :root:not([data-theme="dark"]) .i-sun { display: none; }',
+      'id="theme" aria-label="Change theme (current: Porcelain)"',
     );
   });
 
   it("swaps the full screen icon while in full screen", () => {
     const html = renderHtml(scene);
     expect(html).toContain(
-      ".is-fullscreen .i-maximize, :root:not(.is-fullscreen) .i-minimize { display: none; }",
+      ".is-fullscreen .i-full, :root:not(.is-fullscreen) .i-exit { display: none; }",
     );
   });
 

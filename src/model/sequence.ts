@@ -14,6 +14,7 @@ import {
   textSchema,
   themeSchema,
   warning,
+  type ThemeName,
 } from "./common.js";
 
 export const PARTICIPANT_KINDS = ["actor", "service", "database", "queue", "external"] as const;
@@ -61,7 +62,7 @@ export interface Sequence {
   type: "sequence";
   title: string;
   description?: string;
-  theme: "light" | "dark";
+  theme: ThemeName;
   participants: SeqParticipant[];
   items: SeqItem[];
 }

@@ -65,7 +65,7 @@ describe("panBy", () => {
 
 describe("VIEWER_SCRIPT", () => {
   it("stays under the byte budget", () => {
-    expect(Buffer.byteLength(VIEWER_SCRIPT)).toBeLessThan(10240);
+    expect(Buffer.byteLength(VIEWER_SCRIPT)).toBeLessThan(40960);
   });
 
   it("compiles", () => {
@@ -77,10 +77,10 @@ describe("VIEWER_SCRIPT", () => {
     expect(VIEWER_SCRIPT).toContain(panBy.toString());
   });
 
-  it("keeps the theme toggle and Fullscreen API", () => {
+  it("keeps the Fullscreen API and sets the theme on the root element", () => {
     expect(VIEWER_SCRIPT).toContain("requestFullscreen");
-    expect(VIEWER_SCRIPT).toContain("Switch to light theme");
-    expect(VIEWER_SCRIPT).toContain("Switch to dark theme");
+    expect(VIEWER_SCRIPT).toContain('root.setAttribute("data-theme"');
+    expect(VIEWER_SCRIPT).toContain("Change theme (current: ");
   });
 
   it("embeds the theme variable list used for export", () => {

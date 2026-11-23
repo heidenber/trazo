@@ -2,6 +2,7 @@
 // Copyright 2026 Heidenber Palacio Garzón
 
 import type { SeqItem, SeqParticipant, Sequence } from "../model/sequence.js";
+import { LABEL_PAD_X } from "../render/card.js";
 import { lineHeight, textWidth, wrapText } from "../text/measure.js";
 import { ICON_TEXT_LEFT } from "./shapes.js";
 
@@ -90,7 +91,7 @@ export function solveColumns(seq: Sequence, widths: number[]): number[] {
       } else if (item.type === "message") {
         const a = at.get(item.from)!;
         const b = at.get(item.to)!;
-        const box = sizeLabel(item.label).width + 2 * LABEL_PAD;
+        const box = sizeLabel(item.label).width + 2 * LABEL_PAD_X;
         // A self-call label sits right of its loop and must clear the next lifeline;
         // a span label is centred between its two lifelines.
         if (a === b)

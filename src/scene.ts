@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 Heidenber Palacio Garzón
 
+import type { ThemeName } from "./model/common.js";
+
 export interface Point {
   x: number;
   y: number;
@@ -45,6 +47,8 @@ export interface SceneNode extends Box {
   icon?: string;
   shape: NodeShape;
   label: TextBlock;
+  /** Visible note below the label, cut to a few lines; `note` keeps the whole text for the tooltip. */
+  subtitle?: TextBlock;
   note?: string;
   source?: string;
   /** Id of the group or lane that directly contains the node. */
@@ -60,8 +64,10 @@ export interface SceneGroup extends Box {
   label: TextBlock;
   depth: number;
   variant: "group" | "lane" | "fragment";
-  /** Width of the label column at the left of a lane band. */
+  /** Width of the label column at the left of a lane band, or height of the label row atop a lane column. */
   header?: number;
+  /** The lane is a column: steps flow down and its label sits in a row at the top. */
+  columns?: true;
   /** Fragment tab box; `label` holds the operator (alt, opt, loop). The renderer does not measure text. */
   tab?: Box;
   /** Guard of the first branch. */
@@ -88,11 +94,18 @@ export interface SceneLifeline {
   y2: number;
 }
 
+export interface SceneLegendItem {
+  family?: string;
+  style?: SceneEdge["style"];
+  swatch: Box;
+  label: TextBlock;
+}
+
 export interface Scene {
   type: string;
   title: string;
   description?: string;
-  theme: "light" | "dark";
+  theme: ThemeName;
   width: number;
   height: number;
   /** Outer groups come before the groups they contain. */
@@ -101,4 +114,5 @@ export interface Scene {
   edges: SceneEdge[];
   /** Present only in sequence scenes. */
   lifelines?: SceneLifeline[];
+  legend?: SceneLegendItem[];
 }

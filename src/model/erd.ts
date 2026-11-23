@@ -4,7 +4,15 @@
 import { z } from "zod";
 import { didYouMean, type Issue } from "../validate/issues.js";
 import { IdRegistry } from "../validate/refs.js";
-import { customIssue, error_, idSchema, textSchema, themeSchema, warning } from "./common.js";
+import {
+  customIssue,
+  error_,
+  idSchema,
+  textSchema,
+  themeSchema,
+  warning,
+  type ThemeName,
+} from "./common.js";
 
 export type End = "one" | "zero-or-one" | "many" | "zero-or-many";
 
@@ -41,7 +49,7 @@ export interface Erd {
   type: "erd";
   title: string;
   description?: string;
-  theme: "light" | "dark";
+  theme: ThemeName;
   tables: ErdTable[];
   relations: ErdRelation[];
 }
