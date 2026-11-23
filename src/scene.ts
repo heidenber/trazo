@@ -45,6 +45,8 @@ export interface SceneNode extends Box {
   icon?: string;
   shape: NodeShape;
   label: TextBlock;
+  /** Visible note below the label, cut to a few lines; `note` keeps the whole text for the tooltip. */
+  subtitle?: TextBlock;
   note?: string;
   source?: string;
   /** Id of the group or lane that directly contains the node. */

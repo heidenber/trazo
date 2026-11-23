@@ -51,7 +51,7 @@ trazo make demo.json
 
 ![The demo diagram: web, api and db connected left to right by HTTPS and SQL arrows](https://raw.githubusercontent.com/heidenber/trazo/main/docs/demo-light.png)
 
-This writes `demo.html` next to the input and prints its path. Open it in a browser: pan, zoom, hover or focus a node to see its note and highlight its connections, export to SVG or PNG. No server and no network requests. A small "Made with trazo" link sits at the bottom of the page; exported SVG and PNG files do not include it.
+This writes `demo.html` next to the input and prints its path. Open it in a browser: pan, zoom, hover or focus a node to see its whole note and source and highlight its connections, export to SVG or PNG. A node's note is also shown under its label, up to three lines. No server and no network requests. A small "Made with trazo" link sits at the bottom of the page; exported SVG and PNG files do not include it.
 
 ## Why not just ask the agent for a diagram?
 

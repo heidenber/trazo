@@ -4,6 +4,7 @@
 import type { StepKind, WorkflowStep } from "../model/workflow.js";
 import type { NodeShape, Point } from "../scene.js";
 import { lineHeight, textWidth, wrapText } from "../text/measure.js";
+import { NOTE_SIZE, noteHeight, noteLines } from "./note.js";
 
 const BOX_SIZE = 14;
 const BOX_WRAP = 160;
@@ -33,6 +34,8 @@ export interface StepSize {
   shape: NodeShape;
   fontSize: number;
   icon?: string;
+  /** Visible note lines; boxes only, other shapes keep the note in the tooltip. */
+  note: string[];
 }
 
 const SHAPES: Record<StepKind, NodeShape> = {
@@ -54,7 +57,7 @@ export function sizeStep(step: WorkflowStep): StepSize {
   if (shape === "pill" || shape === "end") {
     const lines = [step.label];
     const width = Math.max(PILL_MIN_W, Math.ceil(widest(lines, PILL_SIZE) + 2 * PILL_PAD_X));
-    return { width, height: PILL_HEIGHT, lines, shape, fontSize: PILL_SIZE };
+    return { width, height: PILL_HEIGHT, lines, shape, fontSize: PILL_SIZE, note: [] };
   }
   if (shape === "diamond") {
     const lines = wrapText(step.label, DIAMOND_WRAP, DIAMOND_SIZE, 600);
@@ -70,20 +73,25 @@ export function sizeStep(step: WorkflowStep): StepSize {
       lines,
       shape,
       fontSize: DIAMOND_SIZE,
+      note: [],
     };
   }
   const lines = wrapText(step.label, BOX_WRAP, BOX_SIZE, 600);
   const icon = step.kind === "wait" ? "clock" : undefined;
-  const textWidthPx = widest(lines, BOX_SIZE);
+  const note = step.note === undefined ? [] : noteLines(step.note, BOX_WRAP);
+  const textWidthPx = Math.max(
+    widest(lines, BOX_SIZE),
+    Math.max(0, ...note.map((l) => textWidth(l, NOTE_SIZE, 400))),
+  );
   const width =
     icon === undefined
       ? Math.max(BOX_MIN_W, Math.ceil(textWidthPx + 2 * BOX_PAD_X))
       : Math.max(BOX_MIN_W, Math.ceil(ICON_TEXT_LEFT + textWidthPx + RIGHT_PAD));
   const height = Math.max(
     BOX_MIN_H,
-    Math.ceil(lines.length * lineHeight(BOX_SIZE) + 2 * BOX_PAD_Y),
+    Math.ceil(lines.length * lineHeight(BOX_SIZE) + noteHeight(note) + 2 * BOX_PAD_Y),
   );
-  const size: StepSize = { width, height, lines, shape, fontSize: BOX_SIZE };
+  const size: StepSize = { width, height, lines, shape, fontSize: BOX_SIZE, note };
   if (icon !== undefined) size.icon = icon;
   return size;
 }

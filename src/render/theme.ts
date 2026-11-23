@@ -111,6 +111,14 @@ export const TABLE_CSS = `
 .t-end-dot { fill: var(--t-bg, #ffffff); }
 `;
 
+/**
+ * Appended only when a node shows its note, so diagrams without notes stay byte-identical.
+ * Text at 75% keeps at least 5.8:1 on every family tint in both themes; --t-muted falls under 4.5:1 in dark.
+ */
+export const NOTE_CSS = `
+.t-node-note { fill: var(--t-text, #1f2933); fill-opacity: 0.75; }
+`;
+
 /** Appended only to scenes with a legend. */
 export const LEGEND_CSS = `
 .t-legend-label { fill: var(--t-muted, #52606d); }
