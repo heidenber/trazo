@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" class="diagram" viewBox="0 0 917 1009" role="img" aria-labelledby="t-title t-desc">
+<svg xmlns="http://www.w3.org/2000/svg" class="diagram" viewBox="0 0 917 1061" role="img" aria-labelledby="t-title t-desc">
 <title id="t-title">Purchase Request</title>
 <desc id="t-desc">From a team&apos;s request to a paid vendor invoice.</desc>
 <defs><marker id="t-arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow" d="M0 1L10 5L0 9z"/></marker><marker id="t-arrowhead-async" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow t-arrow-async" d="M0 1L10 5L0 9z"/></marker></defs>
@@ -46,6 +46,15 @@
 .t-fam-task .t-node-box { fill: var(--t-fam-task-fill, #e7eefa); stroke: var(--t-fam-task-stroke, #3b6fd4); }
 .t-fam-task .t-node-rule { stroke: var(--t-fam-task-stroke, #3b6fd4); }
 .t-fam-task .t-icon { color: var(--t-fam-task-stroke, #3b6fd4); }
+
+.t-legend-label { fill: var(--t-muted, #52606d); }
+.t-legend-line { fill: none; stroke: var(--t-edge, #2f6fdb); stroke-width: 1.5; stroke-linecap: round; }
+.t-legend-async { stroke: var(--t-edge-async, #7c4ddb); }
+.t-legend-data { stroke: var(--t-edge-data, #1f8a7a); }
+.t-legend-reply { stroke: var(--t-edge-reply, #66727f); }
+.t-legend-async { stroke-dasharray: 7 5; }
+.t-legend-data { stroke-dasharray: 1.5 4.5; }
+.t-legend-reply { stroke-dasharray: 5 4; }
 </style>
 <g class="t-lane" data-id="requester"><rect class="t-lane-band" x="0" y="0" width="208.5" height="1009"/><rect class="t-lane-header" x="0" y="0" width="208.5" height="40"/><line class="t-lane-rule" x1="208.5" y1="0" x2="208.5" y2="1009"/><text class="t-text t-lane-title" x="104.25" y="24.5" font-size="12" font-weight="600" text-anchor="middle"><tspan x="104.25" dy="0">Requester</tspan></text></g>
 <g class="t-lane t-lane-odd" data-id="procurement"><rect class="t-lane-band" x="208.5" y="0" width="459" height="1009"/><rect class="t-lane-header" x="208.5" y="0" width="459" height="40"/><line class="t-lane-rule" x1="667.5" y1="0" x2="667.5" y2="1009"/><text class="t-text t-lane-title" x="438" y="24.5" font-size="12" font-weight="600" text-anchor="middle"><tspan x="438" dy="0">Procurement</tspan></text></g>
@@ -77,4 +86,5 @@
 <g class="t-node t-fam-task" data-id="pay" data-kind="task" tabindex="0"><rect class="t-node-box" x="711" y="709" width="138" height="44" rx="8"/><text class="t-text t-node-label" x="780" y="736" font-size="14" font-weight="600" text-anchor="middle"><tspan x="780" dy="0">Send payment</tspan></text></g>
 <g class="t-node t-fam-decision t-shape-diamond" data-id="paid" data-kind="decision" tabindex="0"><polygon class="t-node-box" points="780,813 855.5,851 780,889 704.5,851"/><text class="t-text t-node-label" x="780" y="855.5" font-size="13" font-weight="600" text-anchor="middle"><tspan x="780" dy="0">Bank accepted?</tspan></text></g>
 <g class="t-node t-fam-end t-shape-end" data-id="end" data-kind="end" tabindex="0"><rect class="t-node-box" x="60" y="949" width="72" height="36" rx="18"/><rect class="t-node-box t-node-inner" x="63" y="952" width="66" height="30" rx="15"/><text class="t-text t-node-label" x="96" y="971.5" font-size="13" font-weight="600" text-anchor="middle"><tspan x="96" dy="0">End</tspan></text></g>
+<g class="t-legend"><g class="t-legend-item t-fam-start"><rect class="t-node-box" x="24" y="1028" width="24" height="14" rx="3"/><text class="t-text t-legend-label" x="56" y="1039.37" font-size="12" font-weight="400"><tspan x="56" dy="0">Start</tspan></text></g><g class="t-legend-item t-fam-end"><rect class="t-node-box" x="102.81" y="1028" width="24" height="14" rx="3"/><text class="t-text t-legend-label" x="134.81" y="1039.37" font-size="12" font-weight="400"><tspan x="134.81" dy="0">End</tspan></text></g><g class="t-legend-item t-fam-decision"><rect class="t-node-box" x="176.46" y="1028" width="24" height="14" rx="3"/><text class="t-text t-legend-label" x="208.46" y="1039.37" font-size="12" font-weight="400"><tspan x="208.46" dy="0">Decision</tspan></text></g><g class="t-legend-item t-fam-wait"><rect class="t-node-box" x="277.4" y="1028" width="24" height="14" rx="3"/><text class="t-text t-legend-label" x="309.4" y="1039.37" font-size="12" font-weight="400"><tspan x="309.4" dy="0">Wait</tspan></text></g><g class="t-legend-item t-fam-task"><rect class="t-node-box" x="354.79" y="1028" width="24" height="14" rx="3"/><text class="t-text t-legend-label" x="386.79" y="1039.37" font-size="12" font-weight="400"><tspan x="386.79" dy="0">Task</tspan></text></g><g class="t-legend-item"><line class="t-legend-line t-legend-sync" x1="434.2" y1="1035" x2="458.2" y2="1035"/><text class="t-text t-legend-label" x="466.2" y="1039.37" font-size="12" font-weight="400"><tspan x="466.2" dy="0">Sync</tspan></text></g><g class="t-legend-item"><line class="t-legend-line t-legend-async" x1="514.59" y1="1035" x2="538.59" y2="1035"/><text class="t-text t-legend-label" x="546.59" y="1039.37" font-size="12" font-weight="400"><tspan x="546.59" dy="0">Async</tspan></text></g></g>
 </svg>

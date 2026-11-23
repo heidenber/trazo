@@ -111,6 +111,18 @@ export const TABLE_CSS = `
 .t-end-dot { fill: var(--t-bg, #ffffff); }
 `;
 
+/** Appended only to scenes with a legend. */
+export const LEGEND_CSS = `
+.t-legend-label { fill: var(--t-muted, #52606d); }
+.t-legend-line { fill: none; stroke: var(--t-edge, #2f6fdb); stroke-width: 1.5; stroke-linecap: round; }
+.t-legend-async { stroke: var(--t-edge-async, ${EDGE_LIGHT.async}); }
+.t-legend-data { stroke: var(--t-edge-data, ${EDGE_LIGHT.data}); }
+.t-legend-reply { stroke: var(--t-edge-reply, ${EDGE_LIGHT.reply}); }
+.t-legend-async { stroke-dasharray: 7 5; }
+.t-legend-data { stroke-dasharray: 1.5 4.5; }
+.t-legend-reply { stroke-dasharray: 5 4; }
+`;
+
 /** Appended only to scenes with lifelines (sequence). */
 export const SEQUENCE_CSS = `
 .t-lifeline { stroke: var(--t-group-stroke, #cbd2d9); stroke-width: 1; stroke-dasharray: 4 4; }
@@ -124,6 +136,7 @@ export const SEQUENCE_CSS = `
 .t-edge-reply { stroke-dasharray: 5 4; }
 .t-seq .t-edge-async { stroke-dasharray: none; }
 .t-arrow-open { fill: none; stroke: var(--t-edge, #2f6fdb); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.t-seq .t-legend-async { stroke-dasharray: none; }
 .t-arrow-open-async { stroke: var(--t-edge-async, ${EDGE_LIGHT.async}); }
 .t-arrow-open-reply { stroke: var(--t-edge-reply, ${EDGE_LIGHT.reply}); }
 `;

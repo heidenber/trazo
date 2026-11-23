@@ -114,7 +114,7 @@ npm i -g .
 
 `<input>` es un archivo JSON, o `-` para leer de stdin. `<type>` es `architecture`, `workflow`, `erd` o `sequence`. Sin `-o`, `make` escribe `<input>` con extensión `.html`; con `-o -`, o cuando `<input>` es `-` y no hay `-o`, escribe el HTML en stdout. `--json` imprime una línea JSON en lugar de texto plano y cubre los resultados (`make`, `check`); los errores de uso (salida 2) son siempre texto plano en stderr.
 
-Los nodos se colorean por tipo (borde de color sobre un relleno suave del mismo tono) y las aristas por estilo (sync azul, async violeta, data verde azulado, reply gris) en ambos temas; nunca escribes colores en el JSON.
+Los nodos se colorean por tipo (borde de color sobre un relleno suave del mismo tono) y las aristas por estilo (sync azul, async violeta, data verde azulado, reply gris) en ambos temas; nunca escribes colores en el JSON. Una leyenda bajo el diagrama, dentro del SVG para que las exportaciones PNG y SVG la conserven, nombra los tipos y estilos que usa el diagrama; se omite cuando solo hay un tipo y un estilo.
 
 Códigos de salida: 0 correcto, 1 entrada inválida, 2 error de uso, 3 error interno.
 

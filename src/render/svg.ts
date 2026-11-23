@@ -5,6 +5,7 @@ import type {
   Box,
   EdgeEnd,
   Scene,
+  SceneLegendItem,
   SceneLifeline,
   SceneEdge,
   SceneGroup,
@@ -16,7 +17,7 @@ import { lineHeight } from "../text/measure.js";
 import { ICONS } from "./generated/icons.js";
 import { familyOf, type Family } from "./families.js";
 import { laneMarkup, num, rect, shapeMarkup } from "./shapes.js";
-import { SEQUENCE_CSS, SHAPE_CSS, SVG_CSS, TABLE_CSS, familyCss } from "./theme.js";
+import { LEGEND_CSS, SEQUENCE_CSS, SHAPE_CSS, SVG_CSS, TABLE_CSS, familyCss } from "./theme.js";
 
 const ICON_SIZE = 20;
 const ICON_PAD = 12;
@@ -128,6 +129,19 @@ function icon(node: SceneNode): string {
   return `<svg class="t-icon t-icon-${escapeXml(node.kind)}" x="${num(node.x + ICON_PAD)}" y="${num(y)}" width="${ICON_SIZE}" height="${ICON_SIZE}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${markup}</svg>`;
 }
 
+function legend(items: SceneLegendItem[]): string {
+  const entries = items.map((item) => {
+    const s = item.swatch;
+    const mid = s.y + s.h / 2;
+    const mark = item.family
+      ? rect(s, "t-node-box", 3)
+      : `<line class="t-legend-line t-legend-${item.style}" x1="${num(s.x)}" y1="${num(mid)}" x2="${num(s.x + s.w)}" y2="${num(mid)}"/>`;
+    const cls = item.family ? `t-legend-item t-fam-${item.family}` : "t-legend-item";
+    return `<g class="${cls}">${mark}${text(item.label, "t-legend-label")}</g>`;
+  });
+  return `<g class="t-legend">${entries.join("")}</g>`;
+}
+
 function lanes(groups: SceneGroup[]): string[] {
   let i = 0;
   return groups
@@ -185,7 +199,11 @@ export function renderSvg(scene: Scene): string {
   const families = scene.nodes.map((n) => familyOf(scene, n));
   const css =
     (needsShapeCss(scene) ? SVG_CSS + SHAPE_CSS : SVG_CSS) +
-    familyCss(families.filter((f): f is Family => f !== undefined)) +
+    familyCss([
+      ...families.filter((f): f is Family => f !== undefined),
+      ...(scene.legend ?? []).flatMap((i) => (i.family ? [i.family as Family] : [])),
+    ]) +
+    (scene.legend ? LEGEND_CSS : "") +
     (needsTableCss(scene) ? TABLE_CSS : "") +
     (seq ? SEQUENCE_CSS : "");
   const parts = [
@@ -201,6 +219,7 @@ export function renderSvg(scene: Scene): string {
     ...scene.edges.map((e) => edge(e, seq)),
     ...scene.edges.map(edgeLabel),
     ...scene.nodes.map((n, i) => node(n, families[i])),
+    ...(scene.legend ? [legend(scene.legend)] : []),
     "</svg>",
   ];
   return parts.filter(Boolean).join("\n");
