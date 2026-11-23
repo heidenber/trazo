@@ -23,6 +23,7 @@ import {
   headerWidth,
   planLanes,
 } from "./lanes.js";
+import { NOTE_SIZE, stackBaselines } from "./note.js";
 import { loopUnder, straighten } from "./route.js";
 import { ICON_TEXT_LEFT, clipToDiamond, sizeStep, type StepSize } from "./shapes.js";
 
@@ -38,18 +39,29 @@ const half = (v: number) => Math.round(v * 2) / 2;
 const widest = (lines: string[], size: number, weight: 400 | 600) =>
   Math.max(0, ...lines.map((l) => textWidth(l, size, weight)));
 
-function stepLabel(size: StepSize, box: Box): TextBlock {
-  const block = size.lines.length * lineHeight(size.fontSize);
-  const y = half(box.y + (box.h - block) / 2 + firstBaseline(size.fontSize));
+function stepText(size: StepSize, box: Box): { label: TextBlock; subtitle?: TextBlock } {
+  const at = stackBaselines(box.y, box.h, size.lines.length, size.fontSize, size.note);
   const centred = size.icon === undefined;
-  return {
+  const x = half(centred ? box.x + box.w / 2 : box.x + ICON_TEXT_LEFT);
+  const anchor = centred ? "middle" : "start";
+  const label: TextBlock = {
     lines: size.lines,
-    x: half(centred ? box.x + box.w / 2 : box.x + ICON_TEXT_LEFT),
-    y,
+    x,
+    y: half(at.label),
     size: size.fontSize,
     weight: 600,
-    anchor: centred ? "middle" : "start",
+    anchor,
   };
+  if (size.note.length === 0) return { label };
+  const subtitle: TextBlock = {
+    lines: size.note,
+    x,
+    y: half(at.note),
+    size: NOTE_SIZE,
+    weight: 400,
+    anchor,
+  };
+  return { label, subtitle };
 }
 
 /** Decisions take edges at the vertices facing the flow, not anywhere on their bounding box. */
@@ -278,13 +290,9 @@ async function layoutFlow(w: Workflow, columns: boolean): Promise<Scene> {
   const nodes: SceneNode[] = w.steps.map((s) => {
     const size = sizes.get(s.id)!;
     const box = layout.boxes.get(s.id)!;
-    const node: SceneNode = {
-      id: s.id,
-      kind: s.kind,
-      shape: size.shape,
-      ...box,
-      label: stepLabel(size, box),
-    };
+    const { label, subtitle } = stepText(size, box);
+    const node: SceneNode = { id: s.id, kind: s.kind, shape: size.shape, ...box, label };
+    if (subtitle !== undefined) node.subtitle = subtitle;
     if (size.icon !== undefined) node.icon = size.icon;
     if (s.note !== undefined) node.note = s.note;
     if (s.source !== undefined) node.source = s.source;

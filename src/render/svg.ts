@@ -17,7 +17,15 @@ import { lineHeight } from "../text/measure.js";
 import { ICONS } from "./generated/icons.js";
 import { familyOf, type Family } from "./families.js";
 import { laneMarkup, num, rect, shapeMarkup } from "./shapes.js";
-import { LEGEND_CSS, SEQUENCE_CSS, SHAPE_CSS, SVG_CSS, TABLE_CSS, familyCss } from "./theme.js";
+import {
+  LEGEND_CSS,
+  NOTE_CSS,
+  SEQUENCE_CSS,
+  SHAPE_CSS,
+  SVG_CSS,
+  TABLE_CSS,
+  familyCss,
+} from "./theme.js";
 
 const ICON_SIZE = 20;
 const ICON_PAD = 12;
@@ -170,7 +178,7 @@ function node(n: SceneNode, family: Family | undefined): string {
   const tip = [n.note, n.source].filter((s): s is string => s !== undefined && s !== "").join("\n");
   const desc = tip ? `<desc>${escapeXml(tip)}</desc>` : "";
   const cls = ["t-node", family && `t-fam-${family}`, n.shape !== "box" && `t-shape-${n.shape}`];
-  return `<g class="${cls.filter(Boolean).join(" ")}" data-id="${escapeXml(n.id)}" data-kind="${escapeXml(n.kind)}" tabindex="0">${desc}${shapeMarkup(n.shape, n)}${n.shape === "table" ? tableBody(n) : icon(n)}${text(n.label, "t-node-label")}</g>`;
+  return `<g class="${cls.filter(Boolean).join(" ")}" data-id="${escapeXml(n.id)}" data-kind="${escapeXml(n.kind)}" tabindex="0">${desc}${shapeMarkup(n.shape, n)}${n.shape === "table" ? tableBody(n) : icon(n)}${text(n.label, "t-node-label")}${n.subtitle ? text(n.subtitle, "t-node-note") : ""}</g>`;
 }
 
 const needsShapeCss = (scene: Scene) =>
@@ -205,6 +213,7 @@ export function renderSvg(scene: Scene): string {
     ]) +
     (scene.legend ? LEGEND_CSS : "") +
     (needsTableCss(scene) ? TABLE_CSS : "") +
+    (scene.nodes.some((n) => n.subtitle) ? NOTE_CSS : "") +
     (seq ? SEQUENCE_CSS : "");
   const parts = [
     `<svg xmlns="http://www.w3.org/2000/svg" class="${seq ? "diagram t-seq" : "diagram"}" viewBox="0 0 ${num(scene.width)} ${num(scene.height)}" role="img" aria-labelledby="${labelled}">`,

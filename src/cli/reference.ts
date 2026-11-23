@@ -21,7 +21,7 @@ node
   id            unique; letters, digits, _ . -; starts with a letter or _
   label?        shown text; defaults to id
   kind?         client | user | gateway | service | function | database | cache | queue | storage | external
-  note?         hover text
+  note?         shown under the label, up to 3 lines; whole on hover
   source?       "path/file.ts:line", shown on hover
 
 group (a box around nodes or other groups)
@@ -63,7 +63,7 @@ step
   id            unique; letters, digits, _ . -; starts with a letter or _
   label?        shown text; defaults to id ("Start" or "End" for those kinds)
   kind?         task | start | end | decision | wait | subprocess
-  note?         hover text
+  note?         shown under the label in task, wait and subprocess boxes, up to 3 lines; whole on hover
   source?       "path/file.ts:line", shown on hover
 
 lane
@@ -100,7 +100,7 @@ Top level
 table
   id            unique; letters, digits, _ . -; may contain dots (public.users)
   label?        shown text; defaults to id
-  note?         hover text
+  note?         shown under the title, up to 3 lines; whole on hover
   source?       "path/file.ts:line", shown on hover
   columns       column[], at least 1
 
