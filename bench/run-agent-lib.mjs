@@ -3,16 +3,19 @@
 
 // Pure helpers for bench/run-agent.mjs: no I/O, no clock, no randomness.
 
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 
 export const PROMPT_SUFFIX =
   "\n\nThe `trazo` command is installed and turns a semantic JSON description into an HTML diagram; `trazo --help` explains it. Use the `trazo` command to build the diagram and save it as diagram.html in the current directory.";
 
 const CONDITIONS = ["skill", "no-skill"];
+const TOOLS = ["trazo", "archify"];
 const AGENTS = ["claude-code", "opencode"];
 const AGENT_CMDS = { "claude-code": "claude", opencode: "opencode" };
 
 /** Parses the runner arguments. Throws Error with a plain message on bad input. */
+const EFFORTS = ["low", "medium", "high", "xhigh", "max"];
+
 export function parseArgs(argv, knownTasks, today) {
   const opts = {
     agent: "claude-code",
@@ -26,7 +29,11 @@ export function parseArgs(argv, knownTasks, today) {
     dryRun: false,
     resume: false,
     sandboxRoot: "",
+    tools: ["trazo"],
+    browser: "",
+    effort: "",
   };
+  let toolsGiven = false;
   const valueOf = (i) => {
     const v = argv[i + 1];
     if (v === undefined || v.startsWith("--")) throw new Error(`${argv[i]} needs a value`);
@@ -74,6 +81,25 @@ export function parseArgs(argv, knownTasks, today) {
       case "--agent-cmd":
         opts.agentCmd = valueOf(i++);
         break;
+      case "--tool": {
+        if (!toolsGiven) opts.tools = [];
+        toolsGiven = true;
+        for (const t of valueOf(i++).split(",")) {
+          if (!TOOLS.includes(t)) throw new Error("--tool must be trazo or archify");
+          if (!opts.tools.includes(t)) opts.tools.push(t);
+        }
+        break;
+      }
+      case "--browser":
+        opts.browser = valueOf(i++);
+        break;
+      case "--effort": {
+        const level = valueOf(i++);
+        if (!EFFORTS.includes(level))
+          throw new Error("--effort must be low, medium, high, xhigh or max");
+        opts.effort = level;
+        break;
+      }
       case "--sandbox-root":
         opts.sandboxRoot = valueOf(i++);
         break;
@@ -83,11 +109,22 @@ export function parseArgs(argv, knownTasks, today) {
       case "--resume":
         opts.resume = true;
         break;
+      case "--rejudge":
+        opts.rejudge = true;
+        break;
       default:
         throw new Error(`unknown option: ${a}`);
     }
   }
   if (!opts.model) throw new Error("--model is required");
+  if (opts.rejudge && !opts.out) throw new Error("--rejudge needs --out <results.json>");
+  if (opts.effort && opts.agent !== "claude-code")
+    throw new Error("--effort needs --agent claude-code");
+  if (opts.tools.includes("archify")) {
+    if (opts.agent !== "claude-code") throw new Error("--tool archify needs --agent claude-code");
+    if (opts.tools.length === 1 && !opts.conditions.includes("skill"))
+      throw new Error("archify only runs with the skill condition");
+  }
   // Defaults that depend on the agent are resolved once all options are read.
   if (!opts.out) opts.out = `bench/results/${today}-agent-${opts.agent}.json`;
   if (!opts.agentCmd) opts.agentCmd = AGENT_CMDS[opts.agent];
@@ -95,11 +132,82 @@ export function parseArgs(argv, knownTasks, today) {
   return opts;
 }
 
-export function buildPrompt(taskPrompt) {
-  return taskPrompt + PROMPT_SUFFIX;
+export const ARCHIFY_VERSION = "v3.2.0";
+export const ARCHIFY_REPO = "https://github.com/tt-a1i/archify";
+
+/** Pinned clone of Archify, next to the sandboxes. */
+export const archifyCloneDir = (home) => join(home, `_archify-${ARCHIFY_VERSION}`);
+
+const SKILL_BIN = ".claude/skills/archify/bin/archify.mjs";
+const forwardSlashes = (p) => p.replace(/\\/g, "/");
+// Git Bash spells C:/x as /c/x.
+const gitBashPath = (p) => p.replace(/^([A-Za-z]):\//, (_, d) => `/${d.toLowerCase()}/`);
+
+/** Prompt tail for archify: names the one command the sandbox allows, so the agent does not guess a path. */
+const archifySuffix = (bin) =>
+  `\n\nThe \`archify\` skill is installed in this project. Use it to build the diagram and save it as diagram.html in the current directory. Run its commands exactly as \`node ${bin} <command> <file>\`; \`finalize\` checks the finished file.`;
+
+/** Filter for the skill copy: the clone's history and dependencies stay out of the sandbox. */
+export const keepSkillEntry = (src) => ![".git", "node_modules"].includes(basename(src));
+
+/**
+ * Everything the runner and the parser need to know about the tool under test. The Archify
+ * skill is copied into each sandbox, so its allowed command depends on the sandbox path.
+ */
+export function toolAdapter(name, ctx = {}) {
+  if (name === "trazo")
+    return {
+      name,
+      version: null,
+      promptSuffix: PROMPT_SUFFIX,
+      bashRules: ["Bash(trazo:*)"],
+      skillName: "trazo",
+      env: {},
+      shim: true,
+      repairFile: (file) => file.endsWith(".json"),
+      verbs: (cmd) =>
+        segments(cmd)
+          .map((s) => /^trazo\s+(check|make)\b/.exec(s)?.[1])
+          .filter(Boolean),
+      firstVerb: "make",
+      nativeVerb: null,
+      inputOf: (seg) => /^trazo\s+make\s+(\S+)/.exec(seg)?.[1] ?? null,
+      nativeOk: null,
+    };
+  if (name === "archify") {
+    const bin = forwardSlashes(join(ctx.sandbox ?? "", ...SKILL_BIN.split("/")));
+    const env = { ARCHIFY_UPDATE_CHECK_DISABLED: "1" };
+    if (ctx.browser) env.ARCHIFY_CHROME = ctx.browser;
+    return {
+      name,
+      version: ARCHIFY_VERSION,
+      promptSuffix: archifySuffix(bin),
+      bashRules: [...new Set([bin, gitBashPath(bin), SKILL_BIN, `./${SKILL_BIN}`])].flatMap((f) => [
+        `Bash(node ${f}:*)`,
+        `Bash(node "${f}":*)`,
+      ]),
+      skillName: "archify",
+      env,
+      shim: false,
+      repairFile: (file) => /\.(json|html)$/.test(file),
+      verbs: (cmd) =>
+        segments(cmd)
+          .map((s) => /^node\s+["']?[^\s"']*archify\.mjs["']?\s+([\w-]+)/.exec(s)?.[1])
+          .filter(Boolean),
+      firstVerb: "finalize",
+      nativeVerb: "finalize",
+      inputOf: () => null,
+      nativeOk: (stats, htmlExists) => htmlExists && stats.lastFinalizeOk === true,
+    };
+  }
+  throw new Error(`unknown tool: ${name}`);
 }
 
-export function buildAgentArgs(prompt, model, agent = "claude-code") {
+export function buildPrompt(taskPrompt, tool) {
+  return taskPrompt + (tool ? tool.promptSuffix : PROMPT_SUFFIX);
+}
+
+export function buildAgentArgs(prompt, model, agent = "claude-code", tool, effort = "") {
   // --standalone: a private server per run, so the env overrides apply and no shared service is reused.
   if (agent === "opencode") return ["run", "--standalone", "-m", model, "--format", "json", prompt];
   return [
@@ -114,23 +222,43 @@ export function buildAgentArgs(prompt, model, agent = "claude-code") {
     "Read",
     "Write",
     "Edit",
-    "Bash(trazo:*)",
+    ...(tool ? tool.bashRules : ["Bash(trazo:*)"]),
+    // Windows adds a PowerShell tool our Bash rules do not cover; its calls would be denied.
+    "--disallowedTools",
+    "PowerShell",
     "--output-format",
     "stream-json",
     "--verbose",
+    ...(effort ? ["--effort", effort] : []),
   ];
 }
 
-export function planRuns(taskIds, conditions, runs) {
+/**
+ * With `tools` each run runs every tool once; the order is the given one when task index plus
+ * run index (run 1 is index 0) is even and reversed when odd, so across the matrix each tool
+ * goes first in half of the runs.
+ * Archify has no no-skill condition.
+ */
+export function planRuns(taskIds, conditions, runs, tools) {
   const plan = [];
-  for (const task of taskIds)
+  for (const [taskIndex, task] of taskIds.entries())
     for (const condition of conditions)
-      for (let run = 1; run <= runs; run++) plan.push({ task, condition, run });
+      for (let run = 1; run <= runs; run++) {
+        if (!tools) {
+          plan.push({ task, condition, run });
+          continue;
+        }
+        const order = (taskIndex + run - 1) % 2 === 0 ? tools : [...tools].reverse();
+        for (const tool of order)
+          if (tool !== "archify" || condition === "skill")
+            plan.push({ task, condition, run, tool });
+      }
   return plan;
 }
 
 export function runName(plan) {
-  return `${plan.task}-${plan.condition}-${plan.run}`;
+  const tool = plan.tool ? `-${plan.tool}` : "";
+  return `${plan.task}${tool}-${plan.condition}-${plan.run}`;
 }
 
 // One safe directory name per model id; "." and ".." would escape or collapse the folder.
@@ -140,8 +268,10 @@ export function modelDir(model) {
 }
 
 /** Where each agent loads project skills from, relative to the sandbox. */
-export function skillSegments(agent) {
-  return agent === "opencode" ? [".opencode", "skills", "trazo"] : [".claude", "skills", "trazo"];
+export function skillSegments(agent, skillName = "trazo") {
+  return agent === "opencode"
+    ? [".opencode", "skills", skillName]
+    : [".claude", "skills", skillName];
 }
 
 // OpenCode sees the git repository around its working directory (its snapshots hold the
@@ -150,6 +280,20 @@ export function defaultSandboxRoot(agent, model, repoRoot, tmpDir) {
   return agent === "opencode"
     ? join(tmpDir, "trazo-bench-runs", modelDir(model))
     : join(repoRoot, "tmp", "bench-runs", modelDir(model));
+}
+
+/**
+ * Where the runs and the pinned Archify clone live. Runs that include archify go under
+ * <root>/<model> (root defaults to <os tmp>/trazo-bench); trazo-only runs keep their old layout.
+ */
+export function sandboxLayout(opts, repoRoot, tmpDir) {
+  const base = opts.sandboxRoot ? resolve(opts.sandboxRoot) : join(tmpDir, "trazo-bench");
+  if (opts.tools.includes("archify"))
+    return { runs: join(base, modelDir(opts.model)), archifyHome: base };
+  const runs = opts.sandboxRoot
+    ? resolve(opts.sandboxRoot)
+    : defaultSandboxRoot(opts.agent, opts.model, repoRoot, tmpDir);
+  return { runs, archifyHome: base };
 }
 
 /**
@@ -262,10 +406,7 @@ export function agentEnv(baseEnv, binDir, platform) {
 
 // Agents often chain `trazo check x && trazo make x`; each segment is read on its own.
 const segments = (cmd) => cmd.split(/&&|\|\||;|\n/).map((s) => s.trim());
-const trazoVerbs = (cmd) =>
-  segments(cmd)
-    .map((s) => /^trazo\s+(check|make)\b/.exec(s)?.[1])
-    .filter(Boolean);
+const trazoVerbs = (cmd) => toolAdapter("trazo").verbs(cmd);
 // A command that ran and failed reports "Exit code N". An error without it is the sandbox
 // refusing the whole call (a heredoc or an `rm` next to trazo), so trazo never ran.
 const denied = (block) =>
@@ -284,7 +425,7 @@ function resultText(content) {
  * carry tool_result blocks {tool_use_id, is_error, content}; the last line is
  * {type:"result", is_error, usage:{input_tokens, output_tokens, cache_*}}.
  */
-export function parseStream(text) {
+export function parseStream(text, tool = toolAdapter("trazo")) {
   const stats = {
     inputTokens: 0,
     outputTokens: 0,
@@ -296,10 +437,15 @@ export function parseStream(text) {
     hasResult: false,
     resultIsError: false,
     lastMakeInput: null,
+    deniedCommands: 0,
+    deniedTools: {},
   };
+  if (tool.nativeVerb) stats.lastFinalizeOk = null;
   const uses = new Map();
   let failedSeen = false;
   let firstMakeSeen = false;
+  let syntheticText = null;
+  let resultReason = null;
   for (const raw of text.split("\n")) {
     const trimmed = raw.trim();
     if (!trimmed) continue;
@@ -310,14 +456,28 @@ export function parseStream(text) {
       continue;
     }
     if (!ev || typeof ev !== "object") continue;
+    if (ev.type === "assistant" && ev.message?.model === "<synthetic>") {
+      // Claude Code writes its own failures (auth, quota, API) as a synthetic assistant message.
+      const t = ev.message.content?.find?.((b) => b?.type === "text")?.text;
+      syntheticText = typeof t === "string" ? t : "";
+    }
     if (ev.type === "result") {
       stats.hasResult = true;
       stats.resultIsError = ev.is_error === true;
+      // Only failures of the agent's own service count; max turns, aborts and execution
+      // errors can come from the tool under test, so they stay tool failures.
+      if (ev.terminal_reason === "api_error") resultReason = "api_error";
       const u = ev.usage ?? {};
       stats.inputTokens = u.input_tokens ?? 0;
       stats.outputTokens = u.output_tokens ?? 0;
       stats.cacheCreationTokens = u.cache_creation_input_tokens ?? 0;
       stats.cacheReadTokens = u.cache_read_input_tokens ?? 0;
+      // Calls Claude Code refused for lack of permission; the agent never ran them.
+      for (const d of Array.isArray(ev.permission_denials) ? ev.permission_denials : []) {
+        const name = typeof d?.tool_name === "string" ? d.tool_name : "unknown";
+        stats.deniedCommands++;
+        stats.deniedTools[name] = (stats.deniedTools[name] ?? 0) + 1;
+      }
       continue;
     }
     const blocks = ev.message?.content;
@@ -329,36 +489,56 @@ export function parseStream(text) {
         if (
           (b.name === "Write" || b.name === "Edit") &&
           typeof file === "string" &&
-          file.endsWith(".json") &&
+          tool.repairFile(file) &&
           failedSeen
         )
           stats.repairs++;
         const cmd = b.input?.command;
         if (b.name === "Bash" && typeof cmd === "string") {
           for (const seg of segments(cmd)) {
-            const m = /^trazo\s+make\s+(\S+)/.exec(seg);
-            if (m) stats.lastMakeInput = m[1];
+            const input = tool.inputOf(seg);
+            if (input) stats.lastMakeInput = input;
           }
         }
       } else if (b?.type === "tool_result") {
         const use = uses.get(b.tool_use_id);
         const cmd = use?.input?.command;
         if (use?.name !== "Bash" || typeof cmd !== "string") continue;
-        const verbs = trazoVerbs(cmd);
+        const verbs = tool.verbs(cmd);
         if (verbs.length === 0 || denied(b)) continue;
         const failed = b.is_error === true || /^Exit code [1-9]/.test(resultText(b.content));
         if (failed) {
           stats.failedCommands++;
           failedSeen = true;
         }
-        if (verbs.includes("make") && !firstMakeSeen) {
+        if (verbs.includes(tool.firstVerb) && !firstMakeSeen) {
           firstMakeSeen = true;
           stats.firstTryOk = !failed;
         }
+        if (tool.nativeVerb && verbs.includes(tool.nativeVerb)) stats.lastFinalizeOk = !failed;
       }
     }
   }
+  const agentError = agentErrorReason(resultReason, syntheticText);
+  if (agentError) stats.agentError = agentError;
   return stats;
+}
+
+/** Short reason ("api_error: Failed to authenticate...") when the agent failed itself, else null. */
+function agentErrorReason(reason, syntheticText) {
+  if (reason === null && syntheticText === null) return null;
+  const text = (syntheticText ?? "").replace(/\s+/g, " ").trim().slice(0, 120);
+  const head = reason ?? "synthetic";
+  return text ? `${head}: ${text}` : head;
+}
+
+/** Runs that count toward the rates: the ones where the agent did not fail itself. */
+export function withoutAgentErrors(runs) {
+  return runs.filter((r) => !r.agentError);
+}
+
+export function countAgentErrors(runs) {
+  return runs.length - withoutAgentErrors(runs).length;
 }
 
 const SHELL_TOOLS = ["shell", "bash"];
@@ -444,4 +624,50 @@ export function parseOpencodeStream(text) {
   }
   stats.hasResult = closing;
   return stats;
+}
+
+/** Issue kinds of a judge result with how many times each appears. */
+export function countIssues(issues) {
+  const counts = {};
+  for (const i of issues) counts[i.kind] = (counts[i.kind] ?? 0) + 1;
+  return counts;
+}
+
+/**
+ * Final and judge pass rates per tool, overall and per task type. A run the judge could not
+ * evaluate (judgeOk not a boolean, e.g. no browser) is left out of the judge rate.
+ */
+export function judgeSummary(runs, typeOfTask) {
+  const rates = (list) => {
+    const judged = list.filter((r) => typeof r.judgeOk === "boolean");
+    return {
+      runs: list.length,
+      finalRate: list.length ? list.filter((r) => r.finalOk).length / list.length : null,
+      judged: judged.length,
+      judgeRate: judged.length ? judged.filter((r) => r.judgeOk).length / judged.length : null,
+    };
+  };
+  const byTool = {};
+  for (const r of runs) (byTool[r.tool ?? "trazo"] ??= []).push(r);
+  const out = {};
+  for (const [tool, all] of Object.entries(byTool)) {
+    const list = withoutAgentErrors(all);
+    const byType = {};
+    for (const r of list) (byType[typeOfTask[r.task] ?? "unknown"] ??= []).push(r);
+    const denials = { runs: 0, commands: 0, tools: {} };
+    for (const r of list) {
+      if (!r.deniedCommands) continue;
+      denials.runs++;
+      denials.commands += r.deniedCommands;
+      for (const [name, n] of Object.entries(r.deniedTools ?? {}))
+        denials.tools[name] = (denials.tools[name] ?? 0) + n;
+    }
+    out[tool] = {
+      overall: rates(list),
+      denials,
+      byType: Object.fromEntries(Object.entries(byType).map(([t, l]) => [t, rates(l)])),
+      agentErrors: countAgentErrors(all),
+    };
+  }
+  return out;
 }

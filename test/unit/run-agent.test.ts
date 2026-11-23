@@ -4,6 +4,7 @@
 import { spawnSync } from "node:child_process";
 import {
   copyFileSync,
+  readdirSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -12,13 +13,19 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join, resolve, sep } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
   agentEnv,
   buildAgentArgs,
   buildPrompt,
+  countIssues,
   defaultSandboxRoot,
+  formatCommandLine,
+  judgeSummary,
+  withoutAgentErrors,
+  countAgentErrors,
+  keepSkillEntry,
   modelDir,
   opencodeConfig,
   opencodeEnv,
@@ -28,13 +35,19 @@ import {
   parseStream,
   planRuns,
   runName,
+  sandboxLayout,
   shellCommandLine,
   shimExePath,
   shimFiles,
   skillSegments,
+  toolAdapter,
 } from "../../bench/run-agent-lib.mjs";
 
 const root = resolve(__dirname, "../..");
+const judgeModule = join(root, "bench", "judge-html.mjs");
+const { findBrowser } = (await import(/* @vite-ignore */ judgeModule)) as {
+  findBrowser(): string | null;
+};
 const tasks = ["arch-shop", "wf-expenses"];
 const line = (o: unknown) => JSON.stringify(o);
 const bash = (id: string, command: string) =>
@@ -73,7 +86,66 @@ const result = (extra: object = {}) =>
     ...extra,
   });
 
+const synthetic = (text: string) =>
+  line({
+    type: "assistant",
+    message: { model: "<synthetic>", content: [{ type: "text", text }] },
+  });
+const oauthExpired = [
+  synthetic("Failed to authenticate: OAuth session expired. Please run /login"),
+  result({
+    is_error: true,
+    subtype: "success",
+    terminal_reason: "api_error",
+    usage: {
+      input_tokens: 0,
+      output_tokens: 0,
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 0,
+    },
+  }),
+].join("\n");
+
 describe("parseStream", () => {
+  it("reports an agent error when the run failed before working", () => {
+    const stats = parseStream(oauthExpired);
+    expect(stats.agentError).toBe(
+      "api_error: Failed to authenticate: OAuth session expired. Please run /login",
+    );
+    expect(stats.resultIsError).toBe(true);
+    expect(stats.inputTokens).toBe(0);
+  });
+
+  it("reports an API error even without a synthetic message", () => {
+    expect(parseStream(result({ is_error: true, terminal_reason: "api_error" })).agentError).toBe(
+      "api_error",
+    );
+  });
+
+  it("keeps errors the tool can cause as tool failures, not agent errors", () => {
+    for (const ev of [
+      { is_error: true, subtype: "error_max_turns" },
+      { is_error: true, subtype: "error_during_execution" },
+      { terminal_reason: "aborted" },
+    ]) {
+      const stats = parseStream(result(ev));
+      expect("agentError" in stats).toBe(false);
+      expect(stats.hasResult).toBe(true);
+    }
+  });
+
+  it("reports a synthetic assistant message even without a result", () => {
+    expect(parseStream(synthetic("Credit balance is too low")).agentError).toBe(
+      "synthetic: Credit balance is too low",
+    );
+  });
+
+  it("does not flag a normal completion", () => {
+    const stats = parseStream(result({ terminal_reason: "completed" }));
+    expect(stats.agentError).toBeUndefined();
+    expect("agentError" in parseStream(result())).toBe(false);
+  });
+
   it("reads check and make chained in one Bash call", () => {
     const text = [
       write("a", "/s/shop.json"),
@@ -163,6 +235,8 @@ describe("parseStream", () => {
       hasResult: true,
       resultIsError: false,
       lastMakeInput: "diagram.json",
+      deniedCommands: 0,
+      deniedTools: {},
     });
   });
 
@@ -213,6 +287,46 @@ describe("parseStream", () => {
     expect(parseStream(text).repairs).toBe(0);
   });
 
+  it("records the permission denials of the final result per tool", () => {
+    const denial = (tool_name: string, command: string) => ({
+      tool_name,
+      tool_use_id: "x",
+      tool_input: { command },
+    });
+    const stats = parseStream(
+      result({
+        permission_denials: [
+          denial("PowerShell", "node a.mjs finalize x"),
+          denial("PowerShell", "trazo --help"),
+          denial("Bash", "trazo example x > d.json"),
+        ],
+      }),
+    );
+    expect(stats.deniedCommands).toBe(3);
+    expect(stats.deniedTools).toEqual({ PowerShell: 2, Bash: 1 });
+    const none = parseStream(result({ permission_denials: [] }));
+    expect(none.deniedCommands).toBe(0);
+    expect(none.deniedTools).toEqual({});
+  });
+
+  it("does not count a denied finalize as the first try, nor a later retry as one", () => {
+    const archify = toolAdapter("archify", { sandbox: "/w/s" });
+    const cmd =
+      "node /w/s/.claude/skills/archify/bin/archify.mjs finalize architecture c.json d.html";
+    const stats = parseStream(
+      [
+        bash("a", cmd),
+        res("a", "This command requires approval", true),
+        bash("b", cmd),
+        res("b", "ok"),
+        result(),
+      ].join("\n"),
+      archify,
+    );
+    expect(stats.firstTryOk).toBe(true);
+    expect(stats.failedCommands).toBe(0);
+  });
+
   it("returns zeros when there is no result message (timeout) and ignores bad lines", () => {
     const text = ["not json", bash("a", "trazo check d.json"), "{broken"].join("\n");
     expect(parseStream(text)).toEqual({
@@ -226,6 +340,8 @@ describe("parseStream", () => {
       hasResult: false,
       resultIsError: false,
       lastMakeInput: null,
+      deniedCommands: 0,
+      deniedTools: {},
     });
     expect(parseStream("").hasResult).toBe(false);
   });
@@ -331,6 +447,8 @@ describe("plan and command", () => {
       "Write",
       "Edit",
       "Bash(trazo:*)",
+      "--disallowedTools",
+      "PowerShell",
       "--output-format",
       "stream-json",
       "--verbose",
@@ -676,11 +794,442 @@ describe("shellCommandLine", () => {
   });
 });
 
+describe("tool adapters", () => {
+  const sb = join("/w", "m", "arch-shop-archify-skill-1");
+  const copy = join(sb, ".claude", "skills", "archify", "bin", "archify.mjs");
+  const fwd = copy.replace(/\\/g, "/");
+  const rel = ".claude/skills/archify/bin/archify.mjs";
+  const fwdRules = [
+    `Bash(node ${fwd}:*)`,
+    `Bash(node "${fwd}":*)`,
+    `Bash(node ${rel}:*)`,
+    `Bash(node "${rel}":*)`,
+    `Bash(node ./${rel}:*)`,
+    `Bash(node "./${rel}":*)`,
+  ];
+
+  it("parses --tool as a repeatable or comma list and defaults to trazo", () => {
+    expect(parseArgs(["--model", "m"], tasks, "d").tools).toEqual(["trazo"]);
+    expect(parseArgs(["--model", "m", "--tool", "archify"], tasks, "d").tools).toEqual(["archify"]);
+    expect(
+      parseArgs(["--model", "m", "--tool", "archify,trazo", "--tool", "archify"], tasks, "d").tools,
+    ).toEqual(["archify", "trazo"]);
+    expect(parseArgs(["--model", "m", "--browser", "/b/chrome"], tasks, "d").browser).toBe(
+      "/b/chrome",
+    );
+  });
+
+  it("rejects bad --tool input with a clear message", () => {
+    expect(() => parseArgs(["--model", "m", "--tool", "x"], tasks, "d")).toThrow(
+      "--tool must be trazo or archify",
+    );
+    expect(() => parseArgs(["--model", "m", "--tool"], tasks, "d")).toThrow("--tool needs a value");
+    expect(() =>
+      parseArgs(["--model", "m", "--tool", "archify", "--agent", "opencode"], tasks, "d"),
+    ).toThrow("--tool archify needs --agent claude-code");
+    expect(() =>
+      parseArgs(["--model", "m", "--tool", "archify", "--condition", "no-skill"], tasks, "d"),
+    ).toThrow("archify only runs with the skill condition");
+  });
+
+  it("builds the archify allowed tools from the skill copy in the sandbox", () => {
+    const tool = toolAdapter("archify", { sandbox: sb, browser: "/b/chrome" });
+    expect(buildAgentArgs("P", "m1", "claude-code", tool)).toEqual([
+      "-p",
+      "P",
+      "--model",
+      "m1",
+      "--setting-sources",
+      "project",
+      "--strict-mcp-config",
+      "--allowedTools",
+      "Read",
+      "Write",
+      "Edit",
+      ...fwdRules,
+      "--disallowedTools",
+      "PowerShell",
+      "--output-format",
+      "stream-json",
+      "--verbose",
+    ]);
+    expect(skillSegments("claude-code", "archify")).toEqual([".claude", "skills", "archify"]);
+    expect(tool.version).toBe("v3.2.0");
+  });
+
+  it("sets the archify environment and keeps the trazo one empty", () => {
+    expect(toolAdapter("archify", { sandbox: sb, browser: "/b/chrome" }).env).toEqual({
+      ARCHIFY_UPDATE_CHECK_DISABLED: "1",
+      ARCHIFY_CHROME: "/b/chrome",
+    });
+    expect(toolAdapter("archify", { sandbox: sb }).env).toEqual({
+      ARCHIFY_UPDATE_CHECK_DISABLED: "1",
+    });
+    expect(toolAdapter("trazo").env).toEqual({});
+    expect(() => toolAdapter("nope")).toThrow("unknown tool: nope");
+  });
+
+  it("asks for the archify skill and keeps the trazo prompt as it was", () => {
+    const p = buildPrompt("Draw it.", toolAdapter("archify", { sandbox: sb }));
+    expect(p.startsWith("Draw it.")).toBe(true);
+    expect(p).toContain("archify");
+    expect(p).toContain("diagram.html");
+    expect(buildPrompt("Draw it.", toolAdapter("trazo"))).toBe(buildPrompt("Draw it."));
+  });
+
+  it("alternates the tool order per run: given order on even indexes, reversed on odd", () => {
+    const plan = planRuns(["a"], ["skill"], 3, ["trazo", "archify"]);
+    expect(plan.map(runName)).toEqual([
+      "a-trazo-skill-1",
+      "a-archify-skill-1",
+      "a-archify-skill-2",
+      "a-trazo-skill-2",
+      "a-trazo-skill-3",
+      "a-archify-skill-3",
+    ]);
+  });
+
+  it("runs archify only under the skill condition", () => {
+    const plan = planRuns(["a"], ["skill", "no-skill"], 1, ["trazo", "archify"]);
+    expect(plan.map(runName)).toEqual([
+      "a-trazo-skill-1",
+      "a-archify-skill-1",
+      "a-trazo-no-skill-1",
+    ]);
+  });
+
+  it("puts archify sandboxes under <root>/<model> and leaves the trazo-only layout alone", () => {
+    const o = (extra: object) => ({
+      model: "v/m.1",
+      sandboxRoot: "",
+      tools: ["trazo"],
+      agent: "claude-code" as const,
+      ...extra,
+    });
+    expect(sandboxLayout(o({ tools: ["trazo", "archify"] }), "/repo", "/tmp")).toEqual({
+      runs: join("/tmp", "trazo-bench", "v-m.1"),
+      archifyHome: join("/tmp", "trazo-bench"),
+    });
+    expect(sandboxLayout(o({ tools: ["archify"], sandboxRoot: "/x" }), "/repo", "/tmp")).toEqual({
+      runs: join(resolve("/x"), "v-m.1"),
+      archifyHome: resolve("/x"),
+    });
+    expect(sandboxLayout(o({}), "/repo", "/tmp").runs).toBe(
+      join("/repo", "tmp", "bench-runs", "v-m.1"),
+    );
+    expect(sandboxLayout(o({ sandboxRoot: "/x" }), "/repo", "/tmp").runs).toBe(resolve("/x"));
+  });
+
+  it("reads archify runs: every archify command counts, the last finalize decides", () => {
+    const cmd = (verb: string) => `node ${copy} ${verb} diagram.html`;
+    const archify = toolAdapter("archify", { sandbox: sb });
+    const text = [
+      bash("a", cmd("finalize")),
+      res("a", "Exit code 1\nbad", true),
+      edit("b", "/s/diagram.html"),
+      bash("c", `${cmd("finalize")} && ls`),
+      res("c", "ok"),
+      result(),
+    ].join("\n");
+    expect(parseStream(text, archify)).toMatchObject({
+      failedCommands: 1,
+      repairs: 1,
+      firstTryOk: false,
+      lastFinalizeOk: true,
+      inputTokens: 120,
+      cacheReadTokens: 700,
+    });
+    const failedLast = parseStream(
+      [bash("a", cmd("finalize")), res("a", "Exit code 2", true), result()].join("\n"),
+      archify,
+    );
+    expect(failedLast.lastFinalizeOk).toBe(false);
+    const cleanFirst = parseStream(
+      [bash("a", cmd("finalize")), res("a", "ok"), result()].join("\n"),
+      archify,
+    );
+    expect(cleanFirst.firstTryOk).toBe(true);
+    // a trazo command is not an archify command
+    const other = parseStream(
+      [bash("a", "trazo make d.json"), res("a", "ok"), result()].join("\n"),
+      archify,
+    );
+    expect(other.firstTryOk).toBe(false);
+  });
+
+  it("allows the archify command by absolute, relative and quoted path, with forward slashes", () => {
+    const tool = toolAdapter("archify", { sandbox: sb });
+    expect(tool.bashRules).toEqual(fwdRules);
+    expect(tool.bashRules.some((r: string) => r.includes("\\"))).toBe(false);
+    expect(toolAdapter("trazo").bashRules).toEqual(["Bash(trazo:*)"]);
+  });
+
+  it("states the exact archify command in the prompt and keeps trazo naming trazo", () => {
+    const p = buildPrompt("Draw it.", toolAdapter("archify", { sandbox: sb }));
+    expect(p).toContain(`node ${fwd} `);
+    expect(p).toContain("finalize");
+    expect(buildPrompt("Draw it.", toolAdapter("trazo"))).toContain("`trazo`");
+  });
+
+  it("copies the skill without .git and node_modules", () => {
+    expect(keepSkillEntry(join("/s", "skill", "SKILL.md"))).toBe(true);
+    expect(keepSkillEntry(join("/s", "skill", "bin", "archify.mjs"))).toBe(true);
+    expect(keepSkillEntry(join("/s", "skill", ".git"))).toBe(false);
+    expect(keepSkillEntry(join("/s", "skill", "node_modules"))).toBe(false);
+  });
+
+  it("balances which tool goes first across tasks and runs", () => {
+    const plan = planRuns(["a", "b"], ["skill"], 2, ["trazo", "archify"]);
+    expect(plan.map(runName)).toEqual([
+      "a-trazo-skill-1",
+      "a-archify-skill-1",
+      "a-archify-skill-2",
+      "a-trazo-skill-2",
+      "b-archify-skill-1",
+      "b-trazo-skill-1",
+      "b-trazo-skill-2",
+      "b-archify-skill-2",
+    ]);
+  });
+
+  it("counts judge issues by kind", () => {
+    expect(countIssues([])).toEqual({});
+    expect(
+      countIssues([
+        { kind: "text-overlap", detail: "a" },
+        { kind: "content-missing", detail: "b" },
+        { kind: "text-overlap", detail: "c" },
+      ]),
+    ).toEqual({ "text-overlap": 2, "content-missing": 1 });
+  });
+
+  it("summarizes final and judge pass rates per tool and per type", () => {
+    const r = (
+      task: string,
+      tool: string | undefined,
+      finalOk: boolean,
+      judgeOk?: boolean | null,
+    ) => ({
+      task,
+      tool,
+      finalOk,
+      judgeOk,
+    });
+    const types = { s1: "sequence", s2: "sequence", e1: "erd" };
+    const out = judgeSummary(
+      [
+        r("s1", "trazo", true, true),
+        r("s2", "trazo", true, false),
+        r("e1", "trazo", false, null),
+        r("s1", "archify", true, true),
+        r("e1", undefined, true),
+      ],
+      types,
+    );
+    expect(out.trazo?.overall).toEqual({ runs: 4, finalRate: 0.75, judged: 2, judgeRate: 0.5 });
+    expect(out.trazo?.byType["sequence"]).toEqual({
+      runs: 2,
+      finalRate: 1,
+      judged: 2,
+      judgeRate: 0.5,
+    });
+    expect(out.trazo?.byType["erd"]).toEqual({
+      runs: 2,
+      finalRate: 0.5,
+      judged: 0,
+      judgeRate: null,
+    });
+    expect(out.archify?.overall).toEqual({ runs: 1, finalRate: 1, judged: 1, judgeRate: 1 });
+  });
+
+  it("parses --effort, defaulting to unset", () => {
+    expect(parseArgs(["--model", "m"], tasks, "d").effort).toBe("");
+    for (const level of ["low", "medium", "high", "xhigh", "max"])
+      expect(parseArgs(["--model", "m", "--effort", level], tasks, "d").effort).toBe(level);
+  });
+
+  it("rejects a bad --effort level and --effort with opencode", () => {
+    expect(() => parseArgs(["--model", "m", "--effort", "huge"], tasks, "d")).toThrow(
+      "--effort must be low, medium, high, xhigh or max",
+    );
+    expect(() => parseArgs(["--model", "m", "--effort"], tasks, "d")).toThrow(
+      "--effort needs a value",
+    );
+    expect(() =>
+      parseArgs(["--model", "m", "--agent", "opencode", "--effort", "low"], tasks, "d"),
+    ).toThrow("--effort needs --agent claude-code");
+  });
+
+  it("passes --effort to claude only when set, the same for every tool", () => {
+    const base = buildAgentArgs("p", "m", "claude-code");
+    expect(base).not.toContain("--effort");
+    for (const name of ["trazo", "archify"]) {
+      const args = buildAgentArgs(
+        "p",
+        "m",
+        "claude-code",
+        toolAdapter(name, { sandbox: sb }),
+        "high",
+      );
+      expect(args.slice(-2)).toEqual(["--effort", "high"]);
+    }
+    expect(buildAgentArgs("p", "m", "claude-code", undefined, "")).toEqual(base);
+  });
+
+  it("leaves agent errors out of every rate and counts them per tool", () => {
+    const r = (tool: string, finalOk: boolean, judgeOk: boolean | null, agentError?: string) => ({
+      task: "s1",
+      tool,
+      finalOk,
+      judgeOk,
+      agentError,
+    });
+    const out = judgeSummary(
+      [
+        r("trazo", true, true),
+        r("trazo", false, null, "api_error: Failed to authenticate"),
+        r("archify", false, null, "api_error: x"),
+        r("archify", false, null, "api_error: y"),
+      ],
+      { s1: "sequence" },
+    );
+    expect(out.trazo?.overall).toEqual({ runs: 1, finalRate: 1, judged: 1, judgeRate: 1 });
+    expect(out.trazo?.agentErrors).toBe(1);
+    expect(out.archify?.overall).toEqual({ runs: 0, finalRate: null, judged: 0, judgeRate: null });
+    expect(out.archify?.agentErrors).toBe(2);
+    expect(out.archify?.byType).toEqual({});
+  });
+
+  it("shows the permission denials per tool in the summary", () => {
+    const r = (tool: string, deniedCommands: number, deniedTools: Record<string, number>) => ({
+      task: "s1",
+      tool,
+      finalOk: false,
+      deniedCommands,
+      deniedTools,
+    });
+    const out = judgeSummary(
+      [
+        r("archify", 3, { PowerShell: 2, Bash: 1 }),
+        r("archify", 0, {}),
+        r("archify", 1, { Bash: 1 }),
+        r("trazo", 0, {}),
+        { task: "s1", tool: "trazo", finalOk: true },
+      ],
+      { s1: "sequence" },
+    );
+    expect(out.archify?.denials).toEqual({
+      runs: 2,
+      commands: 4,
+      tools: { PowerShell: 2, Bash: 2 },
+    });
+    expect(out.trazo?.denials).toEqual({ runs: 0, commands: 0, tools: {} });
+    expect(out.archify?.overall.runs).toBe(3);
+  });
+
+  it("also allows the Git Bash spelling of the archify path", () => {
+    const tool = toolAdapter("archify", { sandbox: "C:/w/m/run-1" });
+    const bin = "C:/w/m/run-1/.claude/skills/archify/bin/archify.mjs";
+    expect(tool.bashRules).toContain(`Bash(node ${bin}:*)`);
+    expect(tool.bashRules).toContain(
+      `Bash(node /c/w/m/run-1/.claude/skills/archify/bin/archify.mjs:*)`,
+    );
+    expect(tool.bashRules).toContain(
+      `Bash(node "/c/w/m/run-1/.claude/skills/archify/bin/archify.mjs":*)`,
+    );
+    expect(tool.bashRules.some((r: string) => r.includes("\\"))).toBe(false);
+  });
+
+  it("splits agent errors from the runs that count", () => {
+    const runs = [{ id: 1 }, { id: 2, agentError: "api_error" }, { id: 3, agentError: "" }];
+    expect(withoutAgentErrors(runs)).toEqual([{ id: 1 }, { id: 3, agentError: "" }]);
+    expect(countAgentErrors(runs)).toBe(1);
+  });
+
+  it("judges native archify success from the html file and the last finalize", () => {
+    const tool = toolAdapter("archify", { sandbox: sb });
+    expect(tool.nativeOk?.({ lastFinalizeOk: true }, true)).toBe(true);
+    expect(tool.nativeOk?.({ lastFinalizeOk: true }, false)).toBe(false);
+    expect(tool.nativeOk?.({ lastFinalizeOk: false }, true)).toBe(false);
+    expect(tool.nativeOk?.({ lastFinalizeOk: null }, true)).toBe(false);
+  });
+});
+
 const script = join(root, "bench", "run-agent.mjs");
 const work = mkdtempSync(join(tmpdir(), "trazo-run-agent-"));
 afterAll(() => rmSync(work, { recursive: true, force: true }));
 const run = (args: string[]) =>
   spawnSync(process.execPath, [script, ...args], { cwd: root, encoding: "utf8", timeout: 120000 });
+
+describe("run-agent.mjs --rejudge", () => {
+  const page = (words: string[]) =>
+    `<!doctype html><html><body style="margin:0;font:16px sans-serif">${words
+      .map((w) => `<p>${w}</p>`)
+      .join("")}</body></html>`;
+  const rec = (over: Record<string, unknown>) => ({
+    tool: "trazo",
+    condition: "skill",
+    run: 1,
+    finalOk: true,
+    judgeOk: true,
+    judgeIssues: {},
+    ...over,
+  });
+
+  it("judges the recorded sandboxes again without spawning an agent", () => {
+    const sb = join(work, "sb-rejudge");
+    const dir = (name: string) => join(sb, name);
+    mkdirSync(dir("arch-shop-skill-1"), { recursive: true });
+    mkdirSync(dir("arch-shop-skill-2"), { recursive: true });
+    mkdirSync(dir("arch-shop-skill-3"), { recursive: true });
+    mkdirSync(dir("arch-shop-skill-4"), { recursive: true });
+    writeFileSync(
+      join(dir("arch-shop-skill-1"), "diagram.html"),
+      page(["web app", "API", "database", "job queue", "payment gateway"]),
+    );
+    writeFileSync(join(dir("arch-shop-skill-2"), "diagram.html"), page(["only this"]));
+    writeFileSync(join(dir("arch-shop-skill-4"), "diagram.html"), page(["only this"]));
+    const out = join(work, "rejudge.json");
+    const failedBefore = { judgeOk: false, judgeIssues: { "content-missing": 1 } };
+    writeFileSync(
+      out,
+      JSON.stringify({
+        kind: "agent",
+        agent: "claude-code",
+        model: "m1",
+        runs: [
+          rec({ task: "arch-shop", run: 1, ...failedBefore }),
+          rec({ task: "arch-shop", run: 2 }),
+          rec({ task: "arch-shop", run: 3 }),
+          rec({ task: "arch-shop", run: 4, agentError: "api_error", ...failedBefore }),
+        ],
+      }),
+    );
+    const r = run(["--model", "m1", "--rejudge", "--out", out, "--sandbox-root", sb]);
+    expect(r.stderr).toBe("");
+    expect(r.status).toBe(0);
+    const runs = JSON.parse(readFileSync(out, "utf8")).runs;
+    expect(runs[0].judgeOk).toBe(true);
+    expect(runs[0].judgeIssues).toEqual({});
+    expect(runs[0].screenshot).toBe(join(dir("arch-shop-skill-1"), "diagram.png"));
+    expect(existsSync(join(dir("arch-shop-skill-1"), "diagram.png"))).toBe(true);
+    expect(runs[1].judgeOk).toBe(false);
+    expect(runs[1].judgeIssues).toEqual({ "content-missing": 5 });
+    expect(runs[2].judgeOk).toBe(false);
+    expect(runs[2].judgeIssues).toEqual({ "no-html": 1 });
+    expect(runs[3]).toMatchObject({ agentError: "api_error", ...failedBefore });
+    expect(runs[3].screenshot).toBeUndefined();
+    expect(r.stdout).toContain("3 run(s) judged again");
+    expect(r.stdout).toContain("judgeRate");
+    // Launches a headless browser per run; under a full parallel suite it can pass 20 s.
+  }, 60_000);
+
+  it("needs --out", () => {
+    const r = run(["--model", "m1", "--rejudge"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toBe("error: --rejudge needs --out <results.json>\n");
+  });
+});
 
 describe("run-agent.mjs", () => {
   it("dry-run prints the plan and the command lines and runs nothing", () => {
@@ -809,12 +1358,81 @@ describe("run-agent.mjs", () => {
     expect(r.stderr).toContain("error: --agent must be claude-code or opencode");
   });
 
+  it("dry-run with several tools alternates the order and plans archify in the skill condition only", () => {
+    const r = run([
+      "--model",
+      "vendor/m.1",
+      "--task",
+      "arch-shop",
+      "--runs",
+      "2",
+      "--tool",
+      "trazo,archify",
+      "--dry-run",
+      "--sandbox-root",
+      join(work, "sb-tools"),
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    const names = [...r.stdout.matchAll(/^(arch-shop-\S+)\s/gm)].map((m) => m[1]);
+    expect(names).toEqual([
+      "arch-shop-trazo-skill-1",
+      "arch-shop-archify-skill-1",
+      "arch-shop-archify-skill-2",
+      "arch-shop-trazo-skill-2",
+      "arch-shop-trazo-no-skill-1",
+      "arch-shop-trazo-no-skill-2",
+    ]);
+    const copy = join(
+      work,
+      "sb-tools",
+      "vendor-m.1",
+      "arch-shop-archify-skill-1",
+      ".claude",
+      "skills",
+      "archify",
+      "bin",
+      "archify.mjs",
+    );
+    expect(r.stdout).toContain(
+      formatCommandLine("x", [`Bash(node ${copy.split(sep).join("/")}:*)`]).slice(2),
+    );
+    expect(r.stdout).toContain("--allowedTools Read Write Edit Bash(trazo:*)");
+    expect(r.stdout).toContain("6 run(s) planned");
+    expect(existsSync(join(work, "sb-tools"))).toBe(false);
+  });
+
+  it("dry-run for archify defaults the sandbox root to <os tmp>/trazo-bench/<model>", () => {
+    const r = run([
+      "--model",
+      "vendor/m.1",
+      "--task",
+      "arch-shop",
+      "--runs",
+      "1",
+      "--tool",
+      "archify",
+      "--dry-run",
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.stdout).toContain(
+      `cwd: ${join(tmpdir(), "trazo-bench", "vendor-m.1", "arch-shop-archify-skill-1")}`,
+    );
+    expect(r.stdout).toContain("1 run(s) planned");
+  });
+
+  it("rejects an unknown tool with exit 2", () => {
+    const r = run(["--tool", "x", "--model", "m", "--dry-run"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain("error: --tool must be trazo or archify");
+  });
+
   it("fails on a missing model with exit 2", () => {
     const r = run(["--dry-run"]);
     expect(r.status).toBe(2);
     expect(r.stderr).toContain("error: --model is required");
   });
 
+  const hasBrowser = findBrowser() !== null;
   const hasDist = existsSync(join(root, "dist", "cli", "main.js"));
   it.skipIf(!hasDist)(
     "runs a fake agent end to end: sandbox, shim, skill copy, record, resume",
@@ -877,6 +1495,15 @@ describe("run-agent.mjs", () => {
       });
       expect(by["no-skill"]).toMatchObject({ firstTryOk: true, finalOk: true });
       expect(typeof by.skill.seconds).toBe("number");
+      if (hasBrowser) {
+        // The example diagram does not carry the words of the arch-shop prompt.
+        expect(by.skill.judgeOk).toBe(false);
+        expect(by.skill.judgeIssues["content-missing"]).toBeGreaterThan(0);
+        expect(by.skill.screenshot).toBe(join(sb, "arch-shop-skill-1", "diagram.png"));
+        expect(existsSync(by.skill.screenshot)).toBe(true);
+        expect(readdirSync(sb).filter((d) => d.startsWith("_judge-"))).toEqual([]);
+      }
+      expect(r.stdout).toContain("judgeRate");
 
       expect(
         existsSync(join(sb, "arch-shop-skill-1", ".claude", "skills", "trazo", "SKILL.md")),
@@ -1108,5 +1735,6 @@ describe("run-agent.mjs", () => {
     const rec = JSON.parse(readFileSync(out, "utf8")).runs[0];
     expect(rec).toMatchObject({ finalOk: false, firstTryOk: false, inputTokens: 0 });
     expect(rec.notes).toContain("no result message");
+    expect(rec).toMatchObject({ judgeOk: false, judgeIssues: { "no-html": 1 } });
   });
 });
