@@ -209,13 +209,24 @@ async function waitForPort(dir, child, timeoutMs) {
   throw new Error("browser did not open its debugging port in time");
 }
 
-function killTree(child) {
-  if (child.exitCode !== null || child.pid === undefined) return;
+/** Stops the browser and every helper process it started, then waits for it to exit. */
+async function killTree(child) {
+  if (child.pid === undefined) return;
+  const exited =
+    child.exitCode !== null || child.signalCode !== null
+      ? Promise.resolve()
+      : new Promise((done) => child.once("exit", done));
   if (process.platform === "win32") {
     spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
   } else {
-    child.kill("SIGKILL");
+    // Killing only the main process leaves helpers (zygote, crashpad) that keep writing the profile.
+    try {
+      process.kill(-child.pid, "SIGKILL");
+    } catch {
+      child.kill("SIGKILL");
+    }
   }
+  await Promise.race([exited, sleep(5_000)]);
 }
 
 /** Throwaway browser profile under `root` (default: the OS temp dir), named _judge-*. */
@@ -229,10 +240,10 @@ async function removeDir(dir) {
   for (let i = 0; i < 30; i++) {
     try {
       await rm(dir, { recursive: true, force: true });
-      return;
-    } catch {
-      await sleep(200);
-    }
+      // A helper that was still exiting can recreate files; only an absent directory counts.
+      if (!existsSync(dir)) return;
+    } catch {}
+    await sleep(200);
   }
 }
 
@@ -279,7 +290,8 @@ export async function judgeHtml(
       `--user-data-dir=${profile}`,
       "about:blank",
     ],
-    { stdio: "ignore" },
+    // On POSIX the browser gets its own process group, so killTree can stop its helpers too.
+    { stdio: "ignore", detached: process.platform !== "win32" },
   );
   let spawnError = null;
   child.on("error", (e) => {
@@ -381,7 +393,7 @@ export async function judgeHtml(
     try {
       cdp?.ws.close();
     } catch {}
-    killTree(child);
+    await killTree(child);
     await removeDir(profile);
   }
 }
