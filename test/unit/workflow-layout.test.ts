@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import { assertStepsInLanes } from "../../src/layout/lanes.js";
-import { layoutWorkflow } from "../../src/layout/workflow.js";
+import { fitScale, layoutWorkflow } from "../../src/layout/workflow.js";
 import { validateDiagram } from "../../src/model/index.js";
 import type { Workflow } from "../../src/model/workflow.js";
 import type { Box, Point, Scene, SceneNode } from "../../src/scene.js";
@@ -29,8 +29,9 @@ const plain = () =>
     edges: ["s -> a", "a -> d", "d -> p: yes", "d -> w: no", "w -> a: retry", "p -> e"],
   });
 
-const refund = () =>
+const refund = (extra: object = { direction: "right" }) =>
   workflow({
+    ...extra,
     lanes: [
       { id: "customer", label: "Customer", steps: ["start", "request", "end"] },
       { id: "support", label: "Support", steps: ["review", "reject", "notify"] },
@@ -302,8 +303,9 @@ describe("layoutWorkflow with lanes", () => {
   });
 });
 
-const purchase = () =>
+const purchase = (extra: object = { direction: "right" }) =>
   workflow({
+    ...extra,
     lanes: [
       { id: "req", label: "Requester", steps: ["start", "submit", "end"] },
       {
@@ -543,5 +545,127 @@ describe("layoutWorkflow parent", () => {
   it("leaves parent unset without lanes", async () => {
     const scene = await layoutWorkflow(plain());
     expect(scene.nodes.every((n) => !("parent" in n))).toBe(true);
+  });
+});
+
+describe("layoutWorkflow with vertical lanes", () => {
+  const down = () => refund({ direction: "down" });
+
+  it("has no overlaps and edges on borders", async () => {
+    expectSound(await layoutWorkflow(down()));
+    expectSound(await layoutWorkflow(purchase({ direction: "down" })));
+  });
+
+  it("draws lanes as full-height contiguous columns in declaration order", async () => {
+    const wf = down();
+    const scene = await layoutWorkflow(wf);
+    expect(scene.groups.map((g) => g.id)).toEqual(["customer", "support", "finance"]);
+    for (const g of scene.groups) {
+      expect(g.columns).toBe(true);
+      expect(g.y).toBe(0);
+      expect(g.h).toBe(scene.height);
+    }
+    expect(scene.groups[0]!.x).toBe(0);
+    expect(scene.groups.at(-1)!.x + scene.groups.at(-1)!.w).toBe(scene.width);
+    for (let i = 0; i + 1 < scene.groups.length; i++) {
+      const a = scene.groups[i]!;
+      expect(a.x + a.w).toBe(scene.groups[i + 1]!.x);
+    }
+    for (const lane of wf.lanes) {
+      const band = scene.groups.find((g) => g.id === lane.id)!;
+      for (const id of lane.steps) {
+        const n = node(scene, id);
+        expect(n.x, id).toBeGreaterThanOrEqual(band.x);
+        expect(n.x + n.w, id).toBeLessThanOrEqual(band.x + band.w);
+      }
+    }
+  });
+
+  it("puts the lane labels in a header row above the steps", async () => {
+    const scene = await layoutWorkflow(down());
+    const header = scene.groups[0]!.header!;
+    expect(header).toBeGreaterThan(0);
+    for (const g of scene.groups) {
+      expect(g.header).toBe(header);
+      expect(g.label.anchor).toBe("middle");
+      expect(g.label.x).toBe(g.x + g.w / 2);
+      expect(g.label.y).toBeLessThan(header);
+    }
+    for (const n of scene.nodes) expect(n.y).toBeGreaterThanOrEqual(header);
+  });
+
+  it("flows down: every forward edge ends below where it starts", async () => {
+    const scene = await layoutWorkflow(down());
+    for (const [a, b] of [
+      ["start", "request"],
+      ["request", "review"],
+      ["approve", "ledger"],
+      ["notify", "end"],
+    ] as const) {
+      expect(node(scene, b).y, `${a} -> ${b}`).toBeGreaterThan(node(scene, a).y);
+    }
+  });
+
+  it("connects decisions at the north and south vertices", async () => {
+    expectDecisionPorts(await layoutWorkflow(down()), "down");
+  });
+
+  it("is deterministic", async () => {
+    expect(await layoutWorkflow(down())).toEqual(await layoutWorkflow(down()));
+  });
+});
+
+describe("fitScale", () => {
+  it("is the factor that fits the scene on a 1440x826 stage", () => {
+    expect(fitScale({ width: 3410, height: 556 })).toBeCloseTo(0.42, 2);
+    expect(fitScale({ width: 720, height: 826 })).toBe(1);
+  });
+});
+
+describe("layoutWorkflow with lanes and no direction", () => {
+  const chain = (direction?: string) =>
+    workflow({
+      ...(direction ? { direction } : {}),
+      lanes: [
+        { id: "ops", label: "Operations", steps: ["s", "a", "b", "c", "d", "e"] },
+        { id: "fin", label: "Finance", steps: ["f", "g", "h", "i", "j", "x"] },
+      ],
+      steps: ["s", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "x"].map((id) => ({
+        id,
+        ...(id === "s"
+          ? { kind: "start" }
+          : id === "x"
+            ? { kind: "end" }
+            : { label: `Step ${id}` }),
+      })),
+      edges: [
+        "s -> a",
+        "a -> f",
+        "f -> b",
+        "b -> g",
+        "g -> c",
+        "c -> h",
+        "h -> d",
+        "d -> i",
+        "i -> e",
+        "e -> j",
+        "j -> x",
+      ],
+    });
+
+  it("keeps the orientation with the larger fit scale", async () => {
+    for (const make of [chain, (d?: string) => refund(d ? { direction: d } : {})]) {
+      const right = await layoutWorkflow(make("right"));
+      const down = await layoutWorkflow(make("down"));
+      const best = fitScale(down) > fitScale(right) ? down : right;
+      expect(await layoutWorkflow(make())).toEqual(best);
+    }
+  });
+
+  it("lays three short lanes out as columns and a long two-lane chain as rows", async () => {
+    const three = await layoutWorkflow(refund({}));
+    expect(three.groups.every((g) => g.columns === true)).toBe(true);
+    const long = await layoutWorkflow(chain());
+    expect(long.groups.every((g) => g.columns === undefined)).toBe(true);
   });
 });

@@ -133,6 +133,13 @@ describe("lanes", () => {
     expect(count(svg, /class="t-lane-header"/g)).toBe(3);
   });
 
+  it("draws a lane column with a header row at the top and a right border", () => {
+    const col: SceneGroup = { ...lane("k", 0), w: 200, h: 400, columns: true };
+    const out = renderSvg(scene([], [col]));
+    expect(out).toContain('class="t-lane-header" x="0" y="0" width="200" height="40"');
+    expect(out).toContain('class="t-lane-rule" x1="200" y1="0" x2="200" y2="400"');
+  });
+
   it("keeps group variant rendering", () => {
     const g: SceneGroup = { ...lane("g", 0), variant: "group" };
     const out = renderSvg(scene([], [g]));

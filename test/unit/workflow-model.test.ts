@@ -100,10 +100,10 @@ describe("workflow: valid input", () => {
     expect(diagram?.type === "workflow" && diagram.steps.map((s) => s.kind)).toEqual(kinds);
   });
 
-  it("keeps lanes, defaults their label and forces direction right", () => {
+  it("keeps lanes, defaults their label and leaves the direction to the layout", () => {
     const { diagram, issues } = validateDiagram(refund);
     expect(issues).toEqual([]);
-    expect(diagram?.type === "workflow" && diagram.direction).toBe("right");
+    expect(diagram?.type === "workflow" && diagram.direction).toBe("auto");
     expect(diagram?.type === "workflow" && diagram.lanes).toEqual([
       { id: "customer", label: "Customer", steps: ["begin", "request", "done"] },
       { id: "support", label: "support", steps: ["review", "reject"] },
@@ -276,17 +276,12 @@ describe("workflow: lanes", () => {
     });
   });
 
-  it("warns when direction down is combined with lanes", () => {
-    const result = validateDiagram({ ...refund, direction: "down" });
-    expect(result.issues).toEqual([
-      {
-        severity: "warning",
-        code: "workflow/lanes-direction",
-        path: "direction",
-        message: "lanes always flow right",
-      },
-    ]);
-    expect(result.diagram?.type === "workflow" && result.diagram.direction).toBe("right");
+  it("honours an explicit direction with lanes", () => {
+    for (const direction of ["down", "right"] as const) {
+      const result = validateDiagram({ ...refund, direction });
+      expect(result.issues).toEqual([]);
+      expect(result.diagram?.type === "workflow" && result.diagram.direction).toBe(direction);
+    }
   });
 });
 

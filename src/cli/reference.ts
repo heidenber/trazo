@@ -47,7 +47,7 @@ rules
   texts must not be empty
 `;
 
-const workflow = `workflow: steps joined by arrows, optionally in lanes (one row per actor or team).
+const workflow = `workflow: steps joined by arrows, optionally in lanes (one row or column per actor or team).
 
 Top level
   type          "workflow"
@@ -77,12 +77,12 @@ edge
   {from, to, label?, style?}   style: sync | async
 
 defaults
-  theme light, kind task, style sync, direction down (right with lanes)
+  theme light, kind task, style sync, direction down (with lanes: whichever fits the screen best)
 
 rules
   start has no incoming edges; end has no outgoing edges
   decision needs at least 2 outgoing edges; label each with its answer
-  with lanes, every step is in exactly one lane; lanes always flow right
+  with lanes, every step is in exactly one lane; direction right makes lanes rows, down makes them columns
   edges need existing step ids
   more than 40 steps warns: split into subprocesses
   texts must not be empty
