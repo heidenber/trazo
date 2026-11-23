@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import { parse, resolve } from "node:path";
 import { parseArgs, type ParseArgsConfig } from "node:util";
 import { check, make } from "../index.js";
+import { THEMES } from "../model/common.js";
 import { DIAGRAM_TYPES } from "../model/index.js";
 import { formatIssues, hasErrors, suggest, type Issue } from "../validate/issues.js";
 import { VERSION } from "../version.js";
@@ -136,8 +137,11 @@ async function execute(argv: string[]): Promise<{ code: number; out: string; err
     return describeType(command, options, positionals.slice(1));
   if (input === undefined) throw new UsageError("missing <input>");
   if (rest.length > 0) throw new UsageError(`unexpected argument "${rest[0]}"`);
-  if (options.theme !== undefined && options.theme !== "light" && options.theme !== "dark") {
-    throw new UsageError(`invalid --theme "${options.theme}" (use light or dark)`);
+  const theme = THEMES.find((t) => t === options.theme);
+  if (options.theme !== undefined && theme === undefined) {
+    throw new UsageError(
+      `invalid --theme "${options.theme}" (use ${THEMES.slice(0, -1).join(", ")} or ${THEMES.at(-1)})`,
+    );
   }
   const json = options.json === true;
 
@@ -164,10 +168,7 @@ async function execute(argv: string[]): Promise<{ code: number; out: string; err
       throw new UsageError("output would overwrite the input");
   }
 
-  const result = await make(
-    readInput(input),
-    options.theme === undefined ? {} : { theme: options.theme },
-  );
+  const result = await make(readInput(input), theme === undefined ? {} : { theme });
   if (!result.ok || result.html === undefined) {
     const { out, err } = report(result.issues, json);
     return { code: 1, out, err };

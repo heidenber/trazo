@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 Heidenber Palacio Garzón
 
+import type { ThemeName } from "./model/common.js";
+
 export interface Point {
   x: number;
   y: number;
@@ -103,7 +105,7 @@ export interface Scene {
   type: string;
   title: string;
   description?: string;
-  theme: "light" | "dark";
+  theme: ThemeName;
   width: number;
   height: number;
   /** Outer groups come before the groups they contain. */

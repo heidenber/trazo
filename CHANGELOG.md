@@ -6,6 +6,7 @@ All notable changes to trazo are listed here. The format follows [Keep a Changel
 
 ### Added
 
+- Two new themes, `lagoon` (light, teal) and `dusk` (dark, violet), next to `light` and `dark`: accepted by the JSON `theme` field of every diagram type, by `--theme` and by `make(…, { theme })`. `light` and `dark` keep their names and take new palettes. All four reach WCAG AA (4.5:1 for text on its fill, 3:1 for strokes and edges). The in-page toggle flips light and dark, and lagoon and dusk. A bad `--theme` now reads `invalid --theme "x" (use light, dark, lagoon or dusk)`.
 - `trazo skill install --agent claude|pi|codex` copies the skill to the agent's user-level location (`~/.claude/skills/trazo`, `~/.pi/agent/skills/trazo`, `~/.agents/skills/trazo`) in any shell and prints `installed <path>` or `updated <path>`. It replaces the per-shell copy commands in the README; trazo still installs nothing on its own.
 - A legend below every diagram that uses more than one node kind family or more than one edge style: one entry per family and per style actually used, in a fixed order, wrapped into rows within the diagram width. It lives inside the SVG, so the PNG and SVG exports include it; an ERD, or a diagram with a single family and a single style, has none.
 

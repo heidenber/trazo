@@ -6,6 +6,7 @@ import { VERSION } from "../version.js";
 import { INTER_400_WOFF2_BASE64, INTER_600_WOFF2_BASE64 } from "./generated/font.js";
 import { ICONS } from "./generated/icons.js";
 import { escapeXml, renderSvg } from "./svg.js";
+import { PALETTES } from "./palettes.js";
 import { pageCss } from "./theme.js";
 import { VIEWER_SCRIPT } from "./viewer.js";
 
@@ -49,7 +50,7 @@ export function renderHtml(scene: Scene): string {
     </div>
     <div class="group">
       ${button("fullscreen", "Enter full screen", ["maximize", "minimize"])}
-      ${button("theme", scene.theme === "dark" ? "Switch to light theme" : "Switch to dark theme", ["sun", "moon"])}
+      ${button("theme", PALETTES[scene.theme].mode === "dark" ? "Switch to light theme" : "Switch to dark theme", ["sun", "moon"])}
     </div>
   </div>
 </header>

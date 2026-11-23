@@ -161,7 +161,7 @@ describe("renderHtml", () => {
   it("shows the sun in dark mode and the moon in light mode", () => {
     const html = renderHtml(scene);
     expect(html).toContain(
-      '[data-theme="dark"] .i-moon, :root:not([data-theme="dark"]) .i-sun { display: none; }',
+      '[data-theme="dark"] .i-moon, [data-theme="dusk"] .i-moon, :root:not([data-theme="dark"], [data-theme="dusk"]) .i-sun { display: none; }',
     );
   });
 

@@ -6,7 +6,7 @@ export class UsageError extends Error {}
 export const USAGE = `trazo: semantic JSON in, laid-out interactive HTML out
 
 Usage:
-  trazo make <input> [-o, --out <file>] [--theme light|dark] [--json]
+  trazo make <input> [-o, --out <file>] [--theme light|dark|lagoon|dusk] [--json]
   trazo check <input> [--json]
   trazo schema <type>
   trazo example <type>
@@ -22,7 +22,7 @@ Commands:
 
 Options:
   -o, --out <file>   output path (default: <input> with .html, or stdout when <input> is "-"; "-" forces stdout)
-      --theme <t>    light or dark; overrides the diagram's theme
+      --theme <t>    light, dark, lagoon or dusk; overrides the diagram's theme
       --json         print one JSON line instead of plain text
       --agent <a>    claude, pi or codex (skill install only)
   -h, --help         show this help

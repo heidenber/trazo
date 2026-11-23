@@ -231,9 +231,9 @@ export const VIEWER_SCRIPT = String.raw`(function () {
   var theme = $("theme");
   var full = $("fullscreen");
   theme.addEventListener("click", function () {
-    var dark = root.getAttribute("data-theme") !== "dark";
-    root.setAttribute("data-theme", dark ? "dark" : "light");
-    label(theme, dark ? "Switch to light theme" : "Switch to dark theme");
+    var next = { light: "dark", dark: "light", lagoon: "dusk", dusk: "lagoon" }[root.getAttribute("data-theme")] || "dark";
+    root.setAttribute("data-theme", next);
+    label(theme, next === "dark" || next === "dusk" ? "Switch to light theme" : "Switch to dark theme");
   });
   if (!root.requestFullscreen) {
     full.hidden = true;

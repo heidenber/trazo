@@ -39,8 +39,12 @@ function block(css: string, head: string): Record<string, string> {
 }
 
 const css = pageCss("", "");
-const light = block(css, ':root, [data-theme="light"]');
-const dark = block(css, '[data-theme="dark"]');
+const palettes = {
+  light: block(css, ':root, [data-theme="light"]'),
+  dark: block(css, '[data-theme="dark"]'),
+  lagoon: block(css, '[data-theme="lagoon"]'),
+  dusk: block(css, '[data-theme="dusk"]'),
+};
 
 const lum = (hex: string) => {
   const c = [1, 3, 5]
@@ -199,10 +203,10 @@ describe("palette", () => {
     ...EDGE_VARS,
   ];
 
-  it("defines every color variable in both themes and exports them", () => {
+  it("defines every color variable in all four themes and exports them", () => {
     for (const v of vars) {
-      expect(light[v], v).toBeDefined();
-      expect(dark[v], v).toBeDefined();
+      for (const [theme, p] of Object.entries(palettes))
+        expect(p[v], `${theme} ${v}`).toBeDefined();
       expect(THEME_VARS).toContain(v);
     }
   });
@@ -212,10 +216,7 @@ describe("palette", () => {
   });
 
   it("keeps labels readable on every tint (>= 4.5:1)", () => {
-    for (const [theme, p] of [
-      ["light", light],
-      ["dark", dark],
-    ] as const)
+    for (const [theme, p] of Object.entries(palettes))
       for (const f of FAMILIES)
         expect(
           ratio(p["--t-text"]!, p[`--t-fam-${f}-fill`]!),
@@ -224,10 +225,7 @@ describe("palette", () => {
   });
 
   it("keeps strokes and edges visible on the background (>= 3:1)", () => {
-    for (const [theme, p] of [
-      ["light", light],
-      ["dark", dark],
-    ] as const) {
+    for (const [theme, p] of Object.entries(palettes)) {
       for (const f of FAMILIES)
         expect(
           ratio(p[`--t-fam-${f}-stroke`]!, p["--t-bg"]!),

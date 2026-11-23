@@ -3,6 +3,7 @@
 
 import { checkGeometry } from "./check/geometry.js";
 import { layoutDiagram } from "./layout/index.js";
+import type { ThemeName } from "./model/common.js";
 import { validateDiagram, type Diagram } from "./model/index.js";
 import { parseJson } from "./parse.js";
 import { renderHtml } from "./render/html.js";
@@ -17,7 +18,7 @@ export interface CheckResult {
 }
 
 export interface MakeOptions {
-  theme?: "light" | "dark";
+  theme?: ThemeName;
 }
 
 export interface MakeResult extends CheckResult {

@@ -2,59 +2,34 @@
 // Copyright 2026 Heidenber Palacio Garzón
 
 import { FONT_FAMILY } from "../text/measure.js";
+import type { ThemeName } from "../model/common.js";
 import { FAMILIES, type Family } from "./families.js";
+import { PALETTES, type Palette } from "./palettes.js";
 
 // Kerning and ligatures are off because the layout measures glyph advances
 // one by one; any shaping would make rendered text drift from those widths.
 const TEXT_RESET = `font-family: "${FONT_FAMILY}", system-ui, -apple-system, "Segoe UI", sans-serif; font-kerning: none; font-variant-ligatures: none; font-feature-settings: "kern" 0, "liga" 0, "calt" 0;`;
 
-type Pair = { stroke: string; fill: string };
+/** Fallback colors in the CSS rules below: the light theme, so a standalone SVG stays readable. */
+const FALLBACK = PALETTES.light;
+const EDGE_LIGHT = FALLBACK.edge;
 
-/** Stroke and tint per family. Explicit hex values, no color-mix, so an exported SVG renders anywhere. */
-const FAMILY_LIGHT: Record<Family, Pair> = {
-  compute: { stroke: "#4f5bd5", fill: "#eaebfa" },
-  data: { stroke: "#1f8a7a", fill: "#e4f1ef" },
-  messaging: { stroke: "#c2670f", fill: "#f8ede2" },
-  client: { stroke: "#2f8a45", fill: "#e6f1e9" },
-  external: { stroke: "#b5476f", fill: "#f6e9ee" },
-  start: { stroke: "#2f8a45", fill: "#e6f1e9" },
-  end: { stroke: "#c2453a", fill: "#f8e9e7" },
-  decision: { stroke: "#a87a0a", fill: "#f5efe2" },
-  wait: { stroke: "#7a6a5a", fill: "#efedeb" },
-  task: { stroke: "#3b6fd4", fill: "#e7eefa" },
-};
-
-const FAMILY_DARK: Record<Family, Pair> = {
-  compute: { stroke: "#8f9aff", fill: "#32384f" },
-  data: { stroke: "#4fc2b0", fill: "#283e42" },
-  messaging: { stroke: "#f0a050", fill: "#413933" },
-  client: { stroke: "#6fcf85", fill: "#2d403b" },
-  external: { stroke: "#e57fa3", fill: "#403340" },
-  start: { stroke: "#6fcf85", fill: "#2d403b" },
-  end: { stroke: "#f08178", fill: "#413439" },
-  decision: { stroke: "#e0b840", fill: "#3f3d30" },
-  wait: { stroke: "#b5a595", fill: "#38393e" },
-  task: { stroke: "#6ea2f5", fill: "#2c394d" },
-};
-
-// Sync keeps --t-edge.
-const EDGE_LIGHT = { async: "#7c4ddb", data: "#1f8a7a", reply: "#66727f" };
-const EDGE_DARK = { async: "#a98bf2", data: "#4fc2b0", reply: "#9aa5b1" };
-
-const familyVars = (p: Record<Family, Pair>) =>
-  FAMILIES.map((f) => `--t-fam-${f}-stroke: ${p[f].stroke}; --t-fam-${f}-fill: ${p[f].fill};`).join(
-    "\n  ",
-  );
-
-const edgeVars = (e: typeof EDGE_LIGHT) =>
-  `--t-edge-async: ${e.async}; --t-edge-data: ${e.data}; --t-edge-reply: ${e.reply};`;
+const themeBlock = (p: Palette): string =>
+  [
+    `color-scheme: ${p.mode};`,
+    ...Object.entries(p.base).map(([name, value]) => `--t-${name}: ${value};`),
+    `--t-edge: ${p.edge.sync}; --t-edge-async: ${p.edge.async}; --t-edge-data: ${p.edge.data}; --t-edge-reply: ${p.edge.reply};`,
+    ...FAMILIES.map(
+      (f) => `--t-fam-${f}-stroke: ${p.fam[f][0]}; --t-fam-${f}-fill: ${p.fam[f][1]};`,
+    ),
+  ].join("\n  ");
 
 /** Appended for the families a scene actually uses. */
 export function familyCss(used: Iterable<Family>): string {
   const set = new Set(used);
   return FAMILIES.filter((f) => set.has(f))
     .map((f) => {
-      const { stroke, fill } = FAMILY_LIGHT[f];
+      const [stroke, fill] = FALLBACK.fam[f];
       // The end shape keeps its inner ring unfilled so only the outer band is tinted.
       const ring = f === "end" ? "\n.t-fam-end .t-node-inner { fill: none; }" : "";
       return `.t-fam-${f} .t-node-box { fill: var(--t-fam-${f}-fill, ${fill}); stroke: var(--t-fam-${f}-stroke, ${stroke}); }${ring}
@@ -149,30 +124,27 @@ export const SEQUENCE_CSS = `
 .t-arrow-open-reply { stroke: var(--t-edge-reply, ${EDGE_LIGHT.reply}); }
 `;
 
-const LIGHT = `--t-bg: #f4f5f7; --t-surface: #ffffff; --t-text: #1f2933; --t-muted: #52606d; --t-border: #d8dde3;
-  --t-group-fill: #eceff3; --t-group-stroke: #c3cbd4; --t-node-fill: #ffffff; --t-node-stroke: #9aa5b1;
-  --t-edge: #2f6fdb; --t-accent: #2f6fdb; --t-icon: #52606d; --t-table-head: #e4e8ee;
-  ${edgeVars(EDGE_LIGHT)}
-  ${familyVars(FAMILY_LIGHT)}`;
-
-const DARK = `--t-bg: #14171c; --t-surface: #1b1f26; --t-text: #e6e9ed; --t-muted: #9aa5b1; --t-border: #2c333d;
-  --t-group-fill: #1a1e25; --t-group-stroke: #343c48; --t-node-fill: #20252d; --t-node-stroke: #4a5361;
-  --t-edge: #6ea2f5; --t-accent: #6ea2f5; --t-icon: #9aa5b1; --t-table-head: #2a303a;
-  ${edgeVars(EDGE_DARK)}
-  ${familyVars(FAMILY_DARK)}`;
+const LIGHT = themeBlock(PALETTES.light);
 
 /** Theme custom properties that an exported SVG needs to look the same outside the page. */
 export const THEME_VARS: readonly string[] = [...LIGHT.matchAll(/--t-[a-z-]+(?=:)/g)].map(
   (m) => m[0],
 );
 
+const THEME_NAMES = Object.keys(PALETTES) as ThemeName[];
+const DARK_NAMES = THEME_NAMES.filter((n) => PALETTES[n].mode === "dark");
+const themeRules = THEME_NAMES.map(
+  (name) =>
+    `${name === "light" ? ':root, [data-theme="light"]' : `[data-theme="${name}"]`} { ${themeBlock(PALETTES[name])} }`,
+).join("\n");
+const darkAttrs = DARK_NAMES.map((n) => `[data-theme="${n}"]`);
+
 export function pageCss(font400: string, font600: string): string {
   return `
 /* Inter is embedded under the SIL Open Font License 1.1, Copyright 2016 The Inter Project Authors. */
 @font-face { font-family: "${FONT_FAMILY}"; font-weight: 400; font-style: normal; font-display: swap; src: url(data:font/woff2;base64,${font400}) format("woff2"); }
 @font-face { font-family: "${FONT_FAMILY}"; font-weight: 600; font-style: normal; font-display: swap; src: url(data:font/woff2;base64,${font600}) format("woff2"); }
-:root, [data-theme="light"] { ${LIGHT} }
-[data-theme="dark"] { ${DARK} }
+${themeRules}
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body { ${TEXT_RESET} background: var(--t-bg); color: var(--t-text); height: 100vh; display: flex; flex-direction: column; }
@@ -186,7 +158,7 @@ button { display: inline-flex; align-items: center; justify-content: center; wid
 button:hover { color: var(--t-text); border-color: var(--t-muted); }
 button:focus-visible { outline: 2px solid var(--t-accent); outline-offset: 2px; }
 button svg { width: 18px; height: 18px; }
-[data-theme="dark"] .i-moon, :root:not([data-theme="dark"]) .i-sun { display: none; }
+${darkAttrs.map((a) => `${a} .i-moon`).join(", ")}, :root:not(${darkAttrs.join(", ")}) .i-sun { display: none; }
 .is-fullscreen .i-maximize, :root:not(.is-fullscreen) .i-minimize { display: none; }
 main { flex: 1; min-height: 0; overflow: hidden; padding: 16px 24px 8px; }
 .credit { padding: 0 24px 10px; text-align: right; font-size: 11px; line-height: 1.4; }

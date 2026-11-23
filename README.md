@@ -107,14 +107,16 @@ npm i -g .
 
 | Command | What it does |
 |---|---|
-| `trazo make <input> [-o, --out <file>] [--theme light\|dark] [--json]` | Validate, lay out and write a self-contained HTML file. |
+| `trazo make <input> [-o, --out <file>] [--theme light\|dark\|lagoon\|dusk] [--json]` | Validate, lay out and write a self-contained HTML file. |
 | `trazo check <input> [--json]` | Validate only; writes nothing. |
 | `trazo schema <type>` | Print the compact field reference for a diagram type. |
 | `trazo example <type>` | Print a complete example diagram, valid input for `make`. |
 
 `<input>` is a JSON file, or `-` to read stdin. `<type>` is `architecture`, `workflow`, `erd` or `sequence`. Without `-o`, `make` writes `<input>` with a `.html` extension; with `-o -`, or when `<input>` is `-` and there is no `-o`, it writes the HTML to stdout. `--json` prints one JSON line instead of plain text and covers results (`make`, `check`); usage errors (exit 2) are always plain text on stderr.
 
-Nodes are colored by kind (a colored border over a soft tint of it) and edges by style (sync blue, async violet, data teal, reply grey) in both themes; you never write colors in the JSON. A legend under the diagram, inside the SVG so PNG and SVG exports keep it, names the kinds and styles the diagram uses; it is left out when there is only one of each.
+Four themes: `light` and `dark`, plus `lagoon` (light, teal) and `dusk` (dark, violet). Set one with the JSON `theme` field or `--theme`; the toggle in the page flips between the light and the dark member of each pair.
+
+Nodes are colored by kind (a colored border over a soft tint of it) and edges by style (sync blue, async violet, data teal, reply grey) in every theme; you never write colors in the JSON. A legend under the diagram, inside the SVG so PNG and SVG exports keep it, names the kinds and styles the diagram uses; it is left out when there is only one of each.
 
 Exit codes: 0 ok, 1 invalid input, 2 usage error, 3 internal error.
 

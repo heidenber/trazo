@@ -4,7 +4,15 @@
 import { z } from "zod";
 import type { Issue } from "../validate/issues.js";
 import { IdRegistry } from "../validate/refs.js";
-import { edgeSchema, error_, idSchema, textSchema, themeSchema, warning } from "./common.js";
+import {
+  edgeSchema,
+  error_,
+  idSchema,
+  textSchema,
+  themeSchema,
+  warning,
+  type ThemeName,
+} from "./common.js";
 
 export const STEP_KINDS = ["task", "start", "end", "decision", "wait", "subprocess"] as const;
 
@@ -36,7 +44,7 @@ export interface Workflow {
   type: "workflow";
   title: string;
   description?: string;
-  theme: "light" | "dark";
+  theme: ThemeName;
   /** "auto" (lanes without a direction): the layout keeps the orientation that fits the screen best. */
   direction: "right" | "down" | "auto";
   lanes: WorkflowLane[];
