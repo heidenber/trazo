@@ -10,8 +10,12 @@ export const NOTE_GAP = 2;
 const MAX_LINES = 3;
 const ELLIPSIS = "…";
 
-/** Wraps a note to at most three lines; a longer note ends in an ellipsis. The tooltip keeps it whole. */
+/**
+ * Wraps a note to at most three lines; a longer note ends in an ellipsis. The tooltip keeps it whole.
+ * A whitespace-only note shows nothing.
+ */
 export function noteLines(note: string, maxWidth: number): string[] {
+  if (note.trim() === "") return [];
   const lines = wrapText(note, maxWidth, NOTE_SIZE, 400);
   if (lines.length <= MAX_LINES) return lines;
   let last = Array.from(lines[MAX_LINES - 1]!);

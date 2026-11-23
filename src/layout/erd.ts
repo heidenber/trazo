@@ -14,7 +14,11 @@ import {
 import { NOTE_SIZE, noteLines } from "./note.js";
 
 const HEADER = 32;
-/** A table note starts this far above the bottom of the title band, and leaves this much below it. */
+/**
+ * A table note sits under the title: it starts NOTE_PULL above the bottom of the 32 px title band,
+ * because the title is centred in that band and leaves room below it, and NOTE_BOTTOM separates
+ * the note from the first row. So header = HEADER - NOTE_PULL + note lines + NOTE_BOTTOM.
+ */
 const NOTE_PULL = 6;
 const NOTE_BOTTOM = 8;
 const ROW = 24;
@@ -73,7 +77,7 @@ function sizeTable(table: ErdTable): Sized {
   const body = nameWidth + GAP + typeWidth + (marksWidth > 0 ? GAP + marksWidth : 0);
   const title = textWidth(table.label, TITLE_SIZE, 600);
   const width = Math.max(MIN_W, Math.ceil(Math.max(body, title) + 2 * PAD));
-  // The note wraps to the width the columns already need; it never widens the table.
+  // The note wraps inside the padded width that the title and columns already set; it never widens the table.
   const note = table.note === undefined ? [] : noteLines(table.note, width - 2 * PAD);
   const header =
     note.length === 0

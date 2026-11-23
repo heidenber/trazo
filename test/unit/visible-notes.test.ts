@@ -154,6 +154,17 @@ describe("visible notes", () => {
     expect(nodeMarkup(svg, "a")).toContain("<desc>participant note</desc>");
   });
 
+  it("treats a whitespace-only note as no note: no subtitle line and no taller box", async () => {
+    const s = await scene({
+      type: "architecture",
+      nodes: [{ id: "api", label: "API", kind: "service", note: "   " }],
+      edges: [],
+    });
+    expect(nodeOf(s, "api").subtitle).toBeUndefined();
+    expect(nodeOf(s, "api").h).toBe(44);
+    expect(renderSvg(s)).not.toContain('t-node-note"');
+  });
+
   it("renders nodes without a note exactly as before: no subtitle and no note markup", async () => {
     const s = await scene({
       type: "architecture",
