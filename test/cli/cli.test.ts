@@ -471,7 +471,7 @@ describe("sequence diagrams", () => {
     expect(r).toEqual({ code: 0, stdout: `${join(dir, "q.html")}\n`, stderr: "" });
     const html = readFileSync(join(dir, "q.html"), "utf8");
     expect(html).toContain("t-lifeline");
-    expect(html).toContain("url(#t-arrowhead-open)");
+    expect(html).toContain("url(#t-arrowhead-open-");
   });
 
   it("rejects a message to an unknown participant with a suggestion", () => {

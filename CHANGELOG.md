@@ -7,9 +7,11 @@ All notable changes to trazo are listed here. The format follows [Keep a Changel
 ### Added
 
 - `trazo skill install --agent claude|pi|codex` copies the skill to the agent's user-level location (`~/.claude/skills/trazo`, `~/.pi/agent/skills/trazo`, `~/.agents/skills/trazo`) in any shell and prints `installed <path>` or `updated <path>`. It replaces the per-shell copy commands in the README; trazo still installs nothing on its own.
+- A legend below every diagram that uses more than one node kind family or more than one edge style: one entry per family and per style actually used, in a fixed order, wrapped into rows within the diagram width. It lives inside the SVG, so the PNG and SVG exports include it; an ERD, or a diagram with a single family and a single style, has none.
 
 ### Changed
 
+- Nodes are colored by kind: a border in the kind's color over a soft tint of it, in five families for architecture (compute, data, messaging, client, external) and five for workflow (start, end, decision, wait, task); sequence participants reuse the architecture families. Edges are colored by style (sync blue, async violet, data teal, reply grey), dash patterns stay, and each arrowhead matches its edge. Notes and ERD tables keep the neutral look; icons take their family color. Colors are explicit variables in both themes, so exported SVG and PNG look the same.
 - Workflow lanes can be columns: with `direction: "down"` each lane is a column with its label in a row at the top and steps flow down; `direction: "right"` keeps lanes as rows. Without a direction, trazo lays a laned workflow out both ways and keeps the one that fits a 1440x826 screen better, so wide workflows with several lanes are no longer drawn at half size or less. The `workflow/lanes-direction` warning is gone: an explicit direction is honored.
 
 ## [0.1.4] - 2026-11-09

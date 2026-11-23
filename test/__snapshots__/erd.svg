@@ -10,12 +10,16 @@
 .t-node:focus { outline: none; }
 .t-node:focus-visible .t-node-box { stroke: var(--t-accent, #2f6fdb); stroke-width: 2.5; }
 .t-icon { color: var(--t-icon, #52606d); }
-.t-icon-database, .t-icon-storage, .t-icon-cache { color: var(--t-icon-data, #2f6f6f); }
-.t-icon-client, .t-icon-user, .t-icon-external { color: var(--t-icon-edge, #8a5a2b); }
 .t-edge { fill: none; stroke: var(--t-edge, #2f6fdb); stroke-width: 1.5; stroke-linejoin: round; }
+.t-edge-async { stroke: var(--t-edge-async, #7c4ddb); }
+.t-edge-data { stroke: var(--t-edge-data, #1f8a7a); }
+.t-edge-reply { stroke: var(--t-edge-reply, #66727f); }
 .t-edge-async { stroke-dasharray: 7 5; }
 .t-edge-data { stroke-dasharray: 1.5 4.5; stroke-linecap: round; }
 .t-arrow { fill: var(--t-edge, #2f6fdb); }
+.t-arrow-async { fill: var(--t-edge-async, #7c4ddb); }
+.t-arrow-data { fill: var(--t-edge-data, #1f8a7a); }
+.t-arrow-reply { fill: var(--t-edge-reply, #66727f); }
 .t-label-bg { fill: var(--t-bg, #ffffff); stroke: none; }
 .t-label { fill: var(--t-muted, #52606d); }
 

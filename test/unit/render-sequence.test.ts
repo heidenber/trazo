@@ -86,7 +86,7 @@ describe("sequence render", () => {
     const life = svg.indexOf("t-lifeline");
     expect(life).toBeGreaterThan(-1);
     expect(life).toBeLessThan(svg.indexOf('class="t-edge'));
-    expect(life).toBeLessThan(svg.indexOf('class="t-node"'));
+    expect(life).toBeLessThan(svg.indexOf('class="t-node '));
     expect(svg).toContain(SEQUENCE_CSS);
   });
 
@@ -126,8 +126,8 @@ describe("sequence render", () => {
   it("draws reply dashed with an open arrowhead", () => {
     const svg = renderSvg(scene([msg("#m0", "reply", 100)]));
     expect(svg).toContain('class="t-edge t-edge-reply"');
-    expect(svg).toContain('marker-end="url(#t-arrowhead-open)"');
-    expect(svg).toContain('<marker id="t-arrowhead-open"');
+    expect(svg).toContain('marker-end="url(#t-arrowhead-open-reply)"');
+    expect(svg).toContain('<marker id="t-arrowhead-open-reply"');
     expect(svg).toContain(".t-edge-reply { stroke-dasharray: 5 4; }");
     expect(svg).not.toContain('id="t-arrowhead"');
   });
@@ -135,7 +135,7 @@ describe("sequence render", () => {
   it("draws async with an open arrowhead and a solid line", () => {
     const svg = renderSvg(scene([msg("#m0", "async", 100), msg("#m1", "sync", 120)]));
     expect(svg).toContain(
-      'class="t-edge t-edge-async" data-from="a" data-to="b" d="M84 100 L304 100" marker-end="url(#t-arrowhead-open)"',
+      'class="t-edge t-edge-async" data-from="a" data-to="b" d="M84 100 L304 100" marker-end="url(#t-arrowhead-open-async)"',
     );
     expect(svg).toContain(".t-seq .t-edge-async { stroke-dasharray: none; }");
     expect(svg).toContain('d="M84 120 L304 120" marker-end="url(#t-arrowhead)"');
@@ -167,7 +167,7 @@ describe("sequence render", () => {
     expect(svg).not.toContain("t-lifeline");
     expect(svg).not.toContain("t-arrowhead-open");
     expect(svg).not.toContain(SEQUENCE_CSS);
-    expect(svg).toContain('marker-end="url(#t-arrowhead)"');
+    expect(svg).toContain('marker-end="url(#t-arrowhead-async)"');
     expect(svg).toContain(".t-edge-async { stroke-dasharray: 7 5; }");
   });
 });

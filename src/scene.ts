@@ -90,6 +90,13 @@ export interface SceneLifeline {
   y2: number;
 }
 
+export interface SceneLegendItem {
+  family?: string;
+  style?: SceneEdge["style"];
+  swatch: Box;
+  label: TextBlock;
+}
+
 export interface Scene {
   type: string;
   title: string;
@@ -103,4 +110,5 @@ export interface Scene {
   edges: SceneEdge[];
   /** Present only in sequence scenes. */
   lifelines?: SceneLifeline[];
+  legend?: SceneLegendItem[];
 }
