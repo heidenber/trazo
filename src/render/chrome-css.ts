@@ -10,6 +10,9 @@ export const CHROME_CSS = `
 header.top { position: relative; z-index: 3; display: flex; align-items: center; gap: 20px; padding: 12px 20px 12px 24px; border-bottom: 1px solid var(--t-border); background: var(--t-surface); }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -0.01em; }
 .logo { display: block; flex: none; }
+.logo-dark { display: none; }
+[data-theme="dark"] .logo-light, [data-theme="dusk"] .logo-light { display: none; }
+[data-theme="dark"] .logo-dark, [data-theme="dusk"] .logo-dark { display: block; }
 .sep { flex: none; width: 1px; height: 28px; background: var(--t-border); }
 .heading { flex: 1; min-width: 0; }
 h1 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; }

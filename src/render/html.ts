@@ -2,6 +2,7 @@
 // Copyright 2026 Heidenber Palacio Garzón
 
 import type { Scene } from "../scene.js";
+import { FAVICON_SVG } from "./brand.js";
 import { VERSION } from "../version.js";
 import { INTER_400_WOFF2_BASE64, INTER_600_WOFF2_BASE64 } from "./generated/font.js";
 import { escapeXml, renderSvg } from "./svg.js";
@@ -38,6 +39,7 @@ export function renderHtml(scene: Scene, options: HtmlOptions = {}): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="trazo ${VERSION}">
 <title>${title}</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${encodeURIComponent(FAVICON_SVG)}">
 <style>${pageCss(INTER_400_WOFF2_BASE64, INTER_600_WOFF2_BASE64)}</style>
 </head>
 <body>

@@ -114,6 +114,36 @@ describe("header and toolbar", () => {
   });
 });
 
+describe("brand", () => {
+  it("shows the trazo logo in the header, the reversed one on dark themes", () => {
+    const header = html.slice(html.indexOf("<header"), html.indexOf("</header>"));
+    expect(header).toContain('<svg class="logo logo-light"');
+    expect(header).toContain('<svg class="logo logo-dark"');
+    expect(header).toContain('fill="#2f6fdb"');
+    expect(header).toContain('fill="#6ea2f5"');
+    expect(header).not.toContain("<title>");
+    expect(header).toContain('aria-label="trazo"');
+    const page = pageCss("", "");
+    expect(page).toContain(".logo-dark { display: none; }");
+    // No later rule may show the reversed logo again on light themes.
+    const after = page.slice(page.indexOf(".logo-dark { display: none; }"));
+    expect(after).not.toMatch(/(^|\n)\.logo \{[^}]*display/);
+    for (const t of ["dark", "dusk"]) {
+      expect(page).toContain(`[data-theme="${t}"] .logo-light`);
+      expect(page).toContain(`[data-theme="${t}"] .logo-dark`);
+    }
+  });
+
+  it("sets an SVG favicon that switches to the light mark in a dark browser", () => {
+    const link =
+      /<link rel="icon" type="image\/svg\+xml" href="data:image\/svg\+xml,([^"]+)">/.exec(html);
+    expect(link).not.toBeNull();
+    const svg = decodeURIComponent(link![1]!);
+    expect(svg).toContain("prefers-color-scheme: dark");
+    expect(svg).toContain("#2f6fdb");
+  });
+});
+
 describe("theme switcher", () => {
   it("lists the four themes and marks the current one", () => {
     for (const [id, name] of [
