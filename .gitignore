@@ -44,3 +44,6 @@ desktop.ini
 .playwright-mcp/
 odd/
 PUBLISHING.md
+
+# Brand kit: kept locally; the repo ships only the logos it uses (docs/logo).
+docs/trazo-logo-kit/

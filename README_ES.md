@@ -1,6 +1,11 @@
 [English](README.md) | Español
 
-# trazo
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/heidenber/trazo/main/docs/logo/trazo-horizontal-reversed.svg">
+    <img alt="trazo" src="https://raw.githubusercontent.com/heidenber/trazo/main/docs/logo/trazo-horizontal.svg" height="56">
+  </picture>
+</h1>
 
 [![CI](https://github.com/heidenber/trazo/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/heidenber/trazo/actions/workflows/ci.yml) [![npm](https://img.shields.io/npm/v/@heidenber/trazo)](https://www.npmjs.com/package/@heidenber/trazo)
 
