@@ -4,6 +4,7 @@
 import { FONT_FAMILY } from "../text/measure.js";
 import type { ThemeName } from "../model/common.js";
 import { FAMILIES, type Family } from "./families.js";
+import { CHROME_CSS } from "./chrome-css.js";
 import { PALETTES, type Palette } from "./palettes.js";
 
 // Kerning and ligatures are off because the layout measures glyph advances
@@ -150,12 +151,10 @@ export const THEME_VARS: readonly string[] = [...LIGHT.matchAll(/--t-[a-z-]+(?=:
 );
 
 const THEME_NAMES = Object.keys(PALETTES) as ThemeName[];
-const DARK_NAMES = THEME_NAMES.filter((n) => PALETTES[n].mode === "dark");
 const themeRules = THEME_NAMES.map(
   (name) =>
     `${name === "light" ? ':root, [data-theme="light"]' : `[data-theme="${name}"]`} { ${themeBlock(PALETTES[name])} }`,
 ).join("\n");
-const darkAttrs = DARK_NAMES.map((n) => `[data-theme="${n}"]`);
 
 export function pageCss(font400: string, font600: string): string {
   return `
@@ -165,31 +164,7 @@ export function pageCss(font400: string, font600: string): string {
 ${themeRules}
 * { box-sizing: border-box; }
 html, body { margin: 0; }
-body { ${TEXT_RESET} background: var(--t-bg); color: var(--t-text); height: 100vh; display: flex; flex-direction: column; }
-header { display: flex; align-items: flex-start; gap: 16px; padding: 16px 24px 12px; border-bottom: 1px solid var(--t-border); background: var(--t-surface); }
-.heading { flex: 1; min-width: 0; }
-h1 { margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3; }
-.desc { margin: 4px 0 0; font-size: 13px; line-height: 1.4; color: var(--t-muted); max-width: 80ch; }
-.actions { display: flex; gap: 12px; }
-.group { display: flex; gap: 8px; }
-button { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--t-border); border-radius: 8px; background: var(--t-surface); color: var(--t-muted); cursor: pointer; }
-button:hover { color: var(--t-text); border-color: var(--t-muted); }
-button:focus-visible { outline: 2px solid var(--t-accent); outline-offset: 2px; }
-button svg { width: 18px; height: 18px; }
-${darkAttrs.map((a) => `${a} .i-moon`).join(", ")}, :root:not(${darkAttrs.join(", ")}) .i-sun { display: none; }
-.is-fullscreen .i-maximize, :root:not(.is-fullscreen) .i-minimize { display: none; }
-main { flex: 1; min-height: 0; overflow: hidden; padding: 16px 24px 8px; }
-.credit { padding: 0 24px 10px; text-align: right; font-size: 11px; line-height: 1.4; }
-.credit a { color: var(--t-muted); text-decoration: none; }
-.credit a:hover { color: var(--t-text); text-decoration: underline; }
-.credit a:focus-visible { outline: 2px solid var(--t-accent); outline-offset: 2px; border-radius: 2px; }
-.stage { height: 100%; touch-action: none; cursor: grab; border-radius: 8px; }
-.stage.is-grabbing { cursor: grabbing; }
-.stage:focus-visible { outline: 2px solid var(--t-accent); outline-offset: 2px; }
-.stage svg.diagram { display: block; width: 100%; height: 100%; }
-.diagram :is(.t-node, .t-edge, .t-edge-halo, .t-edge-label, .t-lifeline) { transition: opacity 120ms; }
-.t-dim :is(.t-node, .t-edge, .t-edge-halo, .t-edge-label, .t-lifeline):not(.t-near) { opacity: 0.25; }
-.tip { position: fixed; z-index: 10; max-width: 320px; padding: 6px 10px; border: 1px solid var(--t-border); border-radius: 6px; background: var(--t-surface); color: var(--t-text); font-size: 12px; line-height: 1.4; white-space: pre-line; pointer-events: none; visibility: hidden; }
-.tip.on { visibility: visible; }
+body { ${TEXT_RESET} background: var(--t-bg); color: var(--t-text); height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
+${CHROME_CSS}
 `;
 }

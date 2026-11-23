@@ -149,26 +149,19 @@ describe("renderHtml", () => {
     expect(html).toContain("requestFullscreen");
   });
 
-  it("labels the theme button with the theme it switches to", () => {
+  it("names the current theme on the theme button", () => {
     expect(renderHtml({ ...scene, theme: "dark" })).toContain(
-      'id="theme" aria-label="Switch to light theme"',
+      'id="theme" aria-label="Change theme (current: Graphite)"',
     );
     expect(renderHtml({ ...scene, theme: "light" })).toContain(
-      'id="theme" aria-label="Switch to dark theme"',
-    );
-  });
-
-  it("shows the sun in dark mode and the moon in light mode", () => {
-    const html = renderHtml(scene);
-    expect(html).toContain(
-      '[data-theme="dark"] .i-moon, [data-theme="dusk"] .i-moon, :root:not([data-theme="dark"], [data-theme="dusk"]) .i-sun { display: none; }',
+      'id="theme" aria-label="Change theme (current: Porcelain)"',
     );
   });
 
   it("swaps the full screen icon while in full screen", () => {
     const html = renderHtml(scene);
     expect(html).toContain(
-      ".is-fullscreen .i-maximize, :root:not(.is-fullscreen) .i-minimize { display: none; }",
+      ".is-fullscreen .i-full, :root:not(.is-fullscreen) .i-exit { display: none; }",
     );
   });
 

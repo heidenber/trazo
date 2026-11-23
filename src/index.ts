@@ -49,6 +49,11 @@ export async function make(
   const { diagram, issues } = validate(input);
   if (hasErrors(issues) || diagram === undefined) return { ok: false, issues };
   const scene = await layoutDiagram(diagram);
-  const html = renderHtml(options.theme === undefined ? scene : { ...scene, theme: options.theme });
+  const html = renderHtml(
+    options.theme === undefined ? scene : { ...scene, theme: options.theme },
+    {
+      source: diagram,
+    },
+  );
   return { ok: true, html, issues: [...issues, ...checkGeometry(scene)] };
 }

@@ -67,10 +67,10 @@ describe("theme variables", () => {
     expect(seen.size).toBe(THEMES.length);
   });
 
-  it("shows the sun in every dark theme and the moon in every light one", () => {
-    expect(css).toContain(
-      '[data-theme="dark"] .i-moon, [data-theme="dusk"] .i-moon, :root:not([data-theme="dark"], [data-theme="dusk"]) .i-sun { display: none; }',
-    );
+  it("defines one rule per theme for the page", () => {
+    for (const name of THEMES) {
+      expect(css).toContain(`[data-theme="${name}"] {`);
+    }
   });
 });
 

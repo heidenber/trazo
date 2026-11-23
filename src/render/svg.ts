@@ -211,7 +211,7 @@ function node(n: SceneNode, family: Family | undefined): string {
     n.shape !== "box" && `t-shape-${n.shape}`,
     tint && "t-tint",
   ];
-  return `<g class="${cls.filter(Boolean).join(" ")}" data-id="${escapeXml(n.id)}" data-kind="${escapeXml(n.kind)}" tabindex="0">${desc}${shapeMarkup(n.shape, n)}${n.shape === "table" ? tableBody(n) : chip(n)}${text(n.label, "t-node-label")}${n.subtitle ? text(n.subtitle, "t-node-note") : ""}</g>`;
+  return `<g class="${cls.filter(Boolean).join(" ")}" data-id="${escapeXml(n.id)}" data-kind="${escapeXml(n.kind)}"${n.source ? ` data-source="${escapeXml(n.source)}"` : ""} tabindex="0">${desc}${shapeMarkup(n.shape, n)}${n.shape === "table" ? tableBody(n) : chip(n)}${text(n.label, "t-node-label")}${n.subtitle ? text(n.subtitle, "t-node-note") : ""}</g>`;
 }
 
 const needsShapeCss = (scene: Scene) =>
