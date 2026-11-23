@@ -243,6 +243,16 @@ describe("search, minimap and detail card", () => {
     for (const key of ['"/"', '"Escape"', '"Enter"']) expect(VIEWER_SCRIPT).toContain(key);
   });
 
+  it("shows the minimap only while part of the diagram is off screen", () => {
+    // It starts hidden in the markup and sync() decides after every view change.
+    expect(html).toContain('id="minimap" aria-hidden="true" hidden>');
+    expect(VIEWER_SCRIPT).toContain('$("minimap").hidden = fits');
+    expect(VIEWER_SCRIPT).toContain("var fits = ");
+    // Building the minimap must not reveal it on its own.
+    expect(VIEWER_SCRIPT).not.toContain('$("minimap").hidden = false');
+    expect(css).toContain(".minimap { display: none; }");
+  });
+
   it("places the minimap and the detail card beside the diagram, not in it", () => {
     expect(html).toContain('<div class="minimap" id="minimap" aria-hidden="true" hidden>');
     expect(html).toContain('<aside class="detail" id="detail" aria-label="Node details" hidden>');

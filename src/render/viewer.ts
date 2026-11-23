@@ -50,10 +50,14 @@ export const VIEWER_SCRIPT = String.raw`(function () {
     var m = svg.getScreenCTM();
     if (!m) return;
     set($("zoom-pct"), Math.round(m.a * 100) + "%");
-    if (!vr) return;
     var r = svg.getBoundingClientRect();
     var a = toSvg(r.left, r.top);
     var b = toSvg(r.right, r.bottom);
+    // The overview is only useful while some of the diagram is out of sight.
+    var slack = Math.max(base.w, base.h) * 0.005;
+    var fits = a.x <= base.x + slack && a.y <= base.y + slack && b.x >= base.x + base.w - slack && b.y >= base.y + base.h - slack;
+    $("minimap").hidden = fits;
+    if (!vr) return;
     vr.setAttribute("x", a.x);
     vr.setAttribute("y", a.y);
     vr.setAttribute("width", b.x - a.x);
@@ -110,7 +114,6 @@ export const VIEWER_SCRIPT = String.raw`(function () {
     m.addEventListener("pointerup", function () { drag = false; });
     m.addEventListener("pointercancel", function () { drag = false; });
     $("minimap").appendChild(m);
-    $("minimap").hidden = false;
     sync();
   };
 

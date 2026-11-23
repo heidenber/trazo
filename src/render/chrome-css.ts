@@ -109,7 +109,7 @@ main { flex: 1; min-height: 0; overflow: hidden; position: relative; background-
   .pop { opacity: 0; translate: 0 -4px; transition: opacity 0.15s, translate 0.15s, display 0.15s allow-discrete, overlay 0.15s allow-discrete; }
   .pop:popover-open { opacity: 1; translate: 0 0; }
   @starting-style { .pop:popover-open { opacity: 0; translate: 0 -4px; } }
-  .detail:not([hidden]) { animation: rise 0.16s ease-out; }
+  .detail:not([hidden]), .minimap:not([hidden]) { animation: rise 0.16s ease-out; }
   @keyframes rise { from { opacity: 0; translate: 0 6px; } }
 }
 @media (max-width: 900px) {
