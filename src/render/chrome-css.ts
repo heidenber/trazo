@@ -125,12 +125,11 @@ main { flex: 1; min-height: 0; overflow: hidden; position: relative; background-
   .stage { padding: 8px 12px; }
 }
 @media print {
-  @page { margin: 10mm; }
   html, body { height: auto; background: #fff; }
   header, .minimap, .detail, .credit, .pop { display: none !important; }
   main { overflow: visible; background: none; }
   .stage { height: auto; padding: 0; }
-  .stage svg.diagram { width: 100%; height: 94vh; }
+  .stage svg.diagram { width: 100%; height: 100vh; }
   .t-dim :is(.t-node, .t-edge, .t-edge-halo, .t-edge-label, .t-lifeline) { opacity: 1 !important; }
 }
 `;
