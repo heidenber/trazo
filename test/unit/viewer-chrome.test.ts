@@ -212,6 +212,21 @@ describe("export menu", () => {
     expect(VIEWER_SCRIPT).toContain("afterprint");
   });
 
+  it("sizes the printed page to the diagram so the PDF holds only the diagram", () => {
+    const rule = /@page \{ size: ([\d.]+)px ([\d.]+)px; margin: (\d+)px; \}/.exec(html);
+    expect(rule, "per-diagram @page rule").not.toBeNull();
+    const [, w, h, m] = rule!.map(Number);
+    const box = /class="diagram[^"]*" viewBox="0 0 ([\d.]+) ([\d.]+)"/
+      .exec(html)!
+      .slice(1)
+      .map(Number);
+    expect(w! - 2 * m!).toBeCloseTo(box[0]!, 0);
+    expect(h! - 2 * m!).toBeCloseTo(box[1]!, 0);
+    const print = css.slice(css.indexOf("@media print"));
+    expect(print).toContain(".stage svg.diagram { width: 100%; height: 100vh; }");
+    expect(print).not.toContain("@page { margin: 10mm; }");
+  });
+
   it("builds exports from the diagram only, with no viewer-only element", () => {
     for (const cls of ["t-find", "t-hit", "t-pick", "t-cur", "t-dim", "t-near"]) {
       expect(VIEWER_SCRIPT, cls).toContain(cls);

@@ -19,6 +19,20 @@ export interface HtmlOptions {
   source?: unknown;
 }
 
+/** Margin around the diagram on the printed page, in CSS pixels. */
+const PRINT_MARGIN = 24;
+
+/**
+ * The printed page takes the diagram's own size, so "Save as PDF" yields one page that holds
+ * the whole diagram with no empty band. Chrome and Edge honor it; other browsers may fall back
+ * to their default paper, where the diagram still scales to fit.
+ */
+function printPage(scene: Scene): string {
+  const w = Math.ceil(scene.width) + 2 * PRINT_MARGIN;
+  const h = Math.ceil(scene.height) + 2 * PRINT_MARGIN;
+  return `\n@page { size: ${w}px ${h}px; margin: ${PRINT_MARGIN}px; }\n`;
+}
+
 export function renderHtml(scene: Scene, options: HtmlOptions = {}): string {
   const title = escapeXml(scene.title);
   const source = embeddedSource(options.source);
@@ -40,7 +54,7 @@ export function renderHtml(scene: Scene, options: HtmlOptions = {}): string {
 <meta name="generator" content="trazo ${VERSION}">
 <title>${title}</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${encodeURIComponent(FAVICON_SVG)}">
-<style>${pageCss(INTER_400_WOFF2_BASE64, INTER_600_WOFF2_BASE64)}</style>
+<style>${pageCss(INTER_400_WOFF2_BASE64, INTER_600_WOFF2_BASE64)}${printPage(scene)}</style>
 </head>
 <body>
 ${page}
