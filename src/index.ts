@@ -3,6 +3,7 @@
 
 import { checkGeometry } from "./check/geometry.js";
 import { layoutDiagram } from "./layout/index.js";
+import type { ThemeName } from "./model/common.js";
 import { validateDiagram, type Diagram } from "./model/index.js";
 import { parseJson } from "./parse.js";
 import { renderHtml } from "./render/html.js";
@@ -17,7 +18,7 @@ export interface CheckResult {
 }
 
 export interface MakeOptions {
-  theme?: "light" | "dark";
+  theme?: ThemeName;
 }
 
 export interface MakeResult extends CheckResult {
@@ -48,6 +49,11 @@ export async function make(
   const { diagram, issues } = validate(input);
   if (hasErrors(issues) || diagram === undefined) return { ok: false, issues };
   const scene = await layoutDiagram(diagram);
-  const html = renderHtml(options.theme === undefined ? scene : { ...scene, theme: options.theme });
+  const html = renderHtml(
+    options.theme === undefined ? scene : { ...scene, theme: options.theme },
+    {
+      source: diagram,
+    },
+  );
   return { ok: true, html, issues: [...issues, ...checkGeometry(scene)] };
 }

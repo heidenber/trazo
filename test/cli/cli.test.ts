@@ -98,11 +98,18 @@ describe("make", () => {
     expect(existsSync(join(dir, "d.html"))).toBe(false);
   });
 
-  it("applies --theme dark", () => {
+  it.each(["light", "dark", "lagoon", "dusk"])("applies --theme %s", (theme) => {
     write("d.json", valid);
-    const r = run(["make", "d.json", "--theme", "dark"]);
+    const r = run(["make", "d.json", "--theme", theme]);
     expect(r.code).toBe(0);
-    expect(readFileSync(join(dir, "d.html"), "utf8")).toContain('data-theme="dark"');
+    expect(r.stderr).toBe("");
+    expect(readFileSync(join(dir, "d.html"), "utf8")).toContain(`data-theme="${theme}"`);
+  });
+
+  it("lists the four themes in the help text", () => {
+    const r = run(["--help"]);
+    expect(r.stdout).toContain("[--theme light|dark|lagoon|dusk]");
+    expect(r.stdout).toContain("light, dark, lagoon or dusk; overrides the diagram's theme");
   });
 
   it("reads stdin and writes html to stdout", () => {
@@ -335,7 +342,7 @@ describe("usage errors", () => {
     expect(run(["make", "d.json", "--theme", "blue"])).toEqual({
       code: 2,
       stdout: "",
-      stderr: usageError('invalid --theme "blue" (use light or dark)'),
+      stderr: usageError('invalid --theme "blue" (use light, dark, lagoon or dusk)'),
     });
   });
 
@@ -471,7 +478,7 @@ describe("sequence diagrams", () => {
     expect(r).toEqual({ code: 0, stdout: `${join(dir, "q.html")}\n`, stderr: "" });
     const html = readFileSync(join(dir, "q.html"), "utf8");
     expect(html).toContain("t-lifeline");
-    expect(html).toContain("url(#t-arrowhead-open)");
+    expect(html).toContain("url(#t-arrowhead-open-");
   });
 
   it("rejects a message to an unknown participant with a suggestion", () => {

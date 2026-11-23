@@ -386,12 +386,6 @@ const RULES: {
   },
   {
     type: "workflow",
-    code: "workflow/lanes-direction",
-    severity: "warning",
-    doc: () => ({ ...flow([]), direction: "down", lanes: [{ id: "l", steps: ["a", "b"] }] }),
-  },
-  {
-    type: "workflow",
     code: "size/large",
     severity: "warning",
     doc: () => ({

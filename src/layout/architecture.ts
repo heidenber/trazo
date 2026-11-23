@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 Heidenber Palacio Garzón
 
+import { ICON_TEXT_LEFT, LABEL_PAD_X } from "../render/card.js";
 import type { Architecture, ArchNode, NodeKind } from "../model/architecture.js";
 import type { Box, Scene, SceneEdge, SceneGroup, SceneNode, TextBlock } from "../scene.js";
 import { firstBaseline, lineHeight, textWidth, wrapText } from "../text/measure.js";
 import { layoutElk, type LayoutBox } from "./elk.js";
+import { NOTE_SIZE, noteHeight, noteLines, stackBaselines } from "./note.js";
 
 const ICONS: Record<NodeKind, string> = {
   client: "monitor",
@@ -21,12 +23,9 @@ const ICONS: Record<NodeKind, string> = {
 
 const NODE_LABEL_SIZE = 14;
 const NODE_WRAP = 150;
-const ICON_SIZE = 20;
-const ICON_PAD = 12;
-const ICON_GAP = 10;
 const RIGHT_PAD = 12;
 const NODE_MIN_W = 120;
-const NODE_MIN_H = 44;
+const NODE_MIN_H = 48;
 const NODE_PAD_Y = 10;
 const GROUP_TITLE_SIZE = 12;
 const GROUP_TITLE_X = 12;
@@ -39,18 +38,21 @@ const half = (v: number) => Math.round(v * 2) / 2;
 const widest = (lines: string[], size: number, weight: 400 | 600) =>
   Math.max(0, ...lines.map((l) => textWidth(l, size, weight)));
 
-function sizeNode(node: ArchNode): { width: number; height: number; lines: string[] } {
+function sizeNode(node: ArchNode): {
+  width: number;
+  height: number;
+  lines: string[];
+  note: string[];
+} {
   const lines = wrapText(node.label, NODE_WRAP, NODE_LABEL_SIZE, 600);
-  const textLeft = ICON_PAD + ICON_SIZE + ICON_GAP;
-  const width = Math.max(
-    NODE_MIN_W,
-    Math.ceil(textLeft + widest(lines, NODE_LABEL_SIZE, 600) + RIGHT_PAD),
-  );
+  const note = node.note === undefined ? [] : noteLines(node.note, NODE_WRAP);
+  const text = Math.max(widest(lines, NODE_LABEL_SIZE, 600), widest(note, NOTE_SIZE, 400));
+  const width = Math.max(NODE_MIN_W, Math.ceil(ICON_TEXT_LEFT + text + RIGHT_PAD));
   const height = Math.max(
     NODE_MIN_H,
-    Math.ceil(lines.length * lineHeight(NODE_LABEL_SIZE) + 2 * NODE_PAD_Y),
+    Math.ceil(lines.length * lineHeight(NODE_LABEL_SIZE) + noteHeight(note) + 2 * NODE_PAD_Y),
   );
-  return { width, height, lines };
+  return { width, height, lines, note };
 }
 
 export async function layoutArchitecture(d: Architecture): Promise<Scene> {
@@ -83,7 +85,7 @@ export async function layoutArchitecture(d: Architecture): Promise<Scene> {
       return {
         ...edge,
         label: {
-          width: Math.ceil(widest(lines, EDGE_LABEL_SIZE, 400)) + 2 * EDGE_LABEL_PAD,
+          width: Math.ceil(widest(lines, EDGE_LABEL_SIZE, 400)) + 2 * LABEL_PAD_X,
           height: Math.ceil(lines.length * lineHeight(EDGE_LABEL_SIZE)) + 2 * EDGE_LABEL_PAD,
         },
       };
@@ -97,11 +99,12 @@ export async function layoutArchitecture(d: Architecture): Promise<Scene> {
   const nodes: SceneNode[] = d.nodes.map((n) => {
     const box = boxOf(n.id);
     const size = sizes.get(n.id)!;
-    const block = size.lines.length * lineHeight(NODE_LABEL_SIZE);
+    const at = stackBaselines(box.y, box.h, size.lines.length, NODE_LABEL_SIZE, size.note);
+    const x = half(box.x + ICON_TEXT_LEFT);
     const label: TextBlock = {
       lines: size.lines,
-      x: half(box.x + ICON_PAD + ICON_SIZE + ICON_GAP),
-      y: half(box.y + (box.h - block) / 2 + firstBaseline(NODE_LABEL_SIZE)),
+      x,
+      y: half(at.label),
       size: NODE_LABEL_SIZE,
       weight: 600,
       anchor: "start",
@@ -114,6 +117,16 @@ export async function layoutArchitecture(d: Architecture): Promise<Scene> {
       ...box,
       label,
     };
+    if (size.note.length > 0) {
+      out.subtitle = {
+        lines: size.note,
+        x,
+        y: half(at.note),
+        size: NOTE_SIZE,
+        weight: 400,
+        anchor: "start",
+      };
+    }
     if (n.note !== undefined) out.note = n.note;
     if (n.source !== undefined) out.source = n.source;
     const parent = parentOf.get(n.id);

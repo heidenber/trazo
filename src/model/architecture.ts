@@ -4,7 +4,15 @@
 import { z } from "zod";
 import type { Issue } from "../validate/issues.js";
 import { IdRegistry } from "../validate/refs.js";
-import { edgeSchema, error_, idSchema, textSchema, themeSchema, warning } from "./common.js";
+import {
+  edgeSchema,
+  error_,
+  idSchema,
+  textSchema,
+  themeSchema,
+  warning,
+  type ThemeName,
+} from "./common.js";
 
 export const NODE_KINDS = [
   "client",
@@ -47,7 +55,7 @@ export interface Architecture {
   type: "architecture";
   title: string;
   description?: string;
-  theme: "light" | "dark";
+  theme: ThemeName;
   direction: "right" | "down";
   nodes: ArchNode[];
   groups: ArchGroup[];

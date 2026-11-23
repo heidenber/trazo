@@ -11,7 +11,7 @@ Top level
   type          "architecture"
   title         text
   description?  text
-  theme?        light | dark
+  theme?        light | dark | lagoon | dusk
   direction?    right | down
   nodes         node[], at least 1
   groups?       group[]
@@ -21,7 +21,7 @@ node
   id            unique; letters, digits, _ . -; starts with a letter or _
   label?        shown text; defaults to id
   kind?         client | user | gateway | service | function | database | cache | queue | storage | external
-  note?         hover text
+  note?         shown under the label, up to 3 lines; whole on hover
   source?       "path/file.ts:line", shown on hover
 
 group (a box around nodes or other groups)
@@ -47,13 +47,13 @@ rules
   texts must not be empty
 `;
 
-const workflow = `workflow: steps joined by arrows, optionally in lanes (one row per actor or team).
+const workflow = `workflow: steps joined by arrows, optionally in lanes (one row or column per actor or team).
 
 Top level
   type          "workflow"
   title         text
   description?  text
-  theme?        light | dark
+  theme?        light | dark | lagoon | dusk
   direction?    down | right
   steps         step[], at least 1
   lanes?        lane[]
@@ -63,7 +63,7 @@ step
   id            unique; letters, digits, _ . -; starts with a letter or _
   label?        shown text; defaults to id ("Start" or "End" for those kinds)
   kind?         task | start | end | decision | wait | subprocess
-  note?         hover text
+  note?         shown under the label in task, wait and subprocess boxes, up to 3 lines; whole on hover
   source?       "path/file.ts:line", shown on hover
 
 lane
@@ -77,12 +77,12 @@ edge
   {from, to, label?, style?}   style: sync | async
 
 defaults
-  theme light, kind task, style sync, direction down (right with lanes)
+  theme light, kind task, style sync, direction down (with lanes: whichever fits the screen best)
 
 rules
   start has no incoming edges; end has no outgoing edges
   decision needs at least 2 outgoing edges; label each with its answer
-  with lanes, every step is in exactly one lane; lanes always flow right
+  with lanes, every step is in exactly one lane; direction right makes lanes rows, down makes them columns
   edges need existing step ids
   more than 40 steps warns: split into subprocesses
   texts must not be empty
@@ -94,13 +94,13 @@ Top level
   type          "erd"
   title         text
   description?  text
-  theme?        light | dark
+  theme?        light | dark | lagoon | dusk
   tables        table[], at least 1
 
 table
   id            unique; letters, digits, _ . -; may contain dots (public.users)
   label?        shown text; defaults to id
-  note?         hover text
+  note?         shown under the title, up to 3 lines; whole on hover
   source?       "path/file.ts:line", shown on hover
   columns       column[], at least 1
 
@@ -135,7 +135,7 @@ Top level
   type          "sequence"
   title         text
   description?  text
-  theme?        light | dark
+  theme?        light | dark | lagoon | dusk
   participants  participant[], at least 1
   messages      element[], at least 1
 

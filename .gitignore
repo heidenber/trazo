@@ -48,3 +48,9 @@ PUBLISHING.md
 # npm is the only package manager; ignore other lockfiles
 pnpm-lock.yaml
 yarn.lock
+
+# Brand kit: kept locally; the repo ships only the logos it uses (docs/logo).
+docs/trazo-logo-kit/
+
+# Design explorations (gentle-design artboards); kept locally.
+design/

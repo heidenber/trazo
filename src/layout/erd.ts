@@ -11,8 +11,16 @@ import {
   type LayoutEdge,
   type LayoutPort,
 } from "./elk.js";
+import { NOTE_SIZE, noteLines } from "./note.js";
 
 const HEADER = 32;
+/**
+ * A table note sits under the title: it starts NOTE_PULL above the bottom of the 32 px title band,
+ * because the title is centred in that band and leaves room below it, and NOTE_BOTTOM separates
+ * the note from the first row. So header = HEADER - NOTE_PULL + note lines + NOTE_BOTTOM.
+ */
+const NOTE_PULL = 6;
+const NOTE_BOTTOM = 8;
 const ROW = 24;
 const PAD = 12;
 const GAP = 12;
@@ -45,6 +53,9 @@ interface Sized {
   width: number;
   height: number;
   nameWidth: number;
+  /** Title band plus the visible table note. */
+  header: number;
+  note: string[];
 }
 
 function describeColumn(c: ErdColumn): Column {
@@ -66,7 +77,14 @@ function sizeTable(table: ErdTable): Sized {
   const body = nameWidth + GAP + typeWidth + (marksWidth > 0 ? GAP + marksWidth : 0);
   const title = textWidth(table.label, TITLE_SIZE, 600);
   const width = Math.max(MIN_W, Math.ceil(Math.max(body, title) + 2 * PAD));
-  return { table, columns, width, height: HEADER + columns.length * ROW, nameWidth };
+  // The note wraps inside the padded width that the title and columns already set; it never widens the table.
+  const note = table.note === undefined ? [] : noteLines(table.note, width - 2 * PAD);
+  const header =
+    note.length === 0
+      ? HEADER
+      : Math.ceil(HEADER - NOTE_PULL + note.length * lineHeight(NOTE_SIZE) + NOTE_BOTTOM);
+  const height = header + columns.length * ROW;
+  return { table, columns, width, height, nameWidth, header, note };
 }
 
 const baseline = (top: number, height: number, size: number) =>
@@ -79,7 +97,7 @@ function block(text: string, x: number, y: number, size: number, weight: 400 | 6
 function buildRows(sized: Sized, box: Box): SceneRow[] {
   const typeX = box.x + PAD + sized.nameWidth + GAP;
   return sized.columns.map((c, i) => {
-    const y = box.y + HEADER + i * ROW;
+    const y = box.y + sized.header + i * ROW;
     const row: SceneRow = {
       y,
       h: ROW,
@@ -100,7 +118,7 @@ const port = (table: string, column: string, side: "W" | "E") => `${table}:${col
 
 function ports(sized: Sized): LayoutPort[] {
   return sized.columns.flatMap((c, i) => {
-    const y = HEADER + i * ROW + ROW / 2;
+    const y = sized.header + i * ROW + ROW / 2;
     return [
       { id: port(sized.table.id, c.name, "W"), side: "WEST" as const, x: 0, y },
       { id: port(sized.table.id, c.name, "E"), side: "EAST" as const, x: sized.width, y },
@@ -184,10 +202,20 @@ export async function layoutErd(d: Erd): Promise<Scene> {
       kind: "table",
       shape: "table",
       ...box,
-      header: HEADER,
+      header: s.header,
       label: block(t.label, box.x + PAD, baseline(box.y, HEADER, TITLE_SIZE), TITLE_SIZE, 600),
       rows: buildRows(s, box),
     };
+    if (s.note.length > 0) {
+      node.subtitle = {
+        lines: s.note,
+        x: half(box.x + PAD),
+        y: half(box.y + HEADER - NOTE_PULL + firstBaseline(NOTE_SIZE)),
+        size: NOTE_SIZE,
+        weight: 400,
+        anchor: "start",
+      };
+    }
     if (t.note !== undefined) node.note = t.note;
     if (t.source !== undefined) node.source = t.source;
     return node;
@@ -195,7 +223,7 @@ export async function layoutErd(d: Erd): Promise<Scene> {
   const nodeOf = new Map(nodes.map((n) => [n.id, n]));
   const rowCentre = (table: string, column: string) => {
     const index = sized.get(table)!.columns.findIndex((c) => c.name === column);
-    return nodeOf.get(table)!.y + HEADER + index * ROW + ROW / 2;
+    return nodeOf.get(table)!.y + sized.get(table)!.header + index * ROW + ROW / 2;
   };
 
   const loops = new Map<string, number>();
