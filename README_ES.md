@@ -163,6 +163,21 @@ const made = await make(jsonTextOrObject, { theme: "dark" });
 
 Las dos aceptan texto JSON o un objeto ya parseado. `make` también devuelve en `issues` los avisos de geometría.
 
+En TypeScript puedes importar `ArchitectureInput`, `WorkflowInput`, `ErdInput`, `SequenceInput` o su unión `DiagramInput` para tipar los objetos de entrada. Por ejemplo:
+
+```ts
+import { check, type ArchitectureInput } from "@heidenber/trazo";
+
+const input: ArchitectureInput = {
+  type: "architecture",
+  title: "Pedidos",
+  nodes: [{ id: "api" }],
+};
+const result = check(input);
+```
+
+Estos tipos describen la entrada, no el diagrama normalizado. La validación en tiempo de ejecución sigue comprobando restricciones semánticas como las referencias y los arrays que no pueden estar vacíos.
+
 La parte estable de un `Issue` es `severity`, `code`, `path` y `hint`. El texto de `message` puede cambiar entre versiones, así que no lo uses para comparar.
 Consulta la [lista de códigos de validación](docs/issue-codes.md) (en inglés).
 

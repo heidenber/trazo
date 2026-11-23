@@ -6,6 +6,8 @@ All notable changes to trazo are listed here. The format follows [Keep a Changel
 
 ### Added
 
+- The library exports `ArchitectureInput`, `WorkflowInput`, `ErdInput`, `SequenceInput` and their union `DiagramInput` for typed parsed objects, while `check` and `make` retain runtime validation.
+
 - `trazo skill install --agent claude|pi|codex` copies the skill to the agent's user-level location (`~/.claude/skills/trazo`, `~/.pi/agent/skills/trazo`, `~/.agents/skills/trazo`) in any shell and prints `installed <path>` or `updated <path>`. It replaces the per-shell copy commands in the README; trazo still installs nothing on its own.
 - A legend below every diagram that uses more than one node kind family or more than one edge style: one entry per family and per style actually used, in a fixed order, wrapped into rows within the diagram width. It lives inside the SVG, so the PNG and SVG exports include it; an ERD, or a diagram with a single family and a single style, has none.
 
