@@ -27,6 +27,10 @@ All notable changes to trazo are listed here. The format follows [Keep a Changel
 - Notes are visible on the canvas: an architecture node's or a workflow task, wait or subprocess step's `note` is shown under its label in smaller muted text, and an ERD table's `note` under its title. A note longer than three lines is cut with an ellipsis; the tooltip keeps the whole note and the source. Decisions, start and end steps, sequence participants and ERD columns keep the note in the tooltip only. Diagrams without notes render exactly as before.
 - Workflow lanes can be columns: with `direction: "down"` each lane is a column with its label in a row at the top and steps flow down; `direction: "right"` keeps lanes as rows. Without a direction, trazo lays a laned workflow out both ways and keeps the one that fits a 1440x826 screen better, so wide workflows with several lanes are no longer drawn at half size or less. The `workflow/lanes-direction` warning is gone: an explicit direction is honored.
 
+### Fixed
+
+- Edge labels no longer overlap each other in workflows. In column lanes the label of a loop edge (for example "retry") could land on the label of a decision's branch ("passed") where the two edges cross; a label that meets an earlier one now slides along its own edge to the nearest free spot, clear of the steps. The same rule applies to row lanes and to workflows without lanes.
+
 ## [0.1.4] - 2026-11-09
 
 ### Added
