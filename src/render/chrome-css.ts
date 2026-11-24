@@ -27,6 +27,13 @@ button { font: inherit; color: inherit; }
 .tools button[aria-expanded="true"] { background: var(--t-group-fill); border-color: var(--t-accent); }
 .tools button#export { background: var(--t-accent); border-color: var(--t-accent); color: var(--t-surface); }
 .tools button#export:hover { filter: brightness(1.08); }
+.tools button[aria-pressed="true"] { background: var(--t-group-fill); border-color: var(--t-accent); }
+.t-flow { pointer-events: none; }
+.t-bead { fill: var(--t-edge); stroke: var(--t-surface); stroke-width: 1.2; }
+.t-bead-async { fill: var(--t-edge-async); }
+.t-bead-data { fill: var(--t-edge-data); }
+.t-bead-reply { fill: var(--t-edge-reply); }
+.t-dim .t-bead:not(.t-near) { opacity: 0.15; }
 .tools .seg { gap: 0; height: 38px; overflow: hidden; border: 1px solid var(--t-border); border-radius: 12px; background: var(--t-surface); }
 .seg button { height: 36px; padding: 0 9px; border: 0; border-radius: 0; background: transparent; }
 .seg output { min-width: 52px; text-align: center; font-size: 13px; font-weight: 600; }
@@ -129,7 +136,7 @@ main { flex: 1; min-height: 0; overflow: hidden; position: relative; background-
 }
 @media print {
   html, body { height: auto; background: #fff; }
-  header, .minimap, .detail, .credit, .pop { display: none !important; }
+  header, .minimap, .detail, .credit, .pop, .t-flow { display: none !important; }
   main { overflow: visible; background: none; }
   .stage { height: auto; padding: 0; }
   .stage svg.diagram { width: 100%; height: 100vh; }

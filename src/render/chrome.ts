@@ -26,6 +26,7 @@ const UI: Record<string, string> = {
   exit: '<path d="M8 3v4a1 1 0 0 1-1 1H3M12 3v4a1 1 0 0 0 1 1h4M17 12h-4a1 1 0 0 0-1 1v4M3 12h4a1 1 0 0 1 1 1v4"/>',
   download: '<path d="M10 3v9m0 0-3.5-3.5M10 12l3.5-3.5M4 15.5h12"/>',
   search: '<circle cx="9" cy="9" r="5.2"/><path d="m13 13 3.8 3.8"/>',
+  flow: '<path d="M3 10h14"/><circle cx="6" cy="10" r="1.7"/><circle cx="13.5" cy="10" r="1.7"/>',
   chev: '<path d="m5 8 5 5 5-5"/>',
   close: '<path d="M5 5l10 10M15 5 5 15"/>',
   image:
@@ -77,6 +78,8 @@ export interface ChromeInput {
   source?: string;
   /** Inert JSON {nodeId: detail} for the detail card; viewer only, never in the svg. */
   detail?: string;
+  /** Show the Flow toggle: every type but erd. */
+  flow?: boolean;
   /** The diagram's svg markup. */
   svg: string;
 }
@@ -123,7 +126,7 @@ export function chromeHtml(c: ChromeInput): string {
       <button type="button" id="fit" aria-label="Fit to screen" title="Fit to screen (0)">${icon("fit", "")}</button>
     </div>
     <div class="group" role="group" aria-label="View">
-      <button type="button" id="fullscreen" aria-label="Enter full screen" title="Full screen">${icon("full", "i-full")}${icon("exit", "i-exit")}</button>
+      ${c.flow ? `<button type="button" id="flow" aria-pressed="true" title="Animate the direction of flow (viewer only)">${icon("flow", "")}<span>Flow</span></button>\n      ` : ""}<button type="button" id="fullscreen" aria-label="Enter full screen" title="Full screen">${icon("full", "i-full")}${icon("exit", "i-exit")}</button>
       <button type="button" id="theme" aria-label="Change theme (current: ${label})" title="Change theme" aria-haspopup="menu" aria-expanded="false" commandfor="theme-menu" command="toggle-popover"><span class="dot" aria-hidden="true"></span><span id="theme-name">${label}</span></button>
     </div>
     <button type="button" id="export" aria-label="Export diagram" aria-haspopup="menu" aria-expanded="false" commandfor="export-menu" command="toggle-popover">${icon("download", "")}<span>Export</span>${icon("chev", "", 14)}</button>
