@@ -172,7 +172,7 @@ describe("theme switcher", () => {
 });
 
 describe("export menu", () => {
-  it("offers the eight formats in order", () => {
+  it("offers the eleven formats in order", () => {
     const keys = [...html.matchAll(/data-export="([a-z0-9-]+)"/g)].map((m) => m[1]);
     expect(keys).toEqual([
       "png1",
@@ -180,6 +180,9 @@ describe("export menu", () => {
       "png-alpha",
       "svg",
       "pdf",
+      "png-bw",
+      "svg-bw",
+      "pdf-bw",
       "copy-png",
       "copy-svg",
       "copy-json",
