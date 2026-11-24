@@ -300,7 +300,8 @@ export async function judgeHtml(
 
   let cdp = null;
   try {
-    const port = await waitForPort(profile, child, 20_000).catch((e) => {
+    // A cold browser start on a loaded CI runner can take more than 20 s.
+    const port = await waitForPort(profile, child, 45_000).catch((e) => {
       throw spawnError ?? e;
     });
     const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();

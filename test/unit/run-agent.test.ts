@@ -1035,7 +1035,7 @@ describe("run-agent.mjs --rejudge", () => {
     expect(r.stdout).toContain("3 run(s) judged again");
     expect(r.stdout).toContain("judgeRate");
     // Launches a headless browser per run; under a full parallel suite it can pass 20 s.
-  }, 60_000);
+  }, 120_000);
 
   it("needs --out", () => {
     const r = run(["--model", "m1", "--rejudge"]);
