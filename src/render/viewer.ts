@@ -488,6 +488,7 @@ export const VIEWER_SCRIPT = String.raw`(function () {
     copy.setAttribute("width", box.w);
     copy.setAttribute("height", box.h);
     copy.classList.remove("t-dim", "t-find");
+    all(".t-flow", copy).forEach(function (el) { el.remove(); });
     all(".t-overview-chevron", copy).forEach(function (el) { el.remove(); });
     all(".t-overview-control", copy).forEach(function (el) {
       el.removeAttribute("role"); el.removeAttribute("tabindex"); el.removeAttribute("aria-expanded"); el.classList.remove("t-overview-control");
@@ -664,6 +665,54 @@ export const VIEWER_SCRIPT = String.raw`(function () {
     else return;
     e.preventDefault();
   });
+  // Flow: beads ride every edge from -> to. SMIL runs them off the main thread (no frame loop);
+  // the layer exists only in the live page, so exports and print never carry it.
+  var flow = $("flow");
+  if (flow) {
+    var layer = null;
+    var live = false;
+    var beads = function () {
+      layer = document.createElementNS(NS, "g");
+      layer.setAttribute("class", "t-flow");
+      layer.setAttribute("aria-hidden", "true");
+      all(".t-edge", svg).forEach(function (e) {
+        var len = e.getTotalLength();
+        if (!(len > 8)) return;
+        var dur = Math.min(8, Math.max(1.6, len / 90));
+        var n = Math.min(3, Math.max(1, Math.round(len / 180)));
+        var style = (/t-edge-(async|data|reply)/.exec(e.getAttribute("class")) || [0, "sync"])[1];
+        for (var i = 0; i < n; i++) {
+          var c = document.createElementNS(NS, "circle");
+          c.setAttribute("class", "t-bead t-bead-" + style);
+          c.setAttribute("r", "3.4");
+          c.setAttribute("data-edge", e.dataset.edge);
+          var m = document.createElementNS(NS, "animateMotion");
+          m.setAttribute("path", e.getAttribute("d"));
+          m.setAttribute("dur", dur + "s");
+          m.setAttribute("begin", "-" + (dur * i) / n + "s");
+          m.setAttribute("repeatCount", "indefinite");
+          c.appendChild(m);
+          layer.appendChild(c);
+        }
+      });
+      svg.insertBefore(layer, svg.querySelector(".t-edge-label"));
+    };
+    var tick = function () {
+      if (live && !document.hidden) svg.unpauseAnimations();
+      else svg.pauseAnimations();
+    };
+    var setFlow = function (on) {
+      live = on;
+      flow.setAttribute("aria-pressed", String(on));
+      if (on && !layer) beads();
+      if (layer) layer.style.display = on ? "" : "none";
+      tick();
+    };
+    // Reduced motion: off until the reader presses Flow.
+    setFlow(!matchMedia("(prefers-reduced-motion: reduce)").matches);
+    flow.addEventListener("click", function () { setFlow(!live); });
+    document.addEventListener("visibilitychange", tick);
+  }
   minimap();
   sync();
 })();`;
