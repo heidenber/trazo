@@ -6,6 +6,7 @@ All notable changes to trazo are listed here. The format follows [Keep a Changel
 
 ### Added
 
+- A small muted "Made with trazo" at the bottom right of every viewer export (PNG 1x and 2x, transparent PNG, SVG, copy PNG, copy SVG and the printed PDF), in a strip added below the diagram so it never covers the legend or any node. The page footer stays, and the diagram SVG inside the page is unchanged; copying the JSON source adds nothing.
 - Optional JSON fields: `detail` on workflow steps and ERD tables (longer text for the viewer's detail card, which falls back to `note`; it is never drawn in the SVG, so exports do not carry it), `note` on workflow lanes (a muted role line under the lane name, clipped with "…" to the header width) and `group` on ERD tables (stored and validated; rendered later). The on-canvas note keeps its 3-line cap. Wrong types are rejected with the usual `schema/type` error.
 - A workflow with more than 6 lanes gets the `workflow/many-lanes` warning (non-fatal).
 
@@ -24,6 +25,7 @@ All notable changes to trazo are listed here. The format follows [Keep a Changel
 
 ### Changed
 
+- The viewer header shows the trazo symbol (the small variant, 24 px; recolored on the dark and dusk themes) instead of the horizontal logo. The READMEs keep the horizontal logo.
 - The viewer script is no longer limited to 10 KB: the cap is now 40 KB (it is about 24 KB). The HTML of each example stays well under 300 KB. The separate SVG and PNG download buttons and the light and dark toggle are replaced by the Export and theme menus; the PNG that used to download at 2x is now "PNG @2x".
 - New look for the diagram (Studio Cards): nodes are rounded cards with a soft layered shadow and a tinted icon chip in the kind's color, start, end and decision shapes and plain workflow tasks take a tinted fill and outline, edges turn their corners with small curves, arrowheads are rounded, edge labels are bordered pills, and groups, lanes, fragments, tables and the legend follow. The shadow is one SVG filter, defined only when a diagram uses it, and every color keeps an explicit fallback so an exported SVG or PNG looks the same as the page. Cards are a little wider (the chip takes 52 px before the text) and a little taller (48 px minimum), and a workflow loop keeps 28 px from its steps so its label clears them. Notes are drawn in the muted text color.
 - Nodes are colored by kind: a border in the kind's color over a soft tint of it, in five families for architecture (compute, data, messaging, client, external) and five for workflow (start, end, decision, wait, task); sequence participants reuse the architecture families. Edges are colored by style (sync blue, async violet, data teal, reply grey), dash patterns stay, and each arrowhead matches its edge. Notes and ERD tables keep the neutral look; icons take their family color. Colors are explicit variables in both themes, so exported SVG and PNG look the same.

@@ -7,7 +7,7 @@ import { validateDiagram } from "../../src/model/index.js";
 import { SOURCE_CAP, renderHtml } from "../../src/render/html.js";
 import { PALETTES } from "../../src/render/palettes.js";
 import { pageCss } from "../../src/render/theme.js";
-import { VIEWER_SCRIPT } from "../../src/render/viewer.js";
+import { CREDIT_STRIP, VIEWER_SCRIPT } from "../../src/render/viewer.js";
 import type { Scene } from "../../src/scene.js";
 
 const input = {
@@ -115,7 +115,7 @@ describe("header and toolbar", () => {
 });
 
 describe("brand", () => {
-  it("shows the trazo logo in the header, the reversed one on dark themes", () => {
+  it("shows the trazo symbol in the header, recolored on dark themes", () => {
     const header = html.slice(html.indexOf("<header"), html.indexOf("</header>"));
     expect(header).toContain('<svg class="logo logo-light"');
     expect(header).toContain('<svg class="logo logo-dark"');
@@ -221,7 +221,7 @@ describe("export menu", () => {
       .slice(1)
       .map(Number);
     expect(w! - 2 * m!).toBeCloseTo(box[0]!, 0);
-    expect(h! - 2 * m!).toBeCloseTo(box[1]!, 0);
+    expect(h! - 2 * m!).toBeCloseTo(box[1]! + CREDIT_STRIP, 0);
     const print = css.slice(css.indexOf("@media print"));
     expect(print).toContain(".stage svg.diagram { width: 100%; height: 100vh; }");
     expect(print).not.toContain("@page { margin: 10mm; }");
