@@ -13,7 +13,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve, sep } from "node:path";
+import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
   agentEnv,
@@ -25,7 +25,6 @@ import {
   judgeSummary,
   withoutAgentErrors,
   countAgentErrors,
-  keepSkillEntry,
   modelDir,
   opencodeConfig,
   opencodeEnv,
@@ -307,24 +306,6 @@ describe("parseStream", () => {
     const none = parseStream(result({ permission_denials: [] }));
     expect(none.deniedCommands).toBe(0);
     expect(none.deniedTools).toEqual({});
-  });
-
-  it("does not count a denied finalize as the first try, nor a later retry as one", () => {
-    const archify = toolAdapter("archify", { sandbox: "/w/s" });
-    const cmd =
-      "node /w/s/.claude/skills/archify/bin/archify.mjs finalize architecture c.json d.html";
-    const stats = parseStream(
-      [
-        bash("a", cmd),
-        res("a", "This command requires approval", true),
-        bash("b", cmd),
-        res("b", "ok"),
-        result(),
-      ].join("\n"),
-      archify,
-    );
-    expect(stats.firstTryOk).toBe(true);
-    expect(stats.failedCommands).toBe(0);
   });
 
   it("returns zeros when there is no result message (timeout) and ignores bad lines", () => {
@@ -795,110 +776,48 @@ describe("shellCommandLine", () => {
 });
 
 describe("tool adapters", () => {
-  const sb = join("/w", "m", "arch-shop-archify-skill-1");
-  const copy = join(sb, ".claude", "skills", "archify", "bin", "archify.mjs");
-  const fwd = copy.replace(/\\/g, "/");
-  const rel = ".claude/skills/archify/bin/archify.mjs";
-  const fwdRules = [
-    `Bash(node ${fwd}:*)`,
-    `Bash(node "${fwd}":*)`,
-    `Bash(node ${rel}:*)`,
-    `Bash(node "${rel}":*)`,
-    `Bash(node ./${rel}:*)`,
-    `Bash(node "./${rel}":*)`,
-  ];
+  const sb = join("/w", "m", "arch-shop-trazo-skill-1");
 
-  it("parses --tool as a repeatable or comma list and defaults to trazo", () => {
+  it("parses --tool trazo and defaults to trazo", () => {
     expect(parseArgs(["--model", "m"], tasks, "d").tools).toEqual(["trazo"]);
-    expect(parseArgs(["--model", "m", "--tool", "archify"], tasks, "d").tools).toEqual(["archify"]);
+    expect(parseArgs(["--model", "m", "--tool", "trazo"], tasks, "d").tools).toEqual(["trazo"]);
     expect(
-      parseArgs(["--model", "m", "--tool", "archify,trazo", "--tool", "archify"], tasks, "d").tools,
-    ).toEqual(["archify", "trazo"]);
+      parseArgs(["--model", "m", "--tool", "trazo,trazo", "--tool", "trazo"], tasks, "d").tools,
+    ).toEqual(["trazo"]);
     expect(parseArgs(["--model", "m", "--browser", "/b/chrome"], tasks, "d").browser).toBe(
       "/b/chrome",
     );
   });
 
-  it("rejects bad --tool input with a clear message", () => {
+  it("rejects any tool but trazo with a clear message", () => {
     expect(() => parseArgs(["--model", "m", "--tool", "x"], tasks, "d")).toThrow(
-      "--tool must be trazo or archify",
+      "--tool must be trazo",
+    );
+    expect(() => parseArgs(["--model", "m", "--tool", "trazo,x"], tasks, "d")).toThrow(
+      "--tool must be trazo",
     );
     expect(() => parseArgs(["--model", "m", "--tool"], tasks, "d")).toThrow("--tool needs a value");
-    expect(() =>
-      parseArgs(["--model", "m", "--tool", "archify", "--agent", "opencode"], tasks, "d"),
-    ).toThrow("--tool archify needs --agent claude-code");
-    expect(() =>
-      parseArgs(["--model", "m", "--tool", "archify", "--condition", "no-skill"], tasks, "d"),
-    ).toThrow("archify only runs with the skill condition");
   });
 
-  it("builds the archify allowed tools from the skill copy in the sandbox", () => {
-    const tool = toolAdapter("archify", { sandbox: sb, browser: "/b/chrome" });
-    expect(buildAgentArgs("P", "m1", "claude-code", tool)).toEqual([
-      "-p",
-      "P",
-      "--model",
-      "m1",
-      "--setting-sources",
-      "project",
-      "--strict-mcp-config",
-      "--allowedTools",
-      "Read",
-      "Write",
-      "Edit",
-      ...fwdRules,
-      "--disallowedTools",
-      "PowerShell",
-      "--output-format",
-      "stream-json",
-      "--verbose",
-    ]);
-    expect(skillSegments("claude-code", "archify")).toEqual([".claude", "skills", "archify"]);
-    expect(tool.version).toBe("v3.2.0");
-  });
-
-  it("sets the archify environment and keeps the trazo one empty", () => {
-    expect(toolAdapter("archify", { sandbox: sb, browser: "/b/chrome" }).env).toEqual({
-      ARCHIFY_UPDATE_CHECK_DISABLED: "1",
-      ARCHIFY_CHROME: "/b/chrome",
-    });
-    expect(toolAdapter("archify", { sandbox: sb }).env).toEqual({
-      ARCHIFY_UPDATE_CHECK_DISABLED: "1",
-    });
+  it("keeps the trazo adapter: empty env, one Bash rule, its own prompt", () => {
     expect(toolAdapter("trazo").env).toEqual({});
+    expect(toolAdapter("trazo").bashRules).toEqual(["Bash(trazo:*)"]);
     expect(() => toolAdapter("nope")).toThrow("unknown tool: nope");
-  });
-
-  it("asks for the archify skill and keeps the trazo prompt as it was", () => {
-    const p = buildPrompt("Draw it.", toolAdapter("archify", { sandbox: sb }));
-    expect(p.startsWith("Draw it.")).toBe(true);
-    expect(p).toContain("archify");
-    expect(p).toContain("diagram.html");
     expect(buildPrompt("Draw it.", toolAdapter("trazo"))).toBe(buildPrompt("Draw it."));
+    expect(buildPrompt("Draw it.", toolAdapter("trazo"))).toContain("`trazo`");
   });
 
-  it("alternates the tool order per run: given order on even indexes, reversed on odd", () => {
-    const plan = planRuns(["a"], ["skill"], 3, ["trazo", "archify"]);
+  it("names trazo runs with the tool when --tool is given", () => {
+    const plan = planRuns(["a"], ["skill", "no-skill"], 2, ["trazo"]);
     expect(plan.map(runName)).toEqual([
       "a-trazo-skill-1",
-      "a-archify-skill-1",
-      "a-archify-skill-2",
       "a-trazo-skill-2",
-      "a-trazo-skill-3",
-      "a-archify-skill-3",
-    ]);
-  });
-
-  it("runs archify only under the skill condition", () => {
-    const plan = planRuns(["a"], ["skill", "no-skill"], 1, ["trazo", "archify"]);
-    expect(plan.map(runName)).toEqual([
-      "a-trazo-skill-1",
-      "a-archify-skill-1",
       "a-trazo-no-skill-1",
+      "a-trazo-no-skill-2",
     ]);
   });
 
-  it("puts archify sandboxes under <root>/<model> and leaves the trazo-only layout alone", () => {
+  it("keeps the sandbox layout: --sandbox-root as given, else the per-agent default", () => {
     const o = (extra: object) => ({
       model: "v/m.1",
       sandboxRoot: "",
@@ -906,90 +825,13 @@ describe("tool adapters", () => {
       agent: "claude-code" as const,
       ...extra,
     });
-    expect(sandboxLayout(o({ tools: ["trazo", "archify"] }), "/repo", "/tmp")).toEqual({
-      runs: join("/tmp", "trazo-bench", "v-m.1"),
-      archifyHome: join("/tmp", "trazo-bench"),
-    });
-    expect(sandboxLayout(o({ tools: ["archify"], sandboxRoot: "/x" }), "/repo", "/tmp")).toEqual({
-      runs: join(resolve("/x"), "v-m.1"),
-      archifyHome: resolve("/x"),
-    });
     expect(sandboxLayout(o({}), "/repo", "/tmp").runs).toBe(
       join("/repo", "tmp", "bench-runs", "v-m.1"),
     );
-    expect(sandboxLayout(o({ sandboxRoot: "/x" }), "/repo", "/tmp").runs).toBe(resolve("/x"));
-  });
-
-  it("reads archify runs: every archify command counts, the last finalize decides", () => {
-    const cmd = (verb: string) => `node ${copy} ${verb} diagram.html`;
-    const archify = toolAdapter("archify", { sandbox: sb });
-    const text = [
-      bash("a", cmd("finalize")),
-      res("a", "Exit code 1\nbad", true),
-      edit("b", "/s/diagram.html"),
-      bash("c", `${cmd("finalize")} && ls`),
-      res("c", "ok"),
-      result(),
-    ].join("\n");
-    expect(parseStream(text, archify)).toMatchObject({
-      failedCommands: 1,
-      repairs: 1,
-      firstTryOk: false,
-      lastFinalizeOk: true,
-      inputTokens: 120,
-      cacheReadTokens: 700,
+    expect(sandboxLayout(o({ sandboxRoot: "/x" }), "/repo", "/tmp")).toEqual({
+      runs: resolve("/x"),
+      profileHome: resolve("/x"),
     });
-    const failedLast = parseStream(
-      [bash("a", cmd("finalize")), res("a", "Exit code 2", true), result()].join("\n"),
-      archify,
-    );
-    expect(failedLast.lastFinalizeOk).toBe(false);
-    const cleanFirst = parseStream(
-      [bash("a", cmd("finalize")), res("a", "ok"), result()].join("\n"),
-      archify,
-    );
-    expect(cleanFirst.firstTryOk).toBe(true);
-    // a trazo command is not an archify command
-    const other = parseStream(
-      [bash("a", "trazo make d.json"), res("a", "ok"), result()].join("\n"),
-      archify,
-    );
-    expect(other.firstTryOk).toBe(false);
-  });
-
-  it("allows the archify command by absolute, relative and quoted path, with forward slashes", () => {
-    const tool = toolAdapter("archify", { sandbox: sb });
-    expect(tool.bashRules).toEqual(fwdRules);
-    expect(tool.bashRules.some((r: string) => r.includes("\\"))).toBe(false);
-    expect(toolAdapter("trazo").bashRules).toEqual(["Bash(trazo:*)"]);
-  });
-
-  it("states the exact archify command in the prompt and keeps trazo naming trazo", () => {
-    const p = buildPrompt("Draw it.", toolAdapter("archify", { sandbox: sb }));
-    expect(p).toContain(`node ${fwd} `);
-    expect(p).toContain("finalize");
-    expect(buildPrompt("Draw it.", toolAdapter("trazo"))).toContain("`trazo`");
-  });
-
-  it("copies the skill without .git and node_modules", () => {
-    expect(keepSkillEntry(join("/s", "skill", "SKILL.md"))).toBe(true);
-    expect(keepSkillEntry(join("/s", "skill", "bin", "archify.mjs"))).toBe(true);
-    expect(keepSkillEntry(join("/s", "skill", ".git"))).toBe(false);
-    expect(keepSkillEntry(join("/s", "skill", "node_modules"))).toBe(false);
-  });
-
-  it("balances which tool goes first across tasks and runs", () => {
-    const plan = planRuns(["a", "b"], ["skill"], 2, ["trazo", "archify"]);
-    expect(plan.map(runName)).toEqual([
-      "a-trazo-skill-1",
-      "a-archify-skill-1",
-      "a-archify-skill-2",
-      "a-trazo-skill-2",
-      "b-archify-skill-1",
-      "b-trazo-skill-1",
-      "b-trazo-skill-2",
-      "b-archify-skill-2",
-    ]);
   });
 
   it("counts judge issues by kind", () => {
@@ -1021,7 +863,7 @@ describe("tool adapters", () => {
         r("s1", "trazo", true, true),
         r("s2", "trazo", true, false),
         r("e1", "trazo", false, null),
-        r("s1", "archify", true, true),
+        r("s1", "other", true, true),
         r("e1", undefined, true),
       ],
       types,
@@ -1039,7 +881,7 @@ describe("tool adapters", () => {
       judged: 0,
       judgeRate: null,
     });
-    expect(out.archify?.overall).toEqual({ runs: 1, finalRate: 1, judged: 1, judgeRate: 1 });
+    expect(out.other?.overall).toEqual({ runs: 1, finalRate: 1, judged: 1, judgeRate: 1 });
   });
 
   it("parses --effort, defaulting to unset", () => {
@@ -1060,19 +902,11 @@ describe("tool adapters", () => {
     ).toThrow("--effort needs --agent claude-code");
   });
 
-  it("passes --effort to claude only when set, the same for every tool", () => {
+  it("passes --effort to claude only when set, ", () => {
     const base = buildAgentArgs("p", "m", "claude-code");
     expect(base).not.toContain("--effort");
-    for (const name of ["trazo", "archify"]) {
-      const args = buildAgentArgs(
-        "p",
-        "m",
-        "claude-code",
-        toolAdapter(name, { sandbox: sb }),
-        "high",
-      );
-      expect(args.slice(-2)).toEqual(["--effort", "high"]);
-    }
+    const args = buildAgentArgs("p", "m", "claude-code", toolAdapter("trazo"), "high");
+    expect(args.slice(-2)).toEqual(["--effort", "high"]);
     expect(buildAgentArgs("p", "m", "claude-code", undefined, "")).toEqual(base);
   });
 
@@ -1088,16 +922,16 @@ describe("tool adapters", () => {
       [
         r("trazo", true, true),
         r("trazo", false, null, "api_error: Failed to authenticate"),
-        r("archify", false, null, "api_error: x"),
-        r("archify", false, null, "api_error: y"),
+        r("other", false, null, "api_error: x"),
+        r("other", false, null, "api_error: y"),
       ],
       { s1: "sequence" },
     );
     expect(out.trazo?.overall).toEqual({ runs: 1, finalRate: 1, judged: 1, judgeRate: 1 });
     expect(out.trazo?.agentErrors).toBe(1);
-    expect(out.archify?.overall).toEqual({ runs: 0, finalRate: null, judged: 0, judgeRate: null });
-    expect(out.archify?.agentErrors).toBe(2);
-    expect(out.archify?.byType).toEqual({});
+    expect(out.other?.overall).toEqual({ runs: 0, finalRate: null, judged: 0, judgeRate: null });
+    expect(out.other?.agentErrors).toBe(2);
+    expect(out.other?.byType).toEqual({});
   });
 
   it("shows the permission denials per tool in the summary", () => {
@@ -1110,48 +944,27 @@ describe("tool adapters", () => {
     });
     const out = judgeSummary(
       [
-        r("archify", 3, { PowerShell: 2, Bash: 1 }),
-        r("archify", 0, {}),
-        r("archify", 1, { Bash: 1 }),
+        r("other", 3, { PowerShell: 2, Bash: 1 }),
+        r("other", 0, {}),
+        r("other", 1, { Bash: 1 }),
         r("trazo", 0, {}),
         { task: "s1", tool: "trazo", finalOk: true },
       ],
       { s1: "sequence" },
     );
-    expect(out.archify?.denials).toEqual({
+    expect(out.other?.denials).toEqual({
       runs: 2,
       commands: 4,
       tools: { PowerShell: 2, Bash: 2 },
     });
     expect(out.trazo?.denials).toEqual({ runs: 0, commands: 0, tools: {} });
-    expect(out.archify?.overall.runs).toBe(3);
-  });
-
-  it("also allows the Git Bash spelling of the archify path", () => {
-    const tool = toolAdapter("archify", { sandbox: "C:/w/m/run-1" });
-    const bin = "C:/w/m/run-1/.claude/skills/archify/bin/archify.mjs";
-    expect(tool.bashRules).toContain(`Bash(node ${bin}:*)`);
-    expect(tool.bashRules).toContain(
-      `Bash(node /c/w/m/run-1/.claude/skills/archify/bin/archify.mjs:*)`,
-    );
-    expect(tool.bashRules).toContain(
-      `Bash(node "/c/w/m/run-1/.claude/skills/archify/bin/archify.mjs":*)`,
-    );
-    expect(tool.bashRules.some((r: string) => r.includes("\\"))).toBe(false);
+    expect(out.other?.overall.runs).toBe(3);
   });
 
   it("splits agent errors from the runs that count", () => {
     const runs = [{ id: 1 }, { id: 2, agentError: "api_error" }, { id: 3, agentError: "" }];
     expect(withoutAgentErrors(runs)).toEqual([{ id: 1 }, { id: 3, agentError: "" }]);
     expect(countAgentErrors(runs)).toBe(1);
-  });
-
-  it("judges native archify success from the html file and the last finalize", () => {
-    const tool = toolAdapter("archify", { sandbox: sb });
-    expect(tool.nativeOk?.({ lastFinalizeOk: true }, true)).toBe(true);
-    expect(tool.nativeOk?.({ lastFinalizeOk: true }, false)).toBe(false);
-    expect(tool.nativeOk?.({ lastFinalizeOk: false }, true)).toBe(false);
-    expect(tool.nativeOk?.({ lastFinalizeOk: null }, true)).toBe(false);
   });
 });
 
@@ -1222,7 +1035,7 @@ describe("run-agent.mjs --rejudge", () => {
     expect(r.stdout).toContain("3 run(s) judged again");
     expect(r.stdout).toContain("judgeRate");
     // Launches a headless browser per run; under a full parallel suite it can pass 20 s.
-  }, 60_000);
+  }, 120_000);
 
   it("needs --out", () => {
     const r = run(["--model", "m1", "--rejudge"]);
@@ -1358,7 +1171,7 @@ describe("run-agent.mjs", () => {
     expect(r.stderr).toContain("error: --agent must be claude-code or opencode");
   });
 
-  it("dry-run with several tools alternates the order and plans archify in the skill condition only", () => {
+  it("dry-run with --tool trazo names the runs with the tool and keeps the trazo rules", () => {
     const r = run([
       "--model",
       "vendor/m.1",
@@ -1367,7 +1180,7 @@ describe("run-agent.mjs", () => {
       "--runs",
       "2",
       "--tool",
-      "trazo,archify",
+      "trazo",
       "--dry-run",
       "--sandbox-root",
       join(work, "sb-tools"),
@@ -1376,54 +1189,26 @@ describe("run-agent.mjs", () => {
     const names = [...r.stdout.matchAll(/^(arch-shop-\S+)\s/gm)].map((m) => m[1]);
     expect(names).toEqual([
       "arch-shop-trazo-skill-1",
-      "arch-shop-archify-skill-1",
-      "arch-shop-archify-skill-2",
       "arch-shop-trazo-skill-2",
       "arch-shop-trazo-no-skill-1",
       "arch-shop-trazo-no-skill-2",
     ]);
-    const copy = join(
-      work,
-      "sb-tools",
-      "vendor-m.1",
-      "arch-shop-archify-skill-1",
-      ".claude",
-      "skills",
-      "archify",
-      "bin",
-      "archify.mjs",
-    );
-    expect(r.stdout).toContain(
-      formatCommandLine("x", [`Bash(node ${copy.split(sep).join("/")}:*)`]).slice(2),
-    );
     expect(r.stdout).toContain("--allowedTools Read Write Edit Bash(trazo:*)");
-    expect(r.stdout).toContain("6 run(s) planned");
+    expect(r.stdout).toContain("4 run(s) planned");
     expect(existsSync(join(work, "sb-tools"))).toBe(false);
-  });
-
-  it("dry-run for archify defaults the sandbox root to <os tmp>/trazo-bench/<model>", () => {
-    const r = run([
-      "--model",
-      "vendor/m.1",
-      "--task",
-      "arch-shop",
-      "--runs",
-      "1",
-      "--tool",
-      "archify",
-      "--dry-run",
-    ]);
-    expect(r.status, r.stderr).toBe(0);
-    expect(r.stdout).toContain(
-      `cwd: ${join(tmpdir(), "trazo-bench", "vendor-m.1", "arch-shop-archify-skill-1")}`,
-    );
-    expect(r.stdout).toContain("1 run(s) planned");
   });
 
   it("rejects an unknown tool with exit 2", () => {
     const r = run(["--tool", "x", "--model", "m", "--dry-run"]);
     expect(r.status).toBe(2);
-    expect(r.stderr).toContain("error: --tool must be trazo or archify");
+    expect(r.stderr).toBe("error: --tool must be trazo\n");
+  });
+
+  it("rejects a removed tool name with exit 2 and runs nothing", () => {
+    const r = run(["--tool", "removed-tool", "--model", "m", "--dry-run"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toBe("error: --tool must be trazo\n");
+    expect(r.stdout).toBe("");
   });
 
   it("fails on a missing model with exit 2", () => {

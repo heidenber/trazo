@@ -116,52 +116,25 @@ The runner saves the runs as `bench/results/<YYYY-MM-DD>-agent-<agent>.json`:
 
 Run `node scripts/bench.mjs --summary <file>` to get, per condition, the number of runs, the first-try and final success rates, and the medians of repairs, uncached and total input tokens, output tokens and seconds.
 
-## Comparing tools (trazo and Archify)
+## Options
 
-`--tool trazo|archify` picks the tool under test. It can be repeated or given as a comma list (`--tool trazo,archify`); the default is `trazo` and nothing else about a trazo-only run changes. `--browser <path>` sets the Chrome or Edge that Archify uses (default: `BENCH_BROWSER`, then the usual install paths). `--tool archify` needs `--agent claude-code`, and Archify only runs in the `skill` condition.
+`--tool trazo` is accepted and is the default; any other value is rejected with `error: --tool must be trazo`. `--browser <path>` sets the Chrome or Edge the judge uses (default: `BENCH_BROWSER`, then the usual install paths).
 
-`--effort low|medium|high|xhigh|max` is passed to Claude Code as `--effort <level>` for every run of the matrix, so both tools get the same level. Without it nothing is passed and the agent uses its own default. It is rejected with `--agent opencode`. Every run record and the results header carry `effort` (`null` when unset); `--out` refuses to mix levels in one file.
+`--effort low|medium|high|xhigh|max` is passed to Claude Code as `--effort <level>` for every run of the matrix. Without it nothing is passed and the agent uses its own default. It is rejected with `--agent opencode`. Every run record and the results header carry `effort` (`null` when unset); `--out` refuses to mix levels in one file.
 
-Archify is pinned to v3.2.0 and staged once, outside this repository:
-
-```sh
-node bench/stage-archify.mjs [--sandbox-root <dir>]
-```
-
-It runs `git clone --depth 1 --branch v3.2.0 https://github.com/tt-a1i/archify` into `<root>/_archify-v3.2.0` (skipped when present) and prints the folder that holds the skill. It needs git and network access. Nothing from the clone is read or copied into this repo.
-
-What changes when `archify` is in `--tool`:
-
-- The sandbox root defaults to `<os tmp>/trazo-bench` (on Windows `%TEMP%\trazo-bench`) and runs live at `<root>/<model>/<task>-<tool>-<condition>-<n>`. `--sandbox-root` replaces the root and keeps the `<model>` folder. The clone is `<root>/_archify-v3.2.0`.
-- With `--tool`, run names carry the tool (`arch-shop-archify-skill-1`); without it they stay `arch-shop-skill-1`.
-- With several tools the order flips on the parity of task index plus run index (both counted from 0): the given order when the sum is even, reversed when it is odd. Across the matrix each tool goes first in half of the runs.
-- The staged skill folder is copied into `<sandbox>/.claude/skills/archify/`. Only that folder is copied, without `.git` and `node_modules`. The allowed tools are `Read`, `Write`, `Edit` and `Bash` rules for `node <sandbox>/.claude/skills/archify/bin/archify.mjs` (forward slashes, also on Windows) and for the relative `.claude/skills/archify/bin/archify.mjs` (with and without `./`), each plain and in double quotes. The environment adds `ARCHIFY_UPDATE_CHECK_DISABLED=1` and, when a browser is found, `ARCHIFY_CHROME=<browser path>`.
-- The prompt asks for the `archify` skill and for `diagram.html` in the current directory, and states the exact command (`node <sandbox>/.claude/skills/archify/bin/archify.mjs <command> <file>`). The trazo prompt keeps naming `trazo`. There is no `trazo` shim for Archify-only runs.
-- Native success (`finalOk`) is `diagram.html` exists and the last `finalize` call exited 0. Failed commands count every `archify.mjs` call that failed; `firstTryOk` is the first `finalize`; repairs are edits to a `.json` or `.html` file after a failure.
-- Each run records `tool`, `toolVersion` (`v3.2.0` for Archify, the package version for trazo) and `agentVersion` (the first line of `claude --version`, or `unknown`). Tokens keep four separate classes: `inputTokens`, `outputTokens`, `cacheReadTokens`, `cacheCreationTokens`. `--resume` matches on tool as well.
-
-### First try per tool
-
-`firstTryOk` means the first call of the tool's own build step exited with 0, and the two tools are not the same step:
-
-- trazo: the first `trazo make`.
-- archify: the first `finalize`.
-
-Compare it across tools with that in mind: `finalize` also runs Archify's own checks.
-
-A refused call is not counted, so a run whose first `finalize` was refused has `firstTryOk: false` until a later `finalize` runs, and then that later call is the one that counts. In the first Haiku run (invalid, see below) `firstTryOk` was false in 18 of 18 Archify runs without agent error, and the parser was right: in 12 the first `finalize` that ran exited 1 on schema validation (for example `/boundaries/0/kind ... must be equal to one of the allowed values`, or `/nodes/7 ... must NOT have additional properties`), and in 6 no `finalize` ever ran because every call was refused (PowerShell, see below). So the figure measures the tool as it is: Archify's strict schema rejects the first spec the agent writes.
+Each run records `tool`, `toolVersion` and `agentVersion` (the first line of `claude --version`, or `unknown`). Tokens keep four separate classes: `inputTokens`, `outputTokens`, `cacheReadTokens`, `cacheCreationTokens`. `--resume` matches on tool as well. With `--tool`, run names carry the tool (`arch-shop-trazo-skill-1`); without it they stay `arch-shop-skill-1`.
 
 ### Permission denials
 
-On Windows, Claude Code offers a `PowerShell` tool next to `Bash`. The runner's `--allowedTools` rules only cover `Bash(...)`, so PowerShell calls were refused without a visible error, and the agent often stopped asking for approval. Both tools were hit (Archify in 15 of 24 runs, trazo in 5 of 24 in the invalid run).
+On Windows, Claude Code offers a `PowerShell` tool next to `Bash`. The runner's `--allowedTools` rules only cover `Bash(...)`, so PowerShell calls were refused without a visible error, and the agent often stopped asking for approval.
 
-- Claude Code runs now pass `--disallowedTools PowerShell` for every tool, so the agent uses Bash as on Linux and macOS. OpenCode runs are unchanged.
+- Claude Code runs now pass `--disallowedTools PowerShell` so the agent uses Bash as on Linux and macOS. OpenCode runs are unchanged.
 - Each run records `deniedCommands` (the number of entries in the final result's `permission_denials`) and `deniedTools` (count per tool name, for example `{"Bash": 1}`). The summary shows, per tool, `denials`: runs with any denial, total commands and counts per tool name. A run with denials that failed still counts as a tool failure; the denials only make the cause visible. Denials do not appear for OpenCode runs (`0` and `{}`).
-- Other Bash denials seen in the invalid run: output redirection (`trazo example x > diagram.json`, which Claude Code asks about because it writes a file; the agent has `Write`), PowerShell syntax pasted into Bash, and Archify calls spelled with Windows backslashes, as `/c/...` Git Bash paths, or with a `../..` relative path after a `cd`. The Git Bash spelling of the exact allowed path is now allowed too. Backslash paths cannot be written as rules (`\` escapes in a rule), and the prompt already names the exact command, so they stay refused for both tools. Redirection and shell scripts are not a use of the tool under test and stay refused.
+- Other Bash denials seen earlier: output redirection (`trazo example x > diagram.json`, which Claude Code asks about because it writes a file; the agent has `Write`), and PowerShell syntax pasted into Bash. Redirection and shell scripts are not a use of the tool under test and stay refused.
 
 ### Judge
 
-After every run, whatever the tool, the runner opens `<sandbox>/diagram.html` in headless Chrome or Edge with `bench/judge-html.mjs` and writes `<sandbox>/diagram.png`. The judge knows nothing about either tool: it only looks at the visible text. Each task in `tasks.json` has an `expect` list with the names its prompt states (entities, steps, participants) and nothing else; `erd-payments` has none because its prompt names no table.
+After every run, the runner opens `<sandbox>/diagram.html` in headless Chrome or Edge with `bench/judge-html.mjs` and writes `<sandbox>/diagram.png`. The judge knows nothing about the tool: it only looks at the visible text. Each task in `tasks.json` has an `expect` list with the names its prompt states (entities, steps, participants) and nothing else; `erd-payments` has none because its prompt names no table.
 
 Each run record gets `judgeOk`, `judgeIssues` (issue kind to count) and `screenshot` (path). A run with no `diagram.html` is `judgeOk: false` with `{"no-html": 1}`. If the browser cannot be started the run gets `judgeOk: null` and `judgeError`, and is left out of the judge rate. A browser failure never counts against the tool.
 
@@ -176,23 +149,13 @@ Issue kinds:
 
 ### Judging again
 
-`--rejudge` judges the runs of an existing results file again, for example after a judge fix or a change to a task's `expect` list. No agent runs: it needs `--out <results.json>`, `--model` (and `--sandbox-root` or `--tool archify` when the original run used them, so the sandboxes are found), and it reads each `<sandbox>/diagram.html`.
+`--rejudge` judges the runs of an existing results file again, for example after a judge fix or a change to a task's `expect` list. No agent runs: it needs `--out <results.json>`, `--model` (and `--sandbox-root` when the original run used it, so the sandboxes are found), and it reads each `<sandbox>/diagram.html`.
 
 ```
 node bench/run-agent.mjs --model claude-haiku-4-5 --out bench/results/<file>.json --rejudge
 ```
 
 Each run gets new `judgeOk`, `judgeIssues` and `screenshot` values, using the task's current `expect`. A missing `diagram.html` stays `no-html`; runs with `agentError` are not touched. Nothing else in the record changes. The file is rewritten and the summary is printed.
-
-### Author preference rating
-
-`bench/rate-pairs.mjs` builds a rating page from a results file: one pair per task (the lowest run where both tools produced a final diagram, else run 1, flagged), screenshots side by side with the tool names, a preference (trazo, Archify or tie), a 1-5 score per tool and a note. **Export JSON** downloads the ratings with `"blind": false`: the rater knows which tool made each diagram, so publish these ratings as the author's preference, never as a blind evaluation.
-
-```sh
-node bench/rate-pairs.mjs bench/results/<file>.json --sandbox-root <root>
-```
-
-The page is written to `<root>/_rating/index.html` (default root `<os tmpdir>/trazo-bench`, `--out` overrides the file) and reads the screenshots from the run sandboxes, so it stays outside the repo.
 
 ### Agent errors
 

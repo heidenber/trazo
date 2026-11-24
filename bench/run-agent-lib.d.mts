@@ -25,7 +25,7 @@ export interface RunOptions {
   browser: string;
   effort: "" | "low" | "medium" | "high" | "xhigh" | "max";
 }
-export type ToolName = "trazo" | "archify";
+export type ToolName = "trazo";
 export interface ToolAdapter {
   name: ToolName;
   version: string | null;
@@ -65,18 +65,12 @@ export interface StreamStats {
 }
 export const PROMPT_SUFFIX: string;
 export function parseArgs(argv: string[], knownTasks: string[], today: string): RunOptions;
-export const ARCHIFY_VERSION: string;
-export const ARCHIFY_REPO: string;
-export function archifyCloneDir(home: string): string;
-export function toolAdapter(
-  name: string,
-  ctx?: { sandbox?: string; browser?: string },
-): ToolAdapter;
+export function toolAdapter(name: string): ToolAdapter;
 export function sandboxLayout(
   opts: { model: string; sandboxRoot: string; tools: string[]; agent: AgentName },
   repoRoot: string,
   tmpDir: string,
-): { runs: string; archifyHome: string };
+): { runs: string; profileHome: string };
 export function buildPrompt(taskPrompt: string, tool?: ToolAdapter): string;
 export function buildAgentArgs(
   prompt: string,
@@ -129,7 +123,6 @@ export function opencodeRunEnv(
 ): Record<string, string | undefined>;
 export function shellCommandLine(cmd: string, args: string[]): string;
 export function shimExePath(text: string, shimDir: string): string | null;
-export function keepSkillEntry(src: string): boolean;
 export function countIssues(issues: { kind: string; detail?: string }[]): Record<string, number>;
 export interface RateSummary {
   runs: number;

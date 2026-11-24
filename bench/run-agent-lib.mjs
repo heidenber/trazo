@@ -3,13 +3,13 @@
 
 // Pure helpers for bench/run-agent.mjs: no I/O, no clock, no randomness.
 
-import { basename, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 
 export const PROMPT_SUFFIX =
   "\n\nThe `trazo` command is installed and turns a semantic JSON description into an HTML diagram; `trazo --help` explains it. Use the `trazo` command to build the diagram and save it as diagram.html in the current directory.";
 
 const CONDITIONS = ["skill", "no-skill"];
-const TOOLS = ["trazo", "archify"];
+const TOOLS = ["trazo"];
 const AGENTS = ["claude-code", "opencode"];
 const AGENT_CMDS = { "claude-code": "claude", opencode: "opencode" };
 
@@ -85,7 +85,7 @@ export function parseArgs(argv, knownTasks, today) {
         if (!toolsGiven) opts.tools = [];
         toolsGiven = true;
         for (const t of valueOf(i++).split(",")) {
-          if (!TOOLS.includes(t)) throw new Error("--tool must be trazo or archify");
+          if (!TOOLS.includes(t)) throw new Error("--tool must be trazo");
           if (!opts.tools.includes(t)) opts.tools.push(t);
         }
         break;
@@ -120,11 +120,6 @@ export function parseArgs(argv, knownTasks, today) {
   if (opts.rejudge && !opts.out) throw new Error("--rejudge needs --out <results.json>");
   if (opts.effort && opts.agent !== "claude-code")
     throw new Error("--effort needs --agent claude-code");
-  if (opts.tools.includes("archify")) {
-    if (opts.agent !== "claude-code") throw new Error("--tool archify needs --agent claude-code");
-    if (opts.tools.length === 1 && !opts.conditions.includes("skill"))
-      throw new Error("archify only runs with the skill condition");
-  }
   // Defaults that depend on the agent are resolved once all options are read.
   if (!opts.out) opts.out = `bench/results/${today}-agent-${opts.agent}.json`;
   if (!opts.agentCmd) opts.agentCmd = AGENT_CMDS[opts.agent];
@@ -132,27 +127,8 @@ export function parseArgs(argv, knownTasks, today) {
   return opts;
 }
 
-export const ARCHIFY_VERSION = "v3.2.0";
-export const ARCHIFY_REPO = "https://github.com/tt-a1i/archify";
-
-/** Pinned clone of Archify, next to the sandboxes. */
-export const archifyCloneDir = (home) => join(home, `_archify-${ARCHIFY_VERSION}`);
-
-const SKILL_BIN = ".claude/skills/archify/bin/archify.mjs";
-const forwardSlashes = (p) => p.replace(/\\/g, "/");
-// Git Bash spells C:/x as /c/x.
-const gitBashPath = (p) => p.replace(/^([A-Za-z]):\//, (_, d) => `/${d.toLowerCase()}/`);
-
-/** Prompt tail for archify: names the one command the sandbox allows, so the agent does not guess a path. */
-const archifySuffix = (bin) =>
-  `\n\nThe \`archify\` skill is installed in this project. Use it to build the diagram and save it as diagram.html in the current directory. Run its commands exactly as \`node ${bin} <command> <file>\`; \`finalize\` checks the finished file.`;
-
-/** Filter for the skill copy: the clone's history and dependencies stay out of the sandbox. */
-export const keepSkillEntry = (src) => ![".git", "node_modules"].includes(basename(src));
-
 /**
- * Everything the runner and the parser need to know about the tool under test. The Archify
- * skill is copied into each sandbox, so its allowed command depends on the sandbox path.
+ * Everything the runner and the parser need to know about the tool under test.
  */
 export function toolAdapter(name, ctx = {}) {
   if (name === "trazo")
@@ -174,32 +150,6 @@ export function toolAdapter(name, ctx = {}) {
       inputOf: (seg) => /^trazo\s+make\s+(\S+)/.exec(seg)?.[1] ?? null,
       nativeOk: null,
     };
-  if (name === "archify") {
-    const bin = forwardSlashes(join(ctx.sandbox ?? "", ...SKILL_BIN.split("/")));
-    const env = { ARCHIFY_UPDATE_CHECK_DISABLED: "1" };
-    if (ctx.browser) env.ARCHIFY_CHROME = ctx.browser;
-    return {
-      name,
-      version: ARCHIFY_VERSION,
-      promptSuffix: archifySuffix(bin),
-      bashRules: [...new Set([bin, gitBashPath(bin), SKILL_BIN, `./${SKILL_BIN}`])].flatMap((f) => [
-        `Bash(node ${f}:*)`,
-        `Bash(node "${f}":*)`,
-      ]),
-      skillName: "archify",
-      env,
-      shim: false,
-      repairFile: (file) => /\.(json|html)$/.test(file),
-      verbs: (cmd) =>
-        segments(cmd)
-          .map((s) => /^node\s+["']?[^\s"']*archify\.mjs["']?\s+([\w-]+)/.exec(s)?.[1])
-          .filter(Boolean),
-      firstVerb: "finalize",
-      nativeVerb: "finalize",
-      inputOf: () => null,
-      nativeOk: (stats, htmlExists) => htmlExists && stats.lastFinalizeOk === true,
-    };
-  }
   throw new Error(`unknown tool: ${name}`);
 }
 
@@ -237,7 +187,6 @@ export function buildAgentArgs(prompt, model, agent = "claude-code", tool, effor
  * With `tools` each run runs every tool once; the order is the given one when task index plus
  * run index (run 1 is index 0) is even and reversed when odd, so across the matrix each tool
  * goes first in half of the runs.
- * Archify has no no-skill condition.
  */
 export function planRuns(taskIds, conditions, runs, tools) {
   const plan = [];
@@ -249,9 +198,7 @@ export function planRuns(taskIds, conditions, runs, tools) {
           continue;
         }
         const order = (taskIndex + run - 1) % 2 === 0 ? tools : [...tools].reverse();
-        for (const tool of order)
-          if (tool !== "archify" || condition === "skill")
-            plan.push({ task, condition, run, tool });
+        for (const tool of order) plan.push({ task, condition, run, tool });
       }
   return plan;
 }
@@ -282,18 +229,13 @@ export function defaultSandboxRoot(agent, model, repoRoot, tmpDir) {
     : join(repoRoot, "tmp", "bench-runs", modelDir(model));
 }
 
-/**
- * Where the runs and the pinned Archify clone live. Runs that include archify go under
- * <root>/<model> (root defaults to <os tmp>/trazo-bench); trazo-only runs keep their old layout.
- */
+/** Where the runs live (--sandbox-root, else the agent's default root) and where the judge keeps its browser profiles. */
 export function sandboxLayout(opts, repoRoot, tmpDir) {
-  const base = opts.sandboxRoot ? resolve(opts.sandboxRoot) : join(tmpDir, "trazo-bench");
-  if (opts.tools.includes("archify"))
-    return { runs: join(base, modelDir(opts.model)), archifyHome: base };
+  const profileHome = opts.sandboxRoot ? resolve(opts.sandboxRoot) : join(tmpDir, "trazo-bench");
   const runs = opts.sandboxRoot
     ? resolve(opts.sandboxRoot)
     : defaultSandboxRoot(opts.agent, opts.model, repoRoot, tmpDir);
-  return { runs, archifyHome: base };
+  return { runs, profileHome };
 }
 
 /**

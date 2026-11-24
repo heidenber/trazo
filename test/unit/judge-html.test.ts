@@ -60,7 +60,8 @@ describe("createProfileDir", () => {
   });
 });
 
-describe.skipIf(!hasBrowser)("judgeHtml", () => {
+// Each test starts a headless browser; a cold start on a loaded CI runner can pass 20 s.
+describe.skipIf(!hasBrowser)("judgeHtml", { timeout: 60_000 }, () => {
   it("accepts a clean page and counts its visible text", async () => {
     const r = await judge.judgeHtml(fixture("clean"), {
       expectedTerms: ["orders  SERVICE", "gateway"],

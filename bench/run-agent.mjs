@@ -7,17 +7,15 @@
 // intact; if none is found pass --agent-cmd <path to the .exe>. The resolved path is printed and saved as agentBin.
 //   node bench/run-agent.mjs --model <id> [--agent claude-code|opencode] [--task <id>]...
 //     [--condition skill|no-skill|both] [--runs N] [--out <file>] [--agent-cmd <path>]
-//     [--tool trazo|archify[,...]] [--effort low|medium|high|xhigh|max] [--browser <path>] [--sandbox-root <dir>] [--timeout <s>] [--resume] [--dry-run]
+//     [--tool trazo] [--effort low|medium|high|xhigh|max] [--browser <path>] [--sandbox-root <dir>] [--timeout <s>] [--resume] [--dry-run]
 // Each run happens in a fresh sandbox: tmp/bench-runs/<model>/ for claude-code, <os tmp>/trazo-bench-runs/<model>/
-// for opencode (outside the repository). Runs that include archify live in <os tmp>/trazo-bench/<model>/ and need
-// the pinned copy from bench/stage-archify.mjs. Results are appended to --out as each run finishes.
+// for opencode (outside the repository). Results are appended to --out as each run finishes.
 // Never run in CI: a real run spends model quota.
 
 import { spawn, spawnSync } from "node:child_process";
 import {
   chmodSync,
   copyFileSync,
-  cpSync,
   createWriteStream,
   existsSync,
   mkdirSync,
@@ -32,13 +30,11 @@ import { tmpdir } from "node:os";
 import {
   agentEnv,
   buildAgentArgs,
-  archifyCloneDir,
   buildPrompt,
   countAgentErrors,
   countIssues,
   formatCommandLine,
   judgeSummary,
-  keepSkillEntry,
   opencodeConfig,
   opencodeEnv,
   opencodeRunEnv,
@@ -56,7 +52,6 @@ import {
   withoutAgentErrors,
 } from "./run-agent-lib.mjs";
 import { judgeHtml } from "./judge-html.mjs";
-import { locateSkillDir } from "./stage-archify.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const distCli = join(root, "dist", "cli", "main.js");
@@ -84,33 +79,11 @@ const outFile = resolve(root, opts.out);
 const layout = sandboxLayout(opts, root, tmpdir());
 const sandboxRoot = layout.runs;
 const isOpencode = opts.agent === "opencode";
-const withArchify = opts.tools.includes("archify");
 const withTrazo = opts.tools.includes("trazo");
 // Without --tool the names, the record and the plan stay as they were before adapters.
 const toolsGiven = process.argv.slice(2).includes("--tool");
 const plan = planRuns(opts.tasks, opts.conditions, opts.runs, toolsGiven ? opts.tools : undefined);
 const toolOf = (p) => p.tool ?? "trazo";
-
-/** Chrome or Edge for Archify's checks: --browser, then BENCH_BROWSER, then the usual install paths. */
-function findBrowser() {
-  const given = opts.browser || process.env.BENCH_BROWSER;
-  if (given) return given;
-  const env = process.env;
-  const candidates = {
-    win32: [
-      join(env["PROGRAMFILES"] ?? "", "Google", "Chrome", "Application", "chrome.exe"),
-      join(env["PROGRAMFILES(X86)"] ?? "", "Google", "Chrome", "Application", "chrome.exe"),
-      join(env["LOCALAPPDATA"] ?? "", "Google", "Chrome", "Application", "chrome.exe"),
-      join(env["PROGRAMFILES(X86)"] ?? "", "Microsoft", "Edge", "Application", "msedge.exe"),
-    ],
-    darwin: [
-      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-      "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-    ],
-    linux: ["/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"],
-  };
-  return (candidates[process.platform] ?? []).find((f) => existsSync(f)) ?? "";
-}
 
 /** Real executable of a .cmd/.bat shim (see shimExePath), or null. */
 function exeBehindShim(shim) {
@@ -165,9 +138,7 @@ async function rejudgeRecord() {
   if ((rec.agent ?? "claude-code") !== opts.agent)
     fail(`${opts.out} holds agent ${rec.agent}, not ${opts.agent}`);
   if (rec.model !== opts.model) fail(`${opts.out} holds model ${rec.model}, not ${opts.model}`);
-  // Archify runs live under <root>/<model>; the record says whether the original run used that layout.
-  const tools = rec.runs.some((r) => r.tool === "archify") ? ["archify"] : opts.tools;
-  const runsDir = sandboxLayout({ ...opts, tools }, root, tmpdir()).runs;
+  const runsDir = layout.runs;
   let judged = 0;
   for (const r of rec.runs) {
     if (r.agentError) continue;
@@ -224,10 +195,7 @@ if (opts.rejudge) await rejudgeRecord();
 
 if (opts.dryRun) {
   for (const p of plan) {
-    const tool = toolAdapter(toolOf(p), {
-      sandbox: join(sandboxRoot, runName(p)),
-      browser: opts.browser,
-    });
+    const tool = toolAdapter(toolOf(p));
     const prompt = buildPrompt(taskById.get(p.task).prompt, tool);
     console.log(`${runName(p)}  (${p.condition})`);
     console.log(`  cwd: ${join(sandboxRoot, runName(p))}`);
@@ -243,18 +211,6 @@ if (!existsSync(distCli)) fail("dist/ not found; run npm run build");
 const agentBin = resolveAgent(opts.agentCmd).bin;
 console.log(`agent binary: ${agentBin}`);
 const VERSION = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version ?? "unknown";
-const browser = withArchify ? findBrowser() : "";
-if (withArchify && !browser)
-  console.log("warning: no Chrome or Edge found; ARCHIFY_CHROME is not set (use --browser)");
-let archifySkillDir = "";
-if (withArchify) {
-  try {
-    archifySkillDir = locateSkillDir(archifyCloneDir(layout.archifyHome));
-  } catch (e) {
-    fail(`${e.message}; run node bench/stage-archify.mjs first`);
-  }
-}
-
 // Output file: load the existing record or start a new one.
 let record;
 if (existsSync(outFile)) {
@@ -392,7 +348,7 @@ async function judgeRun(sandbox, expectedTerms) {
       expectedTerms,
       browserPath: opts.browser || undefined,
       screenshotPath,
-      profileRoot: layout.archifyHome,
+      profileRoot: layout.profileHome,
     });
     return {
       judgeOk: r.ok,
@@ -441,13 +397,11 @@ for (const p of plan) {
       join(sandbox, "opencode.json"),
       `${JSON.stringify(opencodeConfig(p.condition), null, 2)}\n`,
     );
-  const tool = toolAdapter(toolOf(p), { sandbox, browser });
+  const tool = toolAdapter(toolOf(p));
   if (p.condition === "skill") {
     const dest = join(sandbox, ...skillSegments(opts.agent, tool.skillName));
     mkdirSync(dest, { recursive: true });
-    if (tool.name === "archify")
-      cpSync(archifySkillDir, dest, { recursive: true, filter: keepSkillEntry });
-    else copyFileSync(join(root, "skill", "SKILL.md"), join(dest, "SKILL.md"));
+    copyFileSync(join(root, "skill", "SKILL.md"), join(dest, "SKILL.md"));
   }
   const prompt = buildPrompt(taskById.get(p.task).prompt, tool);
   const started = Date.now();
