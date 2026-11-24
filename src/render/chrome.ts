@@ -156,6 +156,11 @@ ${c.svg}
       ${exportItem("svg", "vector", "SVG, self-contained", "vector")}
       ${exportItem("pdf", "print", "PDF through the print dialog", "diagram only")}
     </div>
+    <div role="group" aria-label="Black and white"><span class="gt">Black and white</span>
+      ${exportItem("png-bw", "image", "PNG, black and white", `${w1} × ${h1} px`)}
+      ${exportItem("svg-bw", "vector", "SVG, black and white", "ink on white")}
+      ${exportItem("pdf-bw", "print", "PDF, black and white", "through the print dialog")}
+    </div>
     <div role="group" aria-label="Copy"><span class="gt">Copy</span>
       ${exportItem("copy-png", "copy", "Copy PNG", "to the clipboard")}
       ${exportItem("copy-svg", "copy", "Copy SVG code", "to the clipboard")}

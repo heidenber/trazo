@@ -41,6 +41,25 @@ export function creditMarkup(base: View, font: string): string {
   return `<text class="t-credit" x="${x}" y="${y}" text-anchor="end" font-size="11" style="fill:var(--t-muted);font-family:${font}">Made with trazo</text>`;
 }
 
+/**
+ * The black-and-white export: every theme variable becomes ink, white or transparent, so the cloned
+ * SVG prints in one ink. Only variables change; dash patterns, double lines, underlines and markers
+ * come from the diagram's own rules and stay. Self-contained: it is embedded in the page script.
+ */
+export function bwCss(names: readonly string[], scope?: string): string {
+  const paper = /fill|^--t-(bg|surface|card|label-bg|lane-header|table-head)$/;
+  const decls = names.map(function (n) {
+    const v = n === "--t-shadow" ? "transparent" : paper.test(n) ? "#ffffff" : "#000000";
+    return n + ": " + v + ";";
+  });
+  return (
+    (scope || "svg") +
+    " { color-scheme: light; " +
+    decls.join(" ") +
+    " } .t-node-note { fill-opacity: 1; } "
+  );
+}
+
 // Runs in the page, so the pure functions above are embedded as source text.
 // Sections: view, minimap, hover and detail card, search, keys, menus, theme, export.
 export const VIEWER_SCRIPT = String.raw`(function () {
@@ -60,6 +79,7 @@ export const VIEWER_SCRIPT = String.raw`(function () {
   var CREDIT_FONT = ${JSON.stringify(CREDIT_FONT)};
   ${creditBox.toString()}
   ${creditMarkup.toString()}
+  ${bwCss.toString()}
   var NS = "http://www.w3.org/2000/svg";
   var vb = svg.viewBox.baseVal;
   var base = { x: vb.x, y: vb.y, w: vb.width, h: vb.height };
@@ -482,7 +502,7 @@ export const VIEWER_SCRIPT = String.raw`(function () {
   });
 
   var vars = ${JSON.stringify(THEME_VARS)};
-  var build = function (bg) {
+  var build = function (bg, bw) {
     var copy = svg.cloneNode(true);
     var box = creditBox(base);
     copy.setAttribute("viewBox", box.x + " " + box.y + " " + box.w + " " + box.h);
@@ -499,6 +519,7 @@ export const VIEWER_SCRIPT = String.raw`(function () {
     });
     var cs = getComputedStyle(root);
     var css = "svg { " + vars.map(function (n) { return n + ": " + cs.getPropertyValue(n).trim() + ";"; }).join(" ") + (bg ? " background: var(--t-bg);" : "") + " } ";
+    if (bw) css = bwCss(vars) + (bg ? "svg { background: #ffffff; } " : "");
     Array.from(document.styleSheets).forEach(function (sheet) {
       Array.from(sheet.cssRules).forEach(function (r) {
         if (r instanceof CSSFontFaceRule) css += r.cssText + " ";
@@ -522,9 +543,9 @@ export const VIEWER_SCRIPT = String.raw`(function () {
     a.click();
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
   };
-  var png = function (scale, bg) {
+  var png = function (scale, bg, bw) {
     return new Promise(function (ok, no) {
-      var url = URL.createObjectURL(new Blob([build(bg)], { type: "image/svg+xml" }));
+      var url = URL.createObjectURL(new Blob([build(bg, bw)], { type: "image/svg+xml" }));
       var img = new Image();
       img.onload = function () {
         var box = creditBox(base);
@@ -534,7 +555,7 @@ export const VIEWER_SCRIPT = String.raw`(function () {
         c.height = Math.round(box.h * k);
         var g = c.getContext("2d");
         if (bg) {
-          g.fillStyle = getComputedStyle(root).getPropertyValue("--t-bg");
+          g.fillStyle = bw ? "#ffffff" : getComputedStyle(root).getPropertyValue("--t-bg");
           g.fillRect(0, 0, c.width, c.height);
         }
         g.drawImage(img, 0, 0, c.width, c.height);
@@ -573,6 +594,7 @@ export const VIEWER_SCRIPT = String.raw`(function () {
       .then(function () { return navigator.clipboard.write([new ClipboardItem({ "image/png": png(2, true) })]); })
       .then(function () { return "PNG copied to the clipboard"; }, function () { throw sorry; });
   };
+  var printBw = false;
   var source = $("trazo-source");
   var exportPop = $("export-menu");
   var actions = {
@@ -581,6 +603,13 @@ export const VIEWER_SCRIPT = String.raw`(function () {
     "png-alpha": function () { return png(2, false).then(function (b) { save(b, slug() + "-transparent.png"); }); },
     svg: function () { save(new Blob([build(true)], { type: "image/svg+xml" }), slug() + ".svg"); },
     pdf: function () {
+      close(exportPop);
+      setTimeout(function () { window.print(); }, 60);
+    },
+    "png-bw": function () { return png(1, true, true).then(function (b) { save(b, slug() + "-bw.png"); }); },
+    "svg-bw": function () { save(new Blob([build(true, true)], { type: "image/svg+xml" }), slug() + "-bw.svg"); },
+    "pdf-bw": function () {
+      printBw = true;
       close(exportPop);
       setTimeout(function () { window.print(); }, 60);
     },
@@ -615,12 +644,14 @@ export const VIEWER_SCRIPT = String.raw`(function () {
     svg.insertAdjacentHTML("beforeend", creditMarkup(base, CREDIT_FONT));
     var grown = creditBox(base);
     svg.setAttribute("viewBox", grown.x + " " + grown.y + " " + grown.w + " " + grown.h);
+    if (printBw) svg.insertAdjacentHTML("afterbegin", '<style class="t-bw">' + bwCss(vars, ".stage svg") + "</style>");
     var light = { dark: "light", dusk: "lagoon" }[restore.t];
     if (light) root.setAttribute("data-theme", light);
   });
   addEventListener("afterprint", function () {
     if (!restore) return;
-    all(".t-credit", svg).forEach(function (el) { el.remove(); });
+    all(".t-credit, .t-bw", svg).forEach(function (el) { el.remove(); });
+    printBw = false;
     show(restore.v);
     root.setAttribute("data-theme", restore.t);
     restore = null;
