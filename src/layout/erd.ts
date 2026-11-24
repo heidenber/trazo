@@ -12,6 +12,7 @@ import {
   type LayoutPort,
 } from "./elk.js";
 import { NOTE_SIZE, noteLines } from "./note.js";
+import { OVERVIEW_BOTTOM, OVERVIEW_GAP, PANEL_COLLAPSED, overviewMetrics } from "./overview.js";
 
 const HEADER = 32;
 /**
@@ -158,6 +159,12 @@ function selfLoop(table: Box, fromY: number, toY: number, index: number): Point[
 }
 
 export async function layoutErd(d: Erd): Promise<Scene> {
+  const groupFamilies = new Map(
+    [...new Set(d.tables.flatMap((t) => (t.group ? [t.group] : [])))].map((group, i) => [
+      group,
+      ["compute", "data", "messaging", "client", "external"][i % 5]!,
+    ]),
+  );
   const sized = new Map(d.tables.map((t) => [t.id, sizeTable(t)]));
   const linked = d.relations.filter((r) => r.from !== r.to);
   const boxes = (at?: Map<string, Box>): LayoutBox[] =>
@@ -205,6 +212,7 @@ export async function layoutErd(d: Erd): Promise<Scene> {
       header: s.header,
       label: block(t.label, box.x + PAD, baseline(box.y, HEADER, TITLE_SIZE), TITLE_SIZE, 600),
       rows: buildRows(s, box),
+      ...(t.group === undefined ? {} : { family: groupFamilies.get(t.group)! }),
     };
     if (s.note.length > 0) {
       node.subtitle = {
@@ -264,6 +272,51 @@ export async function layoutErd(d: Erd): Promise<Scene> {
     nodes,
     edges,
   };
+  if (d.tables.length >= 2) {
+    const top = scene.height + OVERVIEW_GAP;
+    const panelHeight = overviewMetrics(d.relations.length, d.tables.length).panel;
+    const label = new Map(d.tables.map((t) => [t.id, t.label]));
+    const nullable = (r: ErdRelation) =>
+      d.tables.find((t) => t.id === r.from)!.columns.find((c) => c.name === r.fromColumn)!.nullable;
+    const relations = d.relations.map((r) => ({
+      id: r.id,
+      parent: label.get(r.to)!,
+      child: label.get(r.from)!,
+      column: r.fromColumn,
+      cardinality:
+        r.fromEnd === "many" || r.fromEnd === "zero-or-many" ? ("1:N" as const) : ("1:1" as const),
+      optional: nullable(r),
+      self: r.from === r.to,
+    }));
+    scene.overview = {
+      top,
+      panelHeight,
+      collapsedPanelHeight: PANEL_COLLAPSED,
+      collapsedHeight: top + PANEL_COLLAPSED + OVERVIEW_BOTTOM,
+      tables: d.tables.map((t) => ({
+        id: t.id,
+        label: t.label,
+        ...(t.note === undefined ? {} : { note: t.note }),
+        columns: t.columns.length,
+        ...(t.group === undefined ? {} : { group: t.group }),
+        referencedBy: [
+          ...new Set(
+            d.relations
+              .filter((r) => r.to === t.id && r.from !== t.id)
+              .map((r) => label.get(r.from)!),
+          ),
+        ],
+      })),
+      relations,
+      stats: {
+        pk: d.tables.reduce((n, t) => n + t.columns.filter((c) => c.pk).length, 0),
+        fk: relations.length,
+        optional: relations.filter((r) => r.optional).length,
+        self: relations.filter((r) => r.self).length,
+      },
+    };
+    scene.height = top + panelHeight + OVERVIEW_BOTTOM;
+  }
   if (d.description !== undefined) scene.description = d.description;
   return scene;
 }

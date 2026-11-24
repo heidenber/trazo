@@ -42,6 +42,8 @@ const STYLES: { style: SceneEdge["style"]; label: string }[] = [
  * (more than one family or more than one style); grows the scene's height.
  */
 export function addLegend(scene: Scene): Scene {
+  // An ERD has no node kinds; the family of a table is its group color, explained by the overview.
+  if (scene.type === "erd") return scene;
   const usedFamilies = new Set(scene.nodes.map((n) => familyOf(scene, n)));
   const usedStyles = new Set(scene.edges.map((e) => e.style));
   const families = FAMILIES.filter((f) => usedFamilies.has(f));

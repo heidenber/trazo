@@ -13,6 +13,7 @@ import type {
   SceneRow,
   TextBlock,
 } from "../scene.js";
+import { INDEX_ROW, MAX_RELATIONS, overviewMetrics } from "../layout/overview.js";
 import { lineHeight } from "../text/measure.js";
 import { CHIP_PAD, CHIP_RADIUS, CHIP_SIZE, GLYPH_SIZE } from "./card.js";
 import { ICONS } from "./generated/icons.js";
@@ -28,8 +29,10 @@ import {
   shapeMarkup,
 } from "./shapes.js";
 import {
+  GROUPED_TABLE_CSS,
   LEGEND_CSS,
   NOTE_CSS,
+  OVERVIEW_CSS,
   SEQUENCE_CSS,
   SHADOW_CSS,
   LANE_NOTE_CSS,
@@ -221,6 +224,176 @@ function node(n: SceneNode, family: Family | undefined): string {
   return `<g class="${cls.filter(Boolean).join(" ")}" data-id="${escapeXml(n.id)}" data-kind="${escapeXml(n.kind)}"${n.source ? ` data-source="${escapeXml(n.source)}"` : ""} tabindex="0">${desc}${shapeMarkup(n.shape, n)}${n.shape === "table" ? tableBody(n) : chip(n)}${text(n.label, "t-node-label")}${n.subtitle ? text(n.subtitle, "t-node-note") : ""}</g>`;
 }
 
+function short(text: string, max: number): string {
+  return text.length <= max ? text : `${text.slice(0, Math.max(0, max - 1)).trimEnd()}…`;
+}
+
+const OVERVIEW_FAMILIES = ["compute", "data", "messaging", "client", "external"] as const;
+const CHAR = 5.4;
+
+/** The summary panel below an ERD: header button, tiles, key relations and the table index. */
+function overview(scene: Scene): string {
+  const o = scene.overview;
+  if (!o) return "";
+  const m = overviewMetrics(o.relations.length, o.tables.length);
+  const x = 16;
+  const w = scene.width - x * 2;
+  const top = o.top;
+  const px = x + 12;
+  const groups = [...new Set(o.tables.flatMap((t) => (t.group ? [t.group] : [])))];
+  const grouped = groups.length > 0;
+  const family = (group: string) => OVERVIEW_FAMILIES[groups.indexOf(group) % 5]!;
+  const cols = o.tables.reduce((sum, t) => sum + t.columns, 0);
+  const label = (
+    cls: string,
+    lx: number,
+    y: number,
+    size: number,
+    weight: number,
+    body: string,
+    extra = "",
+  ) =>
+    `<text class="t-text ${cls}" x="${num(lx)}" y="${num(y)}" font-size="${size}" font-weight="${weight}"${extra}>${body}</text>`;
+
+  const tileW = (w - 24 - 4 * 8) / 5;
+  const tiles = [
+    [o.tables.length, "tables"],
+    [cols, "columns"],
+    [o.relations.length, "relations"],
+    [`${o.stats.pk} · ${o.stats.fk}`, "PK · FK"],
+    [`${o.stats.optional} · ${o.stats.self}`, "optional · self"],
+  ]
+    .map(([value, name], i) => {
+      const tx = px + i * (tileW + 8);
+      const ty = top + 32;
+      return `<rect class="t-overview-tile" x="${num(tx)}" y="${num(ty)}" width="${num(tileW)}" height="34" rx="9"/>${label("t-overview-value", tx + 10, ty + 15, 14, 600, String(value))}${label("t-overview-muted", tx + 10, ty + 28, 10, 400, String(name))}`;
+    })
+    .join("");
+
+  const shown = o.relations.slice(0, MAX_RELATIONS);
+  const more = o.relations.length - shown.length;
+  const colX = [px + 4, px + 4 + (w - 24) / 2];
+  const rels =
+    o.relations.length === 0
+      ? label("t-overview-muted", colX[0]!, top + m.relRow0, 10.5, 400, "No relations")
+      : shown
+          .map((r, i) => {
+            const note = r.self
+              ? r.optional
+                ? " (self, optional)"
+                : " (self)"
+              : r.optional
+                ? " (optional)"
+                : "";
+            const body = `<tspan font-weight="600">${escapeXml(short(r.parent, 18))}</tspan> <tspan class="t-overview-muted">${r.cardinality}</tspan> <tspan font-weight="600">${escapeXml(short(r.child, 18))}</tspan><tspan class="t-overview-muted"> · ${escapeXml(short(r.column, 20))}${note}</tspan>`;
+            return label(
+              "t-overview-cell",
+              colX[i % 2]!,
+              top + m.relRow0 + Math.floor(i / 2) * m.relStep,
+              10.5,
+              400,
+              body,
+            );
+          })
+          .join("");
+  const moreNote =
+    more > 0
+      ? label(
+          "t-overview-muted",
+          x + w - 14,
+          top + 82,
+          10,
+          400,
+          `+${more} more`,
+          ' text-anchor="end"',
+        )
+      : "";
+
+  // Column offsets from the panel's inner left edge; the description takes the rest of the width.
+  const at = grouped
+    ? { table: 16, group: 128, cols: 268, ref: 282, desc: 420 }
+    : { table: 16, cols: 170, ref: 184, desc: 330 };
+  const descX = px + at.desc;
+  const refChars = Math.floor((at.desc - at.ref - 10) / CHAR);
+  const descChars = Math.max(8, Math.floor((x + w - 12 - descX) / CHAR));
+  const heads = [
+    ["Table", at.table, ""],
+    ...(grouped ? [["Group", (at as { group: number }).group, ""]] : []),
+    ["Columns", at.cols, ' text-anchor="end"'],
+    ["Referenced by", at.ref, ""],
+    ["Description", at.desc, ""],
+  ] as [string, number, string][];
+  const head = heads
+    .map(([name, off, extra]) =>
+      label("t-overview-heading", px + off, top + m.colHead, 10, 600, name, extra),
+    )
+    .join("");
+  const rows = o.tables
+    .map((t, i) => {
+      const y = top + m.rowTop + i * INDEX_ROW;
+      const base = y + 12;
+      const band =
+        i % 2 === 1
+          ? `<rect class="t-overview-row" x="${px - 2}" y="${num(y)}" width="${num(w - 20)}" height="${INDEX_ROW}" rx="5"/>`
+          : "";
+      const dot = t.group
+        ? `<g class="t-overview-chip t-fam-${family(t.group)}"><circle cx="${px + 7}" cy="${num(y + 9)}" r="3.6"/></g>`
+        : "";
+      const nameChars = grouped ? 14 : 22;
+      const parts = [
+        label(
+          "t-overview-cell",
+          px + at.table,
+          base,
+          11,
+          600,
+          escapeXml(short(t.label, nameChars)),
+        ),
+        t.group
+          ? label(
+              "t-overview-muted",
+              px + (at as { group: number }).group,
+              base,
+              10.5,
+              400,
+              escapeXml(short(t.group, 16)),
+            )
+          : "",
+        label(
+          "t-overview-cell",
+          px + at.cols,
+          base,
+          11,
+          400,
+          String(t.columns),
+          ' text-anchor="end"',
+        ),
+        label(
+          "t-overview-muted t-overview-ref",
+          px + at.ref,
+          base,
+          10.5,
+          400,
+          escapeXml(t.referencedBy.length ? short(t.referencedBy.join(", "), refChars) : "—"),
+        ),
+        label(
+          "t-overview-muted",
+          descX,
+          base,
+          10.5,
+          400,
+          escapeXml(short(t.note ?? "—", descChars)),
+        ),
+      ];
+      return `${band}${dot}${parts.join("")}`;
+    })
+    .join("");
+
+  const heading = (name: string, hy: number) =>
+    label("t-overview-heading", px + 4, hy, 10, 600, name);
+  return `<g class="t-overview" data-overview-expanded-height="${num(scene.height)}" data-overview-collapsed-height="${num(o.collapsedHeight)}" data-overview-panel-expanded="${num(o.panelHeight)}" data-overview-panel-collapsed="${num(o.collapsedPanelHeight)}"><rect class="t-overview-panel" x="${x}" y="${num(top)}" width="${num(w)}" height="${num(o.panelHeight)}" rx="12"/><g class="t-overview-control" role="button" tabindex="0" aria-expanded="true"><rect class="t-overview-hit" x="${x + 4}" y="${num(top + 3)}" width="${num(w - 8)}" height="24" rx="8"/>${label("t-overview-title", x + 32, top + 19, 11, 600, "Overview")}${label("t-overview-muted", x + 100, top + 19, 10.5, 400, `${o.tables.length} tables · ${cols} columns · ${o.relations.length} relations`)}<path class="t-overview-chevron" data-viewer-only="true" d="M${x + 12} ${num(top + 11)}l5 5 5-5"/></g><g class="t-overview-body">${tiles}${heading("KEY RELATIONS", top + 82)}${moreNote}${rels}${heading("TABLE INDEX", top + m.indexHead)}${head}<line class="t-overview-line" x1="${px}" y1="${num(top + m.line)}" x2="${x + w - 12}" y2="${num(top + m.line)}"/>${rows}</g></g>`;
+}
+
 const needsShapeCss = (scene: Scene) =>
   scene.nodes.some((n) => n.shape !== "box") || scene.groups.some((g) => g.variant === "lane");
 
@@ -246,16 +419,25 @@ export function renderSvg(scene: Scene): string {
   });
   const families = scene.nodes.map((n) => familyOf(scene, n));
   const shadowed = scene.nodes.some((n) => SHADOWED.includes(n.shape));
+  const overviewGroups = [
+    ...new Set(scene.overview?.tables.flatMap((t) => (t.group ? [t.group] : [])) ?? []),
+  ];
+  const overviewFamilies = overviewGroups.map(
+    (_, i) => ["compute", "data", "messaging", "client", "external"][i % 5] as Family,
+  );
   const css =
     (needsShapeCss(scene) ? SVG_CSS + SHAPE_CSS : SVG_CSS) +
     (shadowed ? SHADOW_CSS : "") +
     familyCss([
       ...families.filter((f): f is Family => f !== undefined),
       ...(scene.legend ?? []).flatMap((i) => (i.family ? [i.family as Family] : [])),
+      ...overviewFamilies,
     ]) +
+    (scene.overview ? OVERVIEW_CSS : "") +
     (scene.legend ? LEGEND_CSS : "") +
     (scene.groups.some((g) => g.note) ? LANE_NOTE_CSS : "") +
     (needsTableCss(scene) ? TABLE_CSS : "") +
+    (scene.nodes.some((n) => n.shape === "table" && n.family) ? GROUPED_TABLE_CSS : "") +
     (scene.nodes.some((n) => n.subtitle) ? NOTE_CSS : "") +
     (seq ? SEQUENCE_CSS : "");
   const parts = [
@@ -272,6 +454,7 @@ export function renderSvg(scene: Scene): string {
     ...scene.edges.map(edgeLabel),
     ...scene.nodes.map((n, i) => node(n, families[i])),
     ...(scene.legend ? [legend(scene.legend)] : []),
+    overview(scene),
     "</svg>",
   ];
   return parts.filter(Boolean).join("\n");

@@ -75,7 +75,7 @@ trazo hace una sola cosa: un agente (o tú) describe el diagrama, y el código l
 - La entrada no tiene coordenadas, tamaños ni estilos, así que hay poco para leer y poco que pueda fallar. Antes de escribir un diagrama, un agente lee `trazo schema` y `trazo example` de ese tipo: unos 700 tokens, unos 1.100 con la skill (estimado como caracteres / 4).
 - Los errores nombran la ruta exacta dentro del JSON y traen una pista, así que un agente puede corregir su entrada a partir del mensaje. En las ejecuciones de agentes registradas, Claude Sonnet 5.5 obtuvo un diagrama válido en el primer `make` en todas las ejecuciones y Claude Haiku 4.5 en el 92 a 96%; todas terminaron con un diagrama válido.
 - El mismo JSON siempre da el mismo HTML, byte por byte, sin navegador y sin red.
-- Las claves foráneas del ERD apuntan a columnas, no solo a tablas.
+- Las claves foráneas del ERD apuntan a columnas, no solo a tablas. Los ERD con dos o más tablas también incluyen un overview colapsable dentro del SVG con conteos, relaciones clave e índice de tablas; las exportaciones conservan su estado expandido o colapsado.
 
 Números y método: [bench/README.md](bench/README.md). En el mismo benchmark (Codex, gpt-6-luna, 8 tareas, 3 ejecuciones cada una): el costo en tokens de Mermaid fue entre un 35 y un 40% menor que el de trazo (con la salida ponderada entre 4 y 8 veces la entrada y la entrada en caché a un décimo; ver la sección de costo en tokens), y 5 de 24 ejecuciones de Mermaid necesitaron una corrección tras un error de sintaxis.
 
@@ -133,7 +133,7 @@ trazo example erd | trazo make - -o erd.html
 
 - `architecture`: servicios, almacenes, colas y personas, agrupados en cajas. `trazo example architecture`
 - `workflow`: pasos y decisiones, opcionalmente en carriles. `trazo example workflow`
-- `erd`: tablas, columnas y claves foráneas, con terminaciones de pata de gallo. `trazo example erd`
+- `erd`: tablas, columnas y claves foráneas, con terminaciones de pata de gallo; los ERD de varias tablas agregan un overview con índice de tablas. `trazo example erd`
 - `sequence`: mensajes entre participantes, con notas y fragmentos `alt`, `opt` y `loop`. `trazo example sequence`
 
 `trazo schema <type>` imprime los campos de cada tipo en unas 40 líneas.

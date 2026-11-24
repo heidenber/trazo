@@ -55,6 +55,8 @@ export interface SceneNode extends Box {
   source?: string;
   /** Id of the group or lane that directly contains the node. */
   parent?: string;
+  /** Optional family tint chosen by a layout (ERD table groups). */
+  family?: string;
   /** Table nodes only. */
   rows?: SceneRow[];
   /** Table header height. */
@@ -105,6 +107,35 @@ export interface SceneLegendItem {
   label: TextBlock;
 }
 
+/** ERD-only summary rendered below the diagram when it has two or more tables. */
+export interface SceneOverview {
+  top: number;
+  /** Panel height expanded and collapsed; the scene height adds the gaps around the panel. */
+  panelHeight: number;
+  collapsedPanelHeight: number;
+  /** Scene height when the panel is collapsed. */
+  collapsedHeight: number;
+  tables: {
+    id: string;
+    label: string;
+    note?: string;
+    columns: number;
+    group?: string;
+    referencedBy: string[];
+  }[];
+  /** One per foreign key: `parent` is the referenced table, `child` holds the fk column. */
+  relations: {
+    id: string;
+    parent: string;
+    child: string;
+    column: string;
+    cardinality: "1:N" | "1:1";
+    optional: boolean;
+    self: boolean;
+  }[];
+  stats: { pk: number; fk: number; optional: number; self: number };
+}
+
 export interface Scene {
   type: string;
   title: string;
@@ -119,4 +150,5 @@ export interface Scene {
   /** Present only in sequence scenes. */
   lifelines?: SceneLifeline[];
   legend?: SceneLegendItem[];
+  overview?: SceneOverview;
 }

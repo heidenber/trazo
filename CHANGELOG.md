@@ -6,6 +6,7 @@ All notable changes to trazo are listed here. The format follows [Keep a Changel
 
 ### Added
 
+- Multi-table ERDs now carry an Overview panel inside the SVG, below the diagram: counts, derived key relations and a table index with column and reference counts plus clipped table notes. It is softly tinted and framed in every theme. When tables use the optional `group`, the index adds a Group column with a chip from the existing family palette in group order; authors still write no colors. The Overview defaults open in the viewer, is keyboard-collapsible, shrinks the SVG when closed, and every export keeps the state currently on screen. Single-table ERDs stay unchanged.
 - A small muted "Made with trazo" at the bottom right of every viewer export (PNG 1x and 2x, transparent PNG, SVG, copy PNG, copy SVG and the printed PDF), in a strip added below the diagram so it never covers the legend or any node. The page footer stays, and the diagram SVG inside the page is unchanged; copying the JSON source adds nothing.
 - Optional JSON fields: `detail` on workflow steps and ERD tables (longer text for the viewer's detail card, which falls back to `note`; it is never drawn in the SVG, so exports do not carry it), `note` on workflow lanes (a muted role line under the lane name, clipped with "…" to the header width) and `group` on ERD tables (stored and validated; rendered later). The on-canvas note keeps its 3-line cap. Wrong types are rejected with the usual `schema/type` error.
 - A workflow with more than 6 lanes gets the `workflow/many-lanes` warning (non-fatal).

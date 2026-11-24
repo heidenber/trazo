@@ -40,6 +40,7 @@ const WORKFLOW: Record<string, Family> = {
 
 /** Color family of a node; notes and ERD tables have none. */
 export function familyOf(scene: Scene, node: SceneNode): Family | undefined {
+  if ((FAMILIES as readonly string[]).includes(node.family ?? "")) return node.family as Family;
   if (node.shape === "note" || node.shape === "table") return undefined;
   switch (scene.type) {
     case "workflow":
