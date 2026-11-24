@@ -108,12 +108,35 @@ export const TABLE_CSS = `
 .t-end-dot { fill: var(--t-bg, ${B.bg}); }
 `;
 
+/** Appended only when an ERD table has a group-family tint. */
+export const GROUPED_TABLE_CSS = `.t-tint .t-table-head { fill: var(--t-f-fill, ${B["table-head"]}); }
+`;
+
 /**
  * Appended only when a node shows its note, so diagrams without notes stay byte-identical.
  * The muted color is checked at 4.5:1 on every card, tint and table header in every theme.
  */
 export const NOTE_CSS = `
 .t-node-note { fill: var(--t-muted, ${B.muted}); }
+`;
+
+/** Appended only to ERDs with an overview panel. The hit rect needs its own fill rule: an SVG rect defaults to black. */
+export const OVERVIEW_CSS = `
+.t-overview-panel { fill: var(--t-group-fill, ${B["group-fill"]}); fill-opacity: 0.62; stroke: var(--t-group-stroke, ${B["group-stroke"]}); stroke-width: 1; }
+.t-overview-tile { fill: var(--t-bg, ${B.bg}); stroke: var(--t-border, ${B.border}); stroke-width: 1; }
+.t-overview-row { fill: var(--t-bg, ${B.bg}); fill-opacity: 0.7; stroke: none; }
+.t-overview-title, .t-overview-value, .t-overview-cell { fill: var(--t-text, ${B.text}); }
+.t-overview-muted, .t-overview-heading { fill: var(--t-muted, ${B.muted}); }
+.t-overview-heading { letter-spacing: 0.04em; }
+.t-overview-line { stroke: var(--t-group-stroke, ${B["group-stroke"]}); stroke-width: 1; }
+.t-overview-chip { fill: var(--t-f-stroke, ${B["node-stroke"]}); stroke: none; }
+.t-overview-chevron { fill: none; stroke: var(--t-muted, ${B.muted}); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.t-overview-body[hidden] { display: none; }
+.t-overview-hit { fill: var(--t-bg, ${B.bg}); fill-opacity: 0; stroke: none; }
+.t-overview-control { cursor: pointer; outline: none; }
+.t-overview-control:hover .t-overview-hit { fill-opacity: 0.6; }
+.t-overview-control:focus-visible .t-overview-hit { fill-opacity: 0.6; stroke: var(--t-accent, ${B.accent}); stroke-width: 2; }
+.t-overview-control[aria-expanded="false"] .t-overview-chevron { transform: rotate(-90deg); transform-box: fill-box; transform-origin: center; }
 `;
 
 /** Appended only to scenes with a legend. */

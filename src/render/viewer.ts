@@ -63,6 +63,9 @@ export const VIEWER_SCRIPT = String.raw`(function () {
   var NS = "http://www.w3.org/2000/svg";
   var vb = svg.viewBox.baseVal;
   var base = { x: vb.x, y: vb.y, w: vb.width, h: vb.height };
+  var overview = svg.querySelector(".t-overview");
+  var overviewControl = svg.querySelector(".t-overview-control");
+  var overviewBody = svg.querySelector(".t-overview-body");
   var view = base;
   var vr = null;
   var toSvg = function (cx, cy) {
@@ -94,6 +97,23 @@ export const VIEWER_SCRIPT = String.raw`(function () {
   var zoomMid = function (f) { show(zoomAt(view, base, view.x + view.w / 2, view.y + view.h / 2, f)); };
   var pan = function (fx, fy) { show(panBy(view, fx * view.w, fy * view.h)); };
   if (window.ResizeObserver) new ResizeObserver(sync).observe(stage);
+
+  if (overview && overviewControl && overviewBody) {
+    var setOverview = function (expanded) {
+      overviewBody.hidden = !expanded;
+      svg.querySelector(".t-overview-panel").setAttribute("height", overview.getAttribute(expanded ? "data-overview-panel-expanded" : "data-overview-panel-collapsed"));
+      overviewControl.setAttribute("aria-expanded", String(expanded));
+      base = { x: base.x, y: base.y, w: base.w, h: Number(overview.getAttribute(expanded ? "data-overview-expanded-height" : "data-overview-collapsed-height")) };
+      show(base);
+    };
+    overviewControl.addEventListener("click", function (e) {
+      e.stopPropagation();
+      setOverview(overviewControl.getAttribute("aria-expanded") !== "true");
+    });
+    overviewControl.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); overviewControl.click(); }
+    });
+  }
 
   var minimap = function () {
     var k = Math.min(176 / base.w, 104 / base.h);
@@ -468,6 +488,10 @@ export const VIEWER_SCRIPT = String.raw`(function () {
     copy.setAttribute("width", box.w);
     copy.setAttribute("height", box.h);
     copy.classList.remove("t-dim", "t-find");
+    all(".t-overview-chevron", copy).forEach(function (el) { el.remove(); });
+    all(".t-overview-control", copy).forEach(function (el) {
+      el.removeAttribute("role"); el.removeAttribute("tabindex"); el.removeAttribute("aria-expanded"); el.classList.remove("t-overview-control");
+    });
     all(".t-near, .t-hit, .t-pick, .t-cur", copy).forEach(function (el) {
       el.classList.remove("t-near", "t-hit", "t-pick", "t-cur");
     });

@@ -75,7 +75,7 @@ trazo does one job: an agent (or you) describes the diagram, and code lays it ou
 - The input has no coordinates, sizes or styles, so there is little to read and little to get wrong. Before writing a diagram, an agent reads `trazo schema` and `trazo example` for its type: about 700 tokens, about 1,100 with the skill (estimated as characters / 4).
 - Errors name the exact path in the JSON and carry a hint, so an agent can fix its input from the message. In the recorded agent runs, Claude Sonnet 5.5 got a valid diagram on the first `make` in every run and Claude Haiku 4.5 in 92 to 96% of runs; every run ended with a valid diagram.
 - The same JSON always gives the same HTML, byte for byte, with no browser and no network.
-- ERD foreign keys point at columns, not only at tables.
+- ERD foreign keys point at columns, not only at tables. ERDs with two or more tables also include a collapsible in-SVG overview with counts, key relations and a table index; exports keep its current expanded or collapsed state.
 
 Numbers and method: [bench/README.md](bench/README.md). Same bench (Codex, gpt-6-luna, 8 tasks, 3 runs each): Mermaid's token cost was about 35–40% lower than trazo's (output weighted 4 to 8 times input, cached input at a tenth; see the token cost section), and 5 of 24 Mermaid runs needed a fix after a syntax error.
 
@@ -133,7 +133,7 @@ trazo example erd | trazo make - -o erd.html
 
 - `architecture`: services, stores, queues and people, grouped in boxes. `trazo example architecture`
 - `workflow`: steps and decisions, optionally in lanes. `trazo example workflow`
-- `erd`: tables, columns and foreign keys, with crow's foot ends. `trazo example erd`
+- `erd`: tables, columns and foreign keys, with crow's foot ends; multi-table ERDs add an overview with a table index. `trazo example erd`
 - `sequence`: messages between participants, with notes and `alt`, `opt` and `loop` fragments. `trazo example sequence`
 
 `trazo schema <type>` prints the fields of each type in about 40 lines.
