@@ -233,11 +233,19 @@ Raw runs: `bench/results/2026-11-02-agent-claude-code-haiku-4-5-skill-content.js
 
 Two no-skill runs were first recorded with `firstTryOk: false`: the agent chained `trazo make` with an `rm` that the sandbox refused, then ran `make` again and it passed. The parser was fixed to skip refused calls only, and every run was recomputed from its `stream.jsonl`; only those two values changed.
 
+On 2026-11-23 Haiku 4.5 was run again on the skill condition with the current `main` (the redesigned output: cards, visible notes, four themes and the new viewer), and every diagram was also checked by the visual judge (`bench/judge-html.mjs`):
+
+| Agent | Model | Date | Condition | Runs | First-try rate | Final success | Median repairs | Median total input tokens | Median output tokens | Median seconds |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Claude Code 2.1.308 | claude-haiku-4-5 | 2026-11-23 | skill | 24 | 92% | 100% | 0 | 120,666 | 2,167 | 25.3 |
+
+Raw runs: `bench/results/2026-11-23-agent-claude-code-haiku-4-5-judged.json`. The judge passed 21 of 24 diagrams. Two `arch-shop` runs used other words for parts the task names ("Web Application", "PostgreSQL DB"), so the judge reported them as missing; the rule was fixed before the run and was not changed afterwards. One `wf-onboarding` run had two edge labels drawn on top of each other where two edges cross; that is fixed in [#47](https://github.com/heidenber/trazo/pull/47). The two first-try misses (`wf-expenses`, `seq-oauth`) recovered with one and three edits. The redesign did not make the runs slower or more expensive than on 2026-11-02.
+
 Deterministic results are in `bench/results/*-deterministic.json`.
 
 ## trazo across agents
 
-trazo only, same 8 tasks. First-try is the share of runs whose first `make` exited with 0; final is the share that ended with a valid diagram. The Claude Code rows are the reruns after H7 (detailed tables in [Results](#results)); the Codex rows are runs with trazo 0.1.1 from npm.
+trazo only, same 8 tasks. First-try is the share of runs whose first `make` exited with 0; final is the share that ended with a valid diagram. The Claude Code rows are the reruns after H7 and the judged run of 2026-11-23 (detailed tables in [Results](#results)); the Codex rows are runs with trazo 0.1.1 from npm.
 
 | Agent | Model | trazo | Condition | Runs | First-try | Final |
 |---|---|---|---|---|---|---|
@@ -245,6 +253,7 @@ trazo only, same 8 tasks. First-try is the share of runs whose first `make` exit
 | Claude Code 2.1.308 | claude-sonnet-5-5 | 0.1.0 | no-skill | 24 | 100% | 100% |
 | Claude Code 2.1.308 | claude-haiku-4-5 | 0.1.0 | skill | 24 | 96% | 100% |
 | Claude Code 2.1.308 | claude-haiku-4-5 | 0.1.0 | no-skill | 24 | 92% | 100% |
+| Claude Code 2.1.308 | claude-haiku-4-5 | 0.1.4 + main | skill | 24 | 92% | 100% |
 | Codex CLI 0.166.0 | gpt-6-luna | 0.1.1 | skill | 23 | 100% (23/23) | 100% (23/23) |
 | Codex CLI 0.166.0 | gpt-6-luna | 0.1.1 | no-skill | 23 | 100% (23/23) | 100% (23/23) |
 
