@@ -837,3 +837,70 @@ describe("edge labels never sit on a step", () => {
     }
   });
 });
+
+describe("edge labels never sit on another edge's line", () => {
+  // The interior of the box is crossed by the segment (axis-parallel routes, 0.5 px slack).
+  const crosses = (box: Box, a: Point, b: Point) => {
+    const x0 = Math.min(a.x, b.x);
+    const x1 = Math.max(a.x, b.x);
+    const y0 = Math.min(a.y, b.y);
+    const y1 = Math.max(a.y, b.y);
+    return (
+      x0 < box.x + box.w - 0.5 && x1 > box.x + 0.5 && y0 < box.y + box.h - 0.5 && y1 > box.y + 0.5
+    );
+  };
+
+  // Reduced from the expense approval workflow: the "rejected" label under the second
+  // decision sat on the run of the Notify Rejection -> Rejected edge.
+  const expenses = (extra: object) =>
+    workflow({
+      ...extra,
+      lanes: [
+        { id: "manager", label: "Manager", steps: ["start", "manager_review", "rejected_manager"] },
+        {
+          id: "finance",
+          label: "Finance",
+          steps: ["finance_review", "rejected_finance", "approved"],
+        },
+        { id: "end_lane", label: "End State", steps: ["rejected", "end"] },
+      ],
+      steps: [
+        { id: "start", kind: "start" },
+        { id: "manager_review", label: "Review Expense", kind: "decision" },
+        { id: "rejected_manager", label: "Notify Rejection" },
+        { id: "finance_review", label: "Review & Approve", kind: "decision" },
+        { id: "rejected_finance", label: "Notify Rejection" },
+        { id: "approved", label: "Expense Approved" },
+        { id: "rejected", label: "Rejected" },
+        { id: "end", kind: "end" },
+      ],
+      edges: [
+        "start -> manager_review",
+        "manager_review -> finance_review: approved",
+        "manager_review -> rejected_manager: rejected",
+        "rejected_manager -> rejected",
+        "finance_review -> approved: approved",
+        "finance_review -> rejected_finance: rejected",
+        "rejected_finance -> rejected",
+        "approved -> end",
+        "rejected -> end",
+      ],
+    });
+
+  it("keeps every label off the route of every other edge, in columns and rows", async () => {
+    for (const extra of [{ direction: "down" }, { direction: "right" }, {}]) {
+      const scene = await layoutWorkflow(expenses(extra));
+      for (const [i, e] of scene.edges.entries()) {
+        if (!e.label) continue;
+        for (const [j, o] of scene.edges.entries()) {
+          if (i === j) continue;
+          for (let k = 1; k < o.points.length; k++)
+            expect(
+              crosses(e.label.box, o.points[k - 1]!, o.points[k]!),
+              `${JSON.stringify(extra)} ${e.from}->${e.to} / ${o.from}->${o.to}`,
+            ).toBe(false);
+        }
+      }
+    }
+  });
+});
