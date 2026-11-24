@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 Heidenber Palacio Garzón
 
+import { FONT_FAMILY } from "../text/measure.js";
 import { THEME_VARS } from "./theme.js";
 
 export interface View {
@@ -22,6 +23,24 @@ export function panBy(view: View, dx: number, dy: number): View {
   return { x: view.x + dx, y: view.y + dy, w: view.w, h: view.h };
 }
 
+/** Height of the strip below the diagram that carries the credit in exports and print, in SVG units. */
+export const CREDIT_STRIP = 28;
+
+/** Font stack of the credit: the page's own (Inter, embedded in exports). */
+export const CREDIT_FONT = `'${FONT_FAMILY}',system-ui,-apple-system,'Segoe UI',sans-serif`;
+
+/** The viewBox of an export: the diagram box grown by the credit strip at the bottom. */
+export function creditBox(base: View): View {
+  return { x: base.x, y: base.y, w: base.w, h: base.h + CREDIT_STRIP };
+}
+
+/** The small muted credit, bottom right inside the strip below the diagram. Not part of the inline SVG. */
+export function creditMarkup(base: View, font: string): string {
+  const x = base.x + base.w - 12;
+  const y = base.y + base.h + CREDIT_STRIP - 10;
+  return `<text class="t-credit" x="${x}" y="${y}" text-anchor="end" font-size="11" style="fill:var(--t-muted);font-family:${font}">Made with trazo</text>`;
+}
+
 // Runs in the page, so the pure functions above are embedded as source text.
 // Sections: view, minimap, hover and detail card, search, keys, menus, theme, export.
 export const VIEWER_SCRIPT = String.raw`(function () {
@@ -37,6 +56,10 @@ export const VIEWER_SCRIPT = String.raw`(function () {
   };
   ${zoomAt.toString()}
   ${panBy.toString()}
+  var CREDIT_STRIP = ${CREDIT_STRIP};
+  var CREDIT_FONT = ${JSON.stringify(CREDIT_FONT)};
+  ${creditBox.toString()}
+  ${creditMarkup.toString()}
   var NS = "http://www.w3.org/2000/svg";
   var vb = svg.viewBox.baseVal;
   var base = { x: vb.x, y: vb.y, w: vb.width, h: vb.height };
@@ -440,9 +463,10 @@ export const VIEWER_SCRIPT = String.raw`(function () {
   var vars = ${JSON.stringify(THEME_VARS)};
   var build = function (bg) {
     var copy = svg.cloneNode(true);
-    copy.setAttribute("viewBox", base.x + " " + base.y + " " + base.w + " " + base.h);
-    copy.setAttribute("width", base.w);
-    copy.setAttribute("height", base.h);
+    var box = creditBox(base);
+    copy.setAttribute("viewBox", box.x + " " + box.y + " " + box.w + " " + box.h);
+    copy.setAttribute("width", box.w);
+    copy.setAttribute("height", box.h);
     copy.classList.remove("t-dim", "t-find");
     all(".t-near, .t-hit, .t-pick, .t-cur", copy).forEach(function (el) {
       el.classList.remove("t-near", "t-hit", "t-pick", "t-cur");
@@ -459,7 +483,7 @@ export const VIEWER_SCRIPT = String.raw`(function () {
     copy.insertBefore(style, copy.firstChild);
     var note = Array.from(document.childNodes).find(function (n) { return n.nodeType === 8; });
     if (note) copy.insertBefore(document.createComment(note.data), copy.firstChild);
-    return new XMLSerializer().serializeToString(copy);
+    return new XMLSerializer().serializeToString(copy).replace(/<\/svg>\s*$/, function (end) { return creditMarkup(base, CREDIT_FONT) + end; });
   };
   var slug = function () {
     var s = document.title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "");
@@ -477,10 +501,11 @@ export const VIEWER_SCRIPT = String.raw`(function () {
       var url = URL.createObjectURL(new Blob([build(bg)], { type: "image/svg+xml" }));
       var img = new Image();
       img.onload = function () {
-        var k = Math.min(scale, 8192 / Math.max(base.w, base.h));
+        var box = creditBox(base);
+        var k = Math.min(scale, 8192 / Math.max(box.w, box.h));
         var c = document.createElement("canvas");
-        c.width = Math.round(base.w * k);
-        c.height = Math.round(base.h * k);
+        c.width = Math.round(box.w * k);
+        c.height = Math.round(box.h * k);
         var g = c.getContext("2d");
         if (bg) {
           g.fillStyle = getComputedStyle(root).getPropertyValue("--t-bg");
@@ -560,11 +585,16 @@ export const VIEWER_SCRIPT = String.raw`(function () {
   addEventListener("beforeprint", function () {
     restore = { v: view, t: root.getAttribute("data-theme") };
     show(base);
+    // The credit joins the printed diagram only; the page footer is hidden in print.
+    svg.insertAdjacentHTML("beforeend", creditMarkup(base, CREDIT_FONT));
+    var grown = creditBox(base);
+    svg.setAttribute("viewBox", grown.x + " " + grown.y + " " + grown.w + " " + grown.h);
     var light = { dark: "light", dusk: "lagoon" }[restore.t];
     if (light) root.setAttribute("data-theme", light);
   });
   addEventListener("afterprint", function () {
     if (!restore) return;
+    all(".t-credit", svg).forEach(function (el) { el.remove(); });
     show(restore.v);
     root.setAttribute("data-theme", restore.t);
     restore = null;
