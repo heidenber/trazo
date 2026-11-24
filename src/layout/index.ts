@@ -4,13 +4,14 @@
 import type { Diagram } from "../model/index.js";
 import type { Scene } from "../scene.js";
 import { layoutArchitecture } from "./architecture.js";
+import { layoutChen } from "./chen.js";
 import { layoutErd } from "./erd.js";
 import { addLegend } from "./legend.js";
 import { layoutSequence } from "./sequence.js";
 import { layoutWorkflow } from "./workflow.js";
 
 async function layoutScene(diagram: Diagram): Promise<Scene> {
-  if (diagram.type === "chen") throw new Error("chen diagrams have no layout yet");
+  if (diagram.type === "chen") return layoutChen(diagram);
   if (diagram.type === "sequence") return layoutSequence(diagram);
   if (diagram.type === "erd") return layoutErd(diagram);
   return diagram.type === "workflow" ? layoutWorkflow(diagram) : layoutArchitecture(diagram);

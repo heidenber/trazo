@@ -3,7 +3,7 @@
 
 import { checkGeometry } from "./check/geometry.js";
 import { layoutDiagram } from "./layout/index.js";
-import { error_, type ThemeName } from "./model/common.js";
+import type { ThemeName } from "./model/common.js";
 import { validateDiagram, type Diagram } from "./model/index.js";
 import { parseJson } from "./parse.js";
 import { renderHtml } from "./render/html.js";
@@ -48,21 +48,6 @@ export async function make(
 ): Promise<MakeResult> {
   const { diagram, issues } = validate(input);
   if (hasErrors(issues) || diagram === undefined) return { ok: false, issues };
-  if (diagram.type === "chen") {
-    // Layout and render land with T11.2; until then make says so instead of failing inside.
-    return {
-      ok: false,
-      issues: [
-        ...issues,
-        error_(
-          "chen/render-unavailable",
-          "$",
-          "chen diagrams cannot be rendered yet",
-          '"trazo check" validates them already; rendering arrives in a later release',
-        ),
-      ],
-    };
-  }
   const scene = await layoutDiagram(diagram);
   const html = renderHtml(
     options.theme === undefined ? scene : { ...scene, theme: options.theme },

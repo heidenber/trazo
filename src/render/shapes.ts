@@ -14,6 +14,9 @@ const ARROW_LEG = 9;
 const END_LEG = 20;
 const END_INSET = 3;
 const SUBPROCESS_INSET = 8;
+/** Gap between the two outlines of a Chen double shape; the layout sizes the outer box with it. */
+export const DOUBLE_GAP = 5;
+const ENTITY_RADIUS = 3;
 const NOTE_FOLD = 10;
 
 export const num = (n: number) => String(Math.round(n * 100) / 100);
@@ -62,9 +65,52 @@ export function pathData(points: Point[], radius = EDGE_RADIUS, ends = false): s
 const line = (x1: number, y1: number, x2: number, y2: number, cls: string) =>
   `<line class="${cls}" x1="${num(x1)}" y1="${num(y1)}" x2="${num(x2)}" y2="${num(y2)}"/>`;
 
+const ellipse = (b: Box, cls: string) =>
+  `<ellipse class="${cls}" cx="${num(b.x + b.w / 2)}" cy="${num(b.y + b.h / 2)}" rx="${num(b.w / 2)}" ry="${num(b.h / 2)}"/>`;
+
+const diamond = (b: Box, cls: string) => {
+  const cx = b.x + b.w / 2;
+  const cy = b.y + b.h / 2;
+  const pts = [
+    [cx, b.y],
+    [b.x + b.w, cy],
+    [cx, b.y + b.h],
+    [b.x, cy],
+  ];
+  return `<polygon class="${cls}" points="${pts.map(([x, y]) => `${num(x!)},${num(y!)}`).join(" ")}"/>`;
+};
+
+const inset = (b: Box, d: number): Box => ({
+  x: b.x + d,
+  y: b.y + d,
+  w: b.w - 2 * d,
+  h: b.h - 2 * d,
+});
+
+/** The inner diamond of an identifying relationship: same slopes, its edges DOUBLE_GAP inside the outer ones. */
+function innerDiamond(b: Box): Box {
+  const a = b.w / 2;
+  const h = b.h / 2;
+  const k = 1 - (DOUBLE_GAP * Math.hypot(a, h)) / (a * h);
+  return { x: b.x + a * (1 - k), y: b.y + h * (1 - k), w: b.w * k, h: b.h * k };
+}
+
 export function shapeMarkup(shape: NodeShape, b: Box): string {
   const cls = "t-node-box";
+  const inner = `${cls} t-node-inner`;
   switch (shape) {
+    case "entity":
+      return rect(b, cls, ENTITY_RADIUS);
+    case "weak-entity":
+      return rect(b, cls, ENTITY_RADIUS) + rect(inset(b, DOUBLE_GAP), inner, ENTITY_RADIUS / 2);
+    case "relationship":
+      return diamond(b, cls);
+    case "identifying":
+      return diamond(b, cls) + diamond(innerDiamond(b), inner);
+    case "attribute":
+      return ellipse(b, cls);
+    case "multivalued":
+      return ellipse(b, cls) + ellipse(inset(b, DOUBLE_GAP), inner);
     case "box":
       return rect(b, cls, CARD_RADIUS, SHADOW);
     case "pill":

@@ -38,11 +38,23 @@ const WORKFLOW: Record<string, Family> = {
   wait: "wait",
 };
 
+// Chen: one family per element type, drawn from the same palette as the other diagrams.
+const CHEN: Partial<Record<SceneNode["shape"], Family>> = {
+  entity: "compute",
+  "weak-entity": "compute",
+  relationship: "messaging",
+  identifying: "messaging",
+  attribute: "data",
+  multivalued: "data",
+};
+
 /** Color family of a node; notes and ERD tables have none. */
 export function familyOf(scene: Scene, node: SceneNode): Family | undefined {
   if ((FAMILIES as readonly string[]).includes(node.family ?? "")) return node.family as Family;
   if (node.shape === "note" || node.shape === "table") return undefined;
   switch (scene.type) {
+    case "chen":
+      return CHEN[node.shape];
     case "workflow":
       return WORKFLOW[node.kind] ?? "task";
     case "sequence":

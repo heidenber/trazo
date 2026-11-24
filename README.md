@@ -81,7 +81,7 @@ Numbers and method: [bench/README.md](bench/README.md). Same bench (Codex, gpt-6
 
 What it does not do:
 
-- Only four types: architecture, workflow, ERD and sequence. Mermaid, PlantUML and D2 cover many more.
+- Only five types: architecture, workflow, ERD, sequence and Chen. Mermaid, PlantUML and D2 cover many more.
 - No inline rendering in Markdown. GitHub, GitLab and many editors render Mermaid blocks directly; with trazo you open the HTML or export SVG or PNG from it.
 - No editing in the output: change the JSON and run `make` again.
 - No Mermaid import, no cloud or brand icons, no explainer pages, no browser check of the result.
@@ -135,7 +135,7 @@ trazo example erd | trazo make - -o erd.html
 - `workflow`: steps and decisions, optionally in lanes. `trazo example workflow`
 - `erd`: tables, columns and foreign keys, with crow's foot ends; multi-table ERDs add an overview with a table index. `trazo example erd`
 - `sequence`: messages between participants, with notes and `alt`, `opt` and `loop` fragments. `trazo example sequence`
-- `chen`: Chen entity-relationship diagrams for teaching: entities and weak entities, attributes (key, partial key, multivalued, derived, composite), binary relationships with 1, N and M cardinality and total or partial participation. Ternary relationships are rejected for now. `trazo check` validates it and `trazo example chen` prints the University example; `trazo make` does not draw it yet and exits 1 with `chen diagrams cannot be rendered yet`. `trazo example chen`
+- `chen`: Chen entity-relationship diagrams for teaching: entities and weak entities, attributes (key, partial key, multivalued, derived, composite), binary relationships with 1, N and M cardinality and total or partial participation. Ternary relationships are rejected for now. Each entity's attributes sit in a column beside it, every line ends exactly on the outline of its shapes, and a notation legend (in English) is drawn below the diagram. Like the ERD it has no Flow animation. `trazo example chen` prints the University example.
 
 `trazo schema <type>` prints the fields of each type in about 40 lines.
 
