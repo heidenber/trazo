@@ -35,7 +35,7 @@ Necesitas un agente que pueda ejecutar comandos, como Claude Code, Codex o Pi.
 
    Abre el archivo HTML en el navegador. Para cambiar el diagrama, vuelve a pedírselo al agente.
 
-Los otros tipos son `workflow`, `erd` y `sequence` (ver [Tipos de diagrama](#tipos-de-diagrama)).
+Los otros tipos son `workflow`, `erd`, `sequence` y `chen` (ver [Tipos de diagrama](#tipos-de-diagrama)).
 
 ## Demo
 
@@ -117,7 +117,7 @@ npm i -g .
 | `trazo schema <type>` | Imprime la referencia compacta de campos de un tipo de diagrama. |
 | `trazo example <type>` | Imprime un diagrama de ejemplo completo, entrada válida para `make`. |
 
-`<input>` es un archivo JSON, o `-` para leer de stdin. `<type>` es `architecture`, `workflow`, `erd` o `sequence`. Sin `-o`, `make` escribe `<input>` con extensión `.html`; con `-o -`, o cuando `<input>` es `-` y no hay `-o`, escribe el HTML en stdout. `--json` imprime una línea JSON en lugar de texto plano y cubre los resultados (`make`, `check`); los errores de uso (salida 2) son siempre texto plano en stderr.
+`<input>` es un archivo JSON, o `-` para leer de stdin. `<type>` es `architecture`, `workflow`, `erd`, `sequence` o `chen`. Sin `-o`, `make` escribe `<input>` con extensión `.html`; con `-o -`, o cuando `<input>` es `-` y no hay `-o`, escribe el HTML en stdout. `--json` imprime una línea JSON en lugar de texto plano y cubre los resultados (`make`, `check`); los errores de uso (salida 2) son siempre texto plano en stderr.
 
 Cuatro temas: `light` y `dark`, más `lagoon` (claro, turquesa) y `dusk` (oscuro, violeta). Se eligen con el campo JSON `theme` o con `--theme`; el botón de la página alterna entre el tema claro y el oscuro de cada par.
 
@@ -135,6 +135,7 @@ trazo example erd | trazo make - -o erd.html
 - `workflow`: pasos y decisiones, opcionalmente en carriles. `trazo example workflow`
 - `erd`: tablas, columnas y claves foráneas, con terminaciones de pata de gallo; los ERD de varias tablas agregan un overview con índice de tablas. `trazo example erd`
 - `sequence`: mensajes entre participantes, con notas y fragmentos `alt`, `opt` y `loop`. `trazo example sequence`
+- `chen`: diagramas entidad-relación de Chen para enseñar: entidades y entidades débiles, atributos (clave, clave parcial, multivaluado, derivado, compuesto), relaciones binarias con cardinalidad 1, N y M y participación total o parcial. Las relaciones ternarias se rechazan por ahora. `trazo check` lo valida y `trazo example chen` imprime el ejemplo Universidad; `trazo make` aún no lo dibuja y termina con código 1 y `chen diagrams cannot be rendered yet`. `trazo example chen`
 
 `trazo schema <type>` imprime los campos de cada tipo en unas 40 líneas.
 

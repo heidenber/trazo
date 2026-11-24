@@ -578,14 +578,14 @@ describe("sequence model: other diagram types keep their behavior", () => {
     expect(only({ ...flow, edges: ["a => b"] })).toMatchObject({ code: "edge/syntax", hint });
   });
 
-  it("lists the four types for an unknown type", () => {
+  it("lists the types for an unknown type", () => {
     expect(only({ type: "sequnce", title: "T" })).toMatchObject({
       code: "schema/enum",
       path: "type",
       hint: 'did you mean "sequence"?',
     });
     expect(only({ type: "zzzzzz", title: "T" }).hint).toBe(
-      "use one of: architecture, workflow, erd, sequence",
+      "use one of: architecture, workflow, erd, sequence, chen",
     );
   });
 });

@@ -35,7 +35,7 @@ You need an agent that can run commands, such as Claude Code, Codex or Pi.
 
    Open the HTML file in your browser. To change the diagram, ask the agent again.
 
-The other types are `workflow`, `erd` and `sequence` (see [Diagram types](#diagram-types)).
+The other types are `workflow`, `erd`, `sequence` and `chen` (see [Diagram types](#diagram-types)).
 
 ## Demo
 
@@ -117,7 +117,7 @@ npm i -g .
 | `trazo schema <type>` | Print the compact field reference for a diagram type. |
 | `trazo example <type>` | Print a complete example diagram, valid input for `make`. |
 
-`<input>` is a JSON file, or `-` to read stdin. `<type>` is `architecture`, `workflow`, `erd` or `sequence`. Without `-o`, `make` writes `<input>` with a `.html` extension; with `-o -`, or when `<input>` is `-` and there is no `-o`, it writes the HTML to stdout. `--json` prints one JSON line instead of plain text and covers results (`make`, `check`); usage errors (exit 2) are always plain text on stderr.
+`<input>` is a JSON file, or `-` to read stdin. `<type>` is `architecture`, `workflow`, `erd`, `sequence` or `chen`. Without `-o`, `make` writes `<input>` with a `.html` extension; with `-o -`, or when `<input>` is `-` and there is no `-o`, it writes the HTML to stdout. `--json` prints one JSON line instead of plain text and covers results (`make`, `check`); usage errors (exit 2) are always plain text on stderr.
 
 Four themes: `light` and `dark`, plus `lagoon` (light, teal) and `dusk` (dark, violet). Set one with the JSON `theme` field or `--theme`; the toggle in the page flips between the light and the dark member of each pair.
 
@@ -135,6 +135,7 @@ trazo example erd | trazo make - -o erd.html
 - `workflow`: steps and decisions, optionally in lanes. `trazo example workflow`
 - `erd`: tables, columns and foreign keys, with crow's foot ends; multi-table ERDs add an overview with a table index. `trazo example erd`
 - `sequence`: messages between participants, with notes and `alt`, `opt` and `loop` fragments. `trazo example sequence`
+- `chen`: Chen entity-relationship diagrams for teaching: entities and weak entities, attributes (key, partial key, multivalued, derived, composite), binary relationships with 1, N and M cardinality and total or partial participation. Ternary relationships are rejected for now. `trazo check` validates it and `trazo example chen` prints the University example; `trazo make` does not draw it yet and exits 1 with `chen diagrams cannot be rendered yet`. `trazo example chen`
 
 `trazo schema <type>` prints the fields of each type in about 40 lines.
 

@@ -171,9 +171,57 @@ rules
   texts must not be empty
 `;
 
+const chen = `chen: Chen entity-relationship diagram: entities, attributes and binary relationships.
+
+Top level
+  type            "chen"
+  title           text
+  description?    text
+  theme?          light | dark | lagoon | dusk
+  entities        entity[], at least 1
+  relationships?  relationship[]
+
+entity
+  id          unique among entities and relationships; letters, digits, _ . -
+  label?      shown text; defaults to id
+  weak?       true for a weak entity
+  note?       hover text
+  detail?     longer text for the viewer's detail card only
+  attributes  attribute[]
+
+relationship
+  id            unique among entities and relationships
+  label?        shown text; defaults to id (write it in capitals: ENROLLS)
+  identifying?  true when it identifies a weak entity
+  note?         hover text
+  attributes?   attribute[]
+  participants  participant[], exactly 2
+
+participant
+  {entity, cardinality, total?}   cardinality: 1 | N | M; total: true for total participation
+
+attribute: a string (plain attribute) or an object
+  {name, kind?, children?}   kind: key | partial | multivalued | derived
+  children = a composite attribute: attribute[], at least 1, up to 2 levels
+
+defaults: theme light; weak, identifying and total false
+
+rules
+  participants name existing entities; a recursive relationship names one twice
+  3 or more participants (ternary) are rejected for now
+  a weak entity needs an identifying relationship with total on its side
+  an identifying relationship needs a weak entity
+  partial only on weak entities, key never on weak; neither on relationships or in children
+  a composite takes no kind except multivalued
+  an entity without key (or weak without partial) warns
+  attribute names are unique among siblings
+  texts must not be empty
+`;
+
 export const REFERENCE: Record<(typeof DIAGRAM_TYPES)[number], string> = {
   architecture,
   workflow,
   erd,
   sequence,
+  chen,
 };
