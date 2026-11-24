@@ -50,6 +50,8 @@ export interface SceneNode extends Box {
   /** Visible note below the label, cut to a few lines; `note` keeps the whole text for the tooltip. */
   subtitle?: TextBlock;
   note?: string;
+  /** Viewer-only detail card text; the SVG never carries it. */
+  detail?: string;
   source?: string;
   /** Id of the group or lane that directly contains the node. */
   parent?: string;
@@ -66,6 +68,8 @@ export interface SceneGroup extends Box {
   variant: "group" | "lane" | "fragment";
   /** Width of the label column at the left of a lane band, or height of the label row atop a lane column. */
   header?: number;
+  /** Lane role line, muted, under the label. */
+  note?: TextBlock;
   /** The lane is a column: steps flow down and its label sits in a row at the top. */
   columns?: true;
   /** Fragment tab box; `label` holds the operator (alt, opt, loop). The renderer does not measure text. */

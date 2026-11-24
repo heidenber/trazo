@@ -32,6 +32,7 @@ import {
   NOTE_CSS,
   SEQUENCE_CSS,
   SHADOW_CSS,
+  LANE_NOTE_CSS,
   SHAPE_CSS,
   SVG_CSS,
   TABLE_CSS,
@@ -124,10 +125,12 @@ function edge(e: SceneEdge, seq: boolean): string {
   return `${halo}<path ${attrs} marker-start="url(#t-end-${e.ends.from})" marker-end="url(#t-end-${e.ends.to})" ${id}/>`;
 }
 
-// Drawn for the end of the line (x = 20); auto-start-reverse mirrors it at the start.
+// Drawn for the end of the line (x = 20, the table border); auto-start-reverse
+// mirrors it at the start. The outer bar sits 3 px from the border, flush like
+// the crow's foot tip; exactly one is a double bar.
 const END_MARKERS: Record<EdgeEnd, string> = {
-  one: `<path class="t-end" d="M14 1V11"/>`,
-  "zero-or-one": `<circle class="t-end t-end-dot" cx="6" cy="6" r="3.5"/><path class="t-end" d="M14 1V11"/>`,
+  one: `<path class="t-end" d="M13 1V11M17 1V11"/>`,
+  "zero-or-one": `<circle class="t-end t-end-dot" cx="9" cy="6" r="3.5"/><path class="t-end" d="M17 1V11"/>`,
   many: `<path class="t-end" d="M20 1L10 6L20 11M10 6H20"/>`,
   "zero-or-many": `<circle class="t-end t-end-dot" cx="5" cy="6" r="3.5"/><path class="t-end" d="M20 1L10 6L20 11M10 6H20"/>`,
 };
@@ -182,7 +185,11 @@ function lanes(groups: SceneGroup[]): string[] {
   return groups
     .filter((g) => g.variant === "lane")
     .map((g) =>
-      laneMarkup({ ...g, id: escapeXml(g.id) }, i++ % 2 === 1, text(g.label, "t-lane-title")),
+      laneMarkup(
+        { ...g, id: escapeXml(g.id) },
+        i++ % 2 === 1,
+        text(g.label, "t-lane-title") + (g.note ? text(g.note, "t-lane-note") : ""),
+      ),
     );
 }
 
@@ -247,6 +254,7 @@ export function renderSvg(scene: Scene): string {
       ...(scene.legend ?? []).flatMap((i) => (i.family ? [i.family as Family] : [])),
     ]) +
     (scene.legend ? LEGEND_CSS : "") +
+    (scene.groups.some((g) => g.note) ? LANE_NOTE_CSS : "") +
     (needsTableCss(scene) ? TABLE_CSS : "") +
     (scene.nodes.some((n) => n.subtitle) ? NOTE_CSS : "") +
     (seq ? SEQUENCE_CSS : "");

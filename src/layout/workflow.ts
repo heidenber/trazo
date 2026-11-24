@@ -317,7 +317,7 @@ async function layoutFlow(w: Workflow, columns: boolean): Promise<Scene> {
   let height = layout.height;
   let header = 0;
   if (lanes) {
-    header = columns ? headerHeight() : headerWidth(w);
+    header = columns ? headerHeight(w.lanes.some((l) => l.note !== undefined)) : headerWidth(w);
     shift(layout, header);
     width = half(layout.width + header);
   }
@@ -388,7 +388,7 @@ async function layoutFlow(w: Workflow, columns: boolean): Promise<Scene> {
     for (const g of groups) {
       flipBox(g);
       g.columns = true;
-      g.label = columnLabel(g, header);
+      g.label = columnLabel(g, header, w.lanes.find((l) => l.id === g.id)?.note);
     }
     [width, height] = [height, width];
   }
@@ -401,6 +401,7 @@ async function layoutFlow(w: Workflow, columns: boolean): Promise<Scene> {
     if (subtitle !== undefined) node.subtitle = subtitle;
     if (size.icon !== undefined) node.icon = size.icon;
     if (s.note !== undefined) node.note = s.note;
+    if (s.detail !== undefined) node.detail = s.detail;
     if (s.source !== undefined) node.source = s.source;
     const lane = laneOf.get(s.id);
     if (lane !== undefined) node.parent = lane;

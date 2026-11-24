@@ -4,6 +4,7 @@
 import type { Workflow } from "../model/workflow.js";
 import type { Box, SceneGroup, TextBlock } from "../scene.js";
 import { firstBaseline, lineHeight, textWidth } from "../text/measure.js";
+import { NOTE_GAP, NOTE_SIZE } from "./note.js";
 
 const LANE_LABEL_SIZE = 12;
 const HEADER_PAD = 24;
@@ -13,6 +14,13 @@ const LABEL_X = 12;
 export const BAND_PAD = 24;
 /** Extra room between lanes so edges can run between them. */
 const LANE_GAP = 24;
+
+/** Widest role line text a lane header grows to fit, in px. */
+const NOTE_MAX = 160;
+/** Space right of a role line inside the header. */
+const NOTE_PAD = 8;
+
+const flatten = (text: string) => text.replace(/\s+/g, " ").trim();
 
 const half = (v: number) => Math.round(v * 2) / 2;
 
@@ -100,20 +108,61 @@ export function planLanes(
 
 export function headerWidth(w: Workflow): number {
   const widest = Math.max(...w.lanes.map((l) => textWidth(l.label, LANE_LABEL_SIZE, 600)));
-  return Math.max(HEADER_MIN, Math.ceil(widest + HEADER_PAD));
+  // A role line may widen every header, up to NOTE_MAX of text; a longer note is clipped with "…".
+  const role = Math.max(
+    0,
+    ...w.lanes.map((l) =>
+      l.note === undefined ? 0 : Math.min(NOTE_MAX, textWidth(flatten(l.note), NOTE_SIZE, 400)),
+    ),
+  );
+  return Math.max(HEADER_MIN, Math.ceil(widest + HEADER_PAD), Math.ceil(role + LABEL_X + NOTE_PAD));
 }
 
-/** Height of the label row above lanes drawn as columns. */
-export function headerHeight(): number {
-  return Math.ceil(lineHeight(LANE_LABEL_SIZE) + HEADER_PAD);
+/** Height of the label row above lanes drawn as columns; taller when a lane has a role line. */
+export function headerHeight(withNote = false): number {
+  const note = withNote ? NOTE_GAP + lineHeight(NOTE_SIZE) : 0;
+  return Math.ceil(lineHeight(LANE_LABEL_SIZE) + note + HEADER_PAD);
 }
+
+/** The role line cut to one line that fits maxWidth, ending in an ellipsis when it was longer. */
+function clipLine(text: string, maxWidth: number): string {
+  const flat = flatten(text);
+  if (textWidth(flat, NOTE_SIZE, 400) <= maxWidth) return flat;
+  let cut = Array.from(flat);
+  while (cut.length > 0 && textWidth(cut.join("") + "…", NOTE_SIZE, 400) > maxWidth) cut.pop();
+  return cut.join("").trimEnd() + "…";
+}
+
+const roleLine = (
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  anchor: "start" | "middle",
+): TextBlock => ({
+  lines: [clipLine(text, maxWidth)],
+  x,
+  y: half(y),
+  size: NOTE_SIZE,
+  weight: 400,
+  anchor,
+});
+
+/** Total height of a label with its role line under it. */
+const stackHeight = (note: boolean) =>
+  lineHeight(LANE_LABEL_SIZE) + (note ? NOTE_GAP + lineHeight(NOTE_SIZE) : 0);
 
 /** Label of a lane column, centred in its header row. */
-export function columnLabel(g: SceneGroup, header: number): TextBlock {
+export function columnLabel(g: SceneGroup, header: number, note?: string): TextBlock {
+  const top = g.y + (header - stackHeight(note !== undefined)) / 2;
+  if (note !== undefined) {
+    const at = top + lineHeight(LANE_LABEL_SIZE) + NOTE_GAP + firstBaseline(NOTE_SIZE);
+    g.note = roleLine(note, g.x + g.w / 2, at, g.w - 2 * LABEL_X, "middle");
+  }
   return {
     lines: g.label.lines,
     x: g.x + g.w / 2,
-    y: half(g.y + (header - lineHeight(LANE_LABEL_SIZE)) / 2 + firstBaseline(LANE_LABEL_SIZE)),
+    y: half(top + firstBaseline(LANE_LABEL_SIZE)),
     size: LANE_LABEL_SIZE,
     weight: 600,
     anchor: "middle",
@@ -147,7 +196,8 @@ export function buildBands(
   return w.lanes.map((lane, i): SceneGroup => {
     const y = edges[i]!;
     const h = edges[i + 1]! - y;
-    return {
+    const top = y + (h - stackHeight(lane.note !== undefined)) / 2;
+    const group: SceneGroup = {
       id: lane.id,
       x: 0,
       y,
@@ -159,12 +209,17 @@ export function buildBands(
       label: {
         lines: [lane.label],
         x: LABEL_X,
-        y: half(y + (h - lineHeight(LANE_LABEL_SIZE)) / 2 + firstBaseline(LANE_LABEL_SIZE)),
+        y: half(top + firstBaseline(LANE_LABEL_SIZE)),
         size: LANE_LABEL_SIZE,
         weight: 600,
         anchor: "start",
       },
     };
+    if (lane.note !== undefined) {
+      const at = top + lineHeight(LANE_LABEL_SIZE) + NOTE_GAP + firstBaseline(NOTE_SIZE);
+      group.note = roleLine(lane.note, LABEL_X, at, header - LABEL_X - NOTE_PAD, "start");
+    }
+    return group;
   });
 }
 

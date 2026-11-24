@@ -6,7 +6,7 @@ import { FAVICON_SVG } from "./brand.js";
 import { VERSION } from "../version.js";
 import { INTER_400_WOFF2_BASE64, INTER_600_WOFF2_BASE64 } from "./generated/font.js";
 import { escapeXml, renderSvg } from "./svg.js";
-import { chromeHtml, embeddedSource } from "./chrome.js";
+import { chromeHtml, embeddedSource, inertJson } from "./chrome.js";
 import { pageCss } from "./theme.js";
 import { VIEWER_SCRIPT } from "./viewer.js";
 
@@ -36,6 +36,11 @@ function printPage(scene: Scene): string {
 export function renderHtml(scene: Scene, options: HtmlOptions = {}): string {
   const title = escapeXml(scene.title);
   const source = embeddedSource(options.source);
+  const details = scene.nodes.filter((n) => n.detail !== undefined);
+  const detail =
+    details.length === 0
+      ? undefined
+      : inertJson(Object.fromEntries(details.map((n) => [n.id, n.detail])));
   const page = chromeHtml({
     title: scene.title,
     ...(scene.description === undefined ? {} : { description: scene.description }),
@@ -44,6 +49,7 @@ export function renderHtml(scene: Scene, options: HtmlOptions = {}): string {
     height: scene.height,
     svg: renderSvg(scene),
     ...(source === undefined ? {} : { source }),
+    ...(detail === undefined ? {} : { detail }),
   });
   return `<!doctype html>
 <!-- ${ATTRIBUTION} -->

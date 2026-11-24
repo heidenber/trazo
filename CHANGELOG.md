@@ -6,6 +6,9 @@ All notable changes to trazo are listed here. The format follows [Keep a Changel
 
 ### Added
 
+- Optional JSON fields: `detail` on workflow steps and ERD tables (longer text for the viewer's detail card, which falls back to `note`; it is never drawn in the SVG, so exports do not carry it), `note` on workflow lanes (a muted role line under the lane name, clipped with "…" to the header width) and `group` on ERD tables (stored and validated; rendered later). The on-canvas note keeps its 3-line cap. Wrong types are rejected with the usual `schema/type` error.
+- A workflow with more than 6 lanes gets the `workflow/many-lanes` warning (non-fatal).
+
 - The trazo logo in the viewer header (the reversed logo on the dark and dusk themes) and an SVG favicon that switches to the light mark in a dark browser. The READMEs show the logo, with a reversed version in dark mode.
 
 - Two new themes, `lagoon` (light, teal) and `dusk` (dark, violet), next to `light` and `dark`: accepted by the JSON `theme` field of every diagram type, by `--theme` and by `make(…, { theme })`. `light` and `dark` keep their names and take new palettes. All four reach WCAG AA (4.5:1 for text on its fill, 3:1 for strokes and edges). The in-page toggle flips light and dark, and lagoon and dusk. A bad `--theme` now reads `invalid --theme "x" (use light, dark, lagoon or dusk)`.
@@ -29,6 +32,7 @@ All notable changes to trazo are listed here. The format follows [Keep a Changel
 
 ### Fixed
 
+- ERD: the "one" and "zero or one" relation ends now sit flush with the table border, like the crow's foot. Exactly one is a double bar.
 - Edge labels in workflows no longer sit on another edge's line. A label moved off a step or another label could land on the route of a different edge (in the expense approval workflow, the "approved" and "rejected" labels of the second decision sat on the Notify Rejection -> Rejected run); a label now also slides along its own route to the nearest spot clear of the other edges' lines, trying positions every 4 px, and the edge's own line is no obstacle. Labels already clear keep their place.
 - Edge labels in workflows no longer sit on a step. A label centred on a short run just below a decision, or on the far side of a self-loop, reached over the node it leaves and `make` warned `label of … overlaps node …`. A label that meets a step now slides along its own route to the nearest spot clear of the steps and the other labels; labels already clear keep their place, and the warning stays as a safety net.
 - Edge labels no longer overlap each other in workflows. In column lanes the label of a loop edge (for example "retry") could land on the label of a decision's branch ("passed") where the two edges cross; a label that meets an earlier one now slides along its own edge to the nearest free spot, clear of the steps. The same rule applies to row lanes and to workflows without lanes.
