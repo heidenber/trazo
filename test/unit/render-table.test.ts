@@ -119,6 +119,24 @@ describe("table render", () => {
     expect(svg).toContain('orient="auto-start-reverse"');
   });
 
+  it("draws the one bars flush with the table border, like the crow's foot tip", () => {
+    const svg = renderSvg(scene([edge({ from: "one", to: "zero-or-one" })]));
+    const marker = (id: string) =>
+      new RegExp(`<marker id="t-end-${id}"[^>]*refX="20"[^>]*>(.*?)</marker>`).exec(svg)![1]!;
+    const bars = (id: string) =>
+      [...marker(id).matchAll(/M(\d+(?:\.\d+)?) 1V11/g)].map((m) => Number(m[1]));
+    // The border is at x = 20 (refX). The outer bar sits within 3 px of it.
+    expect(Math.max(...bars("one"))).toBeGreaterThanOrEqual(17);
+    expect(Math.max(...bars("zero-or-one"))).toBeGreaterThanOrEqual(17);
+    // Exactly one is a double bar; zero or one is a circle plus one bar.
+    expect(bars("one")).toHaveLength(2);
+    expect(bars("zero-or-one")).toHaveLength(1);
+    const dot = /<circle[^>]*cx="([\d.]+)"[^>]*r="([\d.]+)"/.exec(marker("zero-or-one"))!;
+    expect(Number(dot[1]) + Number(dot[2])).toBeLessThan(Math.min(...bars("zero-or-one")) - 1);
+    // The crow's foot keeps its tip on the border.
+    expect(marker("many")).toContain("M20 1L10 6L20 11");
+  });
+
   it("does not reference the arrowhead on edges with ends", () => {
     const svg = renderSvg(scene([edge({ from: "many", to: "zero-or-one" })]));
     expect(svg).not.toContain("t-arrowhead");
