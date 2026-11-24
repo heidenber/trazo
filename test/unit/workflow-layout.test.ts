@@ -669,3 +669,62 @@ describe("layoutWorkflow with lanes and no direction", () => {
     expect(long.groups.every((g) => g.columns === undefined)).toBe(true);
   });
 });
+
+describe("edge labels never overlap", () => {
+  const retry = (extra: object) =>
+    workflow({
+      ...extra,
+      lanes: [
+        { id: "hr", label: "HR", steps: ["submit", "check", "reject"] },
+        { id: "it", label: "IT", steps: ["account"] },
+      ],
+      steps: [
+        { id: "submit", label: "Submit onboarding form" },
+        { id: "check", label: "Eligibility check", kind: "decision" },
+        { id: "reject", label: "Request corrections" },
+        { id: "account", label: "Create system account" },
+      ],
+      edges: [
+        "submit -> check",
+        "check -> account: passed",
+        "check -> reject: failed",
+        "reject -> check: retry",
+      ],
+    });
+
+  const labelBoxes = (s: Scene) => s.edges.flatMap((e) => (e.label ? [e.label.box] : []));
+  const expectDisjoint = (s: Scene) => {
+    const boxes = labelBoxes(s);
+    expect(boxes.length).toBeGreaterThan(1);
+    for (let i = 0; i < boxes.length; i++)
+      for (let j = i + 1; j < boxes.length; j++) expect(overlaps(boxes[i]!, boxes[j]!)).toBe(false);
+  };
+
+  it("keeps a loop label off a branch label in column lanes, rows and by default", async () => {
+    for (const extra of [{ direction: "down" }, { direction: "right" }, {}]) {
+      const scene = await layoutWorkflow(retry(extra));
+      expectDisjoint(scene);
+      expectSound(scene);
+    }
+  });
+
+  it("keeps every label on its own route and clear of the steps", async () => {
+    const scene = await layoutWorkflow(retry({ direction: "down" }));
+    for (const e of scene.edges) {
+      if (!e.label) continue;
+      const c = { x: e.label.box.x + e.label.box.w / 2, y: e.label.box.y + e.label.box.h / 2 };
+      const onRoute = e.points.some((p, i) => {
+        const q = e.points[i + 1];
+        return (
+          q !== undefined &&
+          c.x >= Math.min(p.x, q.x) - 0.5 &&
+          c.x <= Math.max(p.x, q.x) + 0.5 &&
+          c.y >= Math.min(p.y, q.y) - 0.5 &&
+          c.y <= Math.max(p.y, q.y) + 0.5
+        );
+      });
+      expect(onRoute, e.id).toBe(true);
+      for (const n of scene.nodes) expect(overlaps(e.label.box, n), `${e.id}/${n.id}`).toBe(false);
+    }
+  });
+});

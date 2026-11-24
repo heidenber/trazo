@@ -103,6 +103,64 @@ function labelOnRoute(points: Point[], lines: string[]): Box | undefined {
   };
 }
 
+/** Step between the positions tried for a label that collides with another. */
+const NUDGE_STEP = 8;
+/** Air kept between two labels. */
+const LABEL_GAP = 2;
+
+const meets = (a: Box, b: Box, gap: number) =>
+  a.x < b.x + b.w + gap && b.x < a.x + a.w + gap && a.y < b.y + b.h + gap && b.y < a.y + a.h + gap;
+
+const span = (a: Point, b: Point) => Math.abs(b.x - a.x) + Math.abs(b.y - a.y);
+
+/**
+ * Edge labels are centred on their edge, so two edges that cross can put their
+ * labels on the same spot. A label that meets an earlier one slides along its
+ * own route, longest segment first, nearest position first, to the first spot
+ * clear of every placed label and of the steps; failing that, the first spot
+ * clear of the labels, else it stays. Order and steps are fixed, so the result
+ * is deterministic.
+ */
+function separateLabels(
+  routes: readonly Point[][],
+  labels: readonly (Box | undefined)[],
+  steps: readonly Box[],
+): (Box | undefined)[] {
+  const placed: Box[] = [];
+  return labels.map((initial, i) => {
+    if (!initial) return undefined;
+    const clearOfLabels = (b: Box) => placed.every((o) => !meets(b, o, LABEL_GAP));
+    let chosen = initial;
+    if (!clearOfLabels(initial)) {
+      const points = routes[i]!;
+      const segments = points
+        .slice(1)
+        .map((b, k) => [points[k]!, b] as const)
+        .sort((a, b) => span(b[0], b[1]) - span(a[0], a[1]));
+      const spots: Box[] = [];
+      for (const [a, b] of segments) {
+        const length = span(a, b);
+        if (length === 0) continue;
+        const ux = Math.sign(b.x - a.x);
+        const uy = Math.sign(b.y - a.y);
+        for (let d = 0; d <= length / 2; d += NUDGE_STEP) {
+          for (const t of d === 0 ? [length / 2] : [length / 2 - d, length / 2 + d]) {
+            spots.push({
+              ...initial,
+              x: half(a.x + ux * t - initial.w / 2),
+              y: half(a.y + uy * t - initial.h / 2),
+            });
+          }
+        }
+      }
+      const free = spots.filter(clearOfLabels);
+      chosen = free.find((b) => steps.every((n) => !meets(b, n, 0))) ?? free[0] ?? initial;
+    }
+    placed.push(chosen);
+    return chosen;
+  });
+}
+
 function shift(layout: LayoutResult, dx: number): void {
   if (dx === 0) return;
   for (const box of layout.boxes.values()) box.x = half(box.x + dx);
@@ -255,11 +313,20 @@ async function layoutFlow(w: Workflow, columns: boolean): Promise<Scene> {
     return points;
   });
   // Edge labels are real text, so they are placed on the real route.
-  const labels = w.edges.map((_, i) => {
-    const lines = edgeLabels[i];
-    if (!lines) return undefined;
-    return lanes ? labelOnRoute(routes[i]!, lines) : layout.edges.get(`e${i}`)?.label;
+  const stepBoxes = [...frame.values()].map((b) => {
+    const real: Box = { x: b.x, y: b.y, w: b.w, h: b.h };
+    if (columns) flipBox(real);
+    return real;
   });
+  const labels = separateLabels(
+    routes,
+    w.edges.map((_, i) => {
+      const lines = edgeLabels[i];
+      if (!lines) return undefined;
+      return lanes ? labelOnRoute(routes[i]!, lines) : layout.edges.get(`e${i}`)?.label;
+    }),
+    stepBoxes,
+  );
 
   let groups: SceneGroup[] = [];
   if (lanes) {
