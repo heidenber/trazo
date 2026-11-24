@@ -205,6 +205,7 @@ interface Def {
   element?: unknown;
   innerType?: unknown;
   out?: unknown;
+  getter?: () => unknown;
 }
 
 function defOf(node: unknown): Def | undefined {
@@ -218,6 +219,7 @@ function unwrap(node: unknown): unknown {
     if (def.type === "optional" || def.type === "default" || def.type === "nullable")
       node = def.innerType;
     else if (def.type === "pipe") node = def.out;
+    else if (def.type === "lazy" && def.getter) node = def.getter();
     else return node;
   }
 }

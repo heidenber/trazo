@@ -1,0 +1,84 @@
+{
+  "type": "chen",
+  "title": "University",
+  "description": "Students enroll in sections of courses; professors teach sections and belong to departments.",
+  "entities": [
+    {
+      "id": "student",
+      "label": "Student",
+      "attributes": [
+        { "name": "student_id", "kind": "key" },
+        { "name": "name", "children": ["first", "last"] },
+        { "name": "emails", "kind": "multivalued" },
+        "birth_date",
+        { "name": "age", "kind": "derived" }
+      ]
+    },
+    {
+      "id": "course",
+      "label": "Course",
+      "attributes": [{ "name": "code", "kind": "key" }, "title", "credits"]
+    },
+    {
+      "id": "section",
+      "label": "Section",
+      "weak": true,
+      "note": "Identified only together with its course.",
+      "attributes": [{ "name": "section_no", "kind": "partial" }, "term"]
+    },
+    {
+      "id": "professor",
+      "label": "Professor",
+      "attributes": [{ "name": "prof_id", "kind": "key" }, "name", "office"]
+    },
+    {
+      "id": "department",
+      "label": "Department",
+      "attributes": [{ "name": "dept_id", "kind": "key" }, "name"]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "enrolls",
+      "label": "ENROLLS",
+      "attributes": ["grade"],
+      "participants": [
+        { "entity": "student", "cardinality": "N" },
+        { "entity": "section", "cardinality": "M" }
+      ]
+    },
+    {
+      "id": "has",
+      "label": "HAS",
+      "identifying": true,
+      "participants": [
+        { "entity": "course", "cardinality": "1" },
+        { "entity": "section", "cardinality": "N", "total": true }
+      ]
+    },
+    {
+      "id": "teaches",
+      "label": "TEACHES",
+      "participants": [
+        { "entity": "professor", "cardinality": "1" },
+        { "entity": "section", "cardinality": "N", "total": true }
+      ]
+    },
+    {
+      "id": "belongs_to",
+      "label": "BELONGS_TO",
+      "participants": [
+        { "entity": "professor", "cardinality": "N", "total": true },
+        { "entity": "department", "cardinality": "1" }
+      ]
+    },
+    {
+      "id": "offers",
+      "label": "OFFERS",
+      "participants": [
+        { "entity": "department", "cardinality": "1" },
+        { "entity": "course", "cardinality": "N", "total": true }
+      ]
+    }
+  ]
+}

@@ -4,13 +4,14 @@
 import { didYouMean, type Issue } from "../validate/issues.js";
 import { architectureSchema, buildArchitecture, type Architecture } from "./architecture.js";
 import { describe, error_, fromZod } from "./common.js";
+import { buildChen, chenSchema, type Chen } from "./chen.js";
 import { buildErd, erdSchema, type Erd } from "./erd.js";
 import { buildSequence, sequenceSchema, type Sequence } from "./sequence.js";
 import { buildWorkflow, workflowSchema, type Workflow } from "./workflow.js";
 
-export type Diagram = Architecture | Workflow | Erd | Sequence;
+export type Diagram = Architecture | Workflow | Erd | Sequence | Chen;
 
-export const DIAGRAM_TYPES = ["architecture", "workflow", "erd", "sequence"] as const;
+export const DIAGRAM_TYPES = ["architecture", "workflow", "erd", "sequence", "chen"] as const;
 
 export interface ValidationResult {
   diagram?: Diagram;
@@ -41,6 +42,11 @@ export function validateDiagram(raw: unknown): ValidationResult {
     if (!parsed.success)
       return { issues: withStartHint(fromZod(parsed.error, sequenceSchema), type) };
     return buildSequence(parsed.data);
+  }
+  if (type === "chen") {
+    const parsed = chenSchema.safeParse(raw, { reportInput: true });
+    if (!parsed.success) return { issues: withStartHint(fromZod(parsed.error, chenSchema), type) };
+    return buildChen(parsed.data);
   }
   if (type === "erd") {
     const parsed = erdSchema.safeParse(raw, { reportInput: true });

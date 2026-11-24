@@ -99,3 +99,12 @@ describe("examples/sequence.json", () => {
     expect(Buffer.byteLength(first.html!)).toBeLessThan(300 * 1024);
   });
 });
+
+describe("examples/chen.json", () => {
+  it("validates with no issues", () => {
+    const { issues } = validateDiagram(
+      JSON.parse(readFileSync(new URL("../../examples/chen.json", import.meta.url), "utf8")),
+    );
+    expect(issues).toEqual([]);
+  });
+});

@@ -1,10 +1,10 @@
 ---
 name: trazo
-description: Use when the user asks for an architecture, workflow, ERD or sequence diagram, or an interactive HTML diagram. trazo turns semantic JSON into a laid-out, self-contained HTML file.
+description: Use when the user asks for an architecture, workflow, ERD, sequence or Chen diagram, or an interactive HTML diagram. trazo turns semantic JSON into a laid-out, self-contained HTML file.
 license: Apache-2.0
 ---
 
-1. Pick the type from the request: architecture (components and links), workflow (steps and decisions), erd (tables and foreign keys), sequence (messages between actors).
+1. Pick the type from the request: architecture (components and links), workflow (steps and decisions), erd (tables and foreign keys), sequence (messages between actors), chen (entities, attributes and binary relationships, for teaching).
 2. Know the content first. When the diagram describes code, read it first and draw only what you found; never add parts that only sound likely. Keep one level of detail per diagram (services or modules, not both). If the request does not say what to cover and the code does not settle it, ask the user.
 3. Run `trazo example <type> > diagram.json` and edit that file. Work in the current directory, not in this skill's folder; in a repository, keep it under docs/diagrams/ so it can be regenerated when the code changes. Run `trazo schema <type>` only when you need a field the example does not show.
 4. Never write positions, sizes or colors. Describe the content with `label`, `kind`, `note` and `source`; layout is automatic. A `note` is shown under the label (up to 3 lines), so use it for the one short fact that explains a part. Set `source` to the "path/file.ts:line" each part comes from, so the user can verify it.
