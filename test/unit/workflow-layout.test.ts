@@ -728,3 +728,112 @@ describe("edge labels never overlap", () => {
     }
   });
 });
+
+describe("edge labels never sit on a step", () => {
+  const expectClearOfSteps = (scene: Scene) => {
+    for (const e of scene.edges) {
+      if (!e.label) continue;
+      for (const n of scene.nodes) expect(overlaps(e.label.box, n), `${e.id}/${n.id}`).toBe(false);
+    }
+  };
+  const expectDisjoint = (s: Scene) => {
+    const boxes = s.edges.flatMap((e) => (e.label ? [e.label.box] : []));
+    for (let i = 0; i < boxes.length; i++)
+      for (let j = i + 1; j < boxes.length; j++) expect(overlaps(boxes[i]!, boxes[j]!)).toBe(false);
+  };
+
+  // Reduced from the expense approval workflow: the label of finance_review -> approved
+  // sat on the bottom corner of the decision it leaves.
+  const expenses = (extra: object) =>
+    workflow({
+      ...extra,
+      lanes: [
+        { id: "manager", label: "Manager", steps: ["start", "manager_review", "rejected_manager"] },
+        {
+          id: "finance",
+          label: "Finance",
+          steps: ["finance_review", "rejected_finance", "approved"],
+        },
+        { id: "end_lane", label: "End State", steps: ["rejected", "end"] },
+      ],
+      steps: [
+        { id: "start", kind: "start" },
+        { id: "manager_review", label: "Review Expense", kind: "decision" },
+        { id: "rejected_manager", label: "Notify Rejection" },
+        { id: "finance_review", label: "Review & Approve", kind: "decision" },
+        { id: "rejected_finance", label: "Notify Rejection" },
+        { id: "approved", label: "Expense Approved" },
+        { id: "rejected", label: "Rejected" },
+        { id: "end", kind: "end" },
+      ],
+      edges: [
+        "start -> manager_review",
+        "manager_review -> finance_review: approved",
+        "manager_review -> rejected_manager: rejected",
+        "rejected_manager -> rejected",
+        "finance_review -> approved: approved",
+        "finance_review -> rejected_finance: rejected",
+        "rejected_finance -> rejected",
+        "approved -> end",
+        "rejected -> end",
+      ],
+    });
+
+  // Reduced from the onboarding workflow: the label of a decision's self-loop was
+  // centred on the loop's far side, half of it over the decision.
+  const selfLoop = (extra: object) =>
+    workflow({
+      ...extra,
+      lanes: [
+        { id: "hr", label: "HR", steps: ["start", "wait_docs", "verify_docs", "bg_check", "end"] },
+      ],
+      steps: [
+        { id: "start", kind: "start" },
+        { id: "wait_docs", label: "Wait for documents", kind: "wait" },
+        { id: "verify_docs", label: "Documents valid?", kind: "decision" },
+        { id: "bg_check", label: "Run background check" },
+        { id: "end", kind: "end" },
+      ],
+      edges: [
+        "start -> wait_docs",
+        "wait_docs -> verify_docs",
+        "verify_docs -> verify_docs: invalid docs",
+        "verify_docs -> bg_check: documents valid",
+        "bg_check -> end",
+      ],
+    });
+
+  it("keeps the label of a decision's branch off the decision, in columns and rows", async () => {
+    for (const extra of [{ direction: "down" }, { direction: "right" }, {}]) {
+      const scene = await layoutWorkflow(expenses(extra));
+      expectClearOfSteps(scene);
+      expectDisjoint(scene);
+    }
+  });
+
+  it("keeps the label of a self-loop off the node, in columns and rows", async () => {
+    for (const extra of [{ direction: "down" }, { direction: "right" }, {}]) {
+      const scene = await layoutWorkflow(selfLoop(extra));
+      expectClearOfSteps(scene);
+      expectDisjoint(scene);
+    }
+  });
+
+  it("keeps labels clear of steps without lanes", async () => {
+    for (const direction of ["down", "right"]) {
+      const scene = await layoutWorkflow(
+        workflow({
+          direction,
+          steps: [
+            { id: "s", kind: "start" },
+            { id: "d", label: "Documents valid?", kind: "decision" },
+            { id: "a", label: "Run background check" },
+            { id: "e", kind: "end" },
+          ],
+          edges: ["s -> d", "d -> d: invalid docs", "d -> a: documents valid", "a -> e"],
+        }),
+      );
+      expectClearOfSteps(scene);
+    }
+  });
+});
