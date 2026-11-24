@@ -291,6 +291,32 @@ describe("viewer", () => {
     expect(renderSvg(scene)).not.toContain("exactly one");
   });
 
+  it("reads the lower bound from the participation of the entity that starts the sentence", async () => {
+    const s = await sceneOf({
+      type: "chen",
+      title: "Lower bounds",
+      entities: [
+        { id: "dept", label: "Department", attributes: [{ name: "dept_id", kind: "key" }] },
+        { id: "emp", label: "Employee", attributes: [{ name: "emp_id", kind: "key" }] },
+      ],
+      relationships: [
+        {
+          id: "works",
+          label: "WORKS_IN",
+          participants: [
+            { entity: "dept", cardinality: "1", total: true },
+            { entity: "emp", cardinality: "N" },
+          ],
+        },
+      ],
+    });
+    const card = s.nodes.find((n) => n.id === "works")!.detail!;
+    // Employee is partial: an employee may work in no department.
+    expect(card).toContain("Each Employee is related to at most one Department.");
+    // Department is total: every department has at least one employee.
+    expect(card).toContain("Each Department is related to one or more Employees.");
+  });
+
   it("shows detail before note", async () => {
     const s = await sceneOf({
       type: "chen",

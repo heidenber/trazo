@@ -376,12 +376,21 @@ function plural(label: string): string {
 
 function reading(r: ChenRelationship, name: (id: string) => string, weak: Set<string>): string[] {
   const [p, q] = r.participants;
-  const one = (c: string) => (c === "1" ? "exactly one" : "many");
+  // "Each <subject> is related to <how many> <other>": the other end's
+  // cardinality is the upper bound, the subject's participation the lower one.
+  const howMany = (subject: ChenParticipant, other: ChenParticipant) =>
+    other.cardinality === "1"
+      ? subject.total
+        ? "exactly one"
+        : "at most one"
+      : subject.total
+        ? "one or more"
+        : "many";
   const noun = (x: ChenParticipant) =>
     x.cardinality === "1" ? name(x.entity) : plural(name(x.entity));
   const out = [
-    `Each ${name(q.entity)} is related to ${one(p.cardinality)} ${noun(p)}.`,
-    `Each ${name(p.entity)} is related to ${one(q.cardinality)} ${noun(q)}.`,
+    `Each ${name(q.entity)} is related to ${howMany(q, p)} ${noun(p)}.`,
+    `Each ${name(p.entity)} is related to ${howMany(p, q)} ${noun(q)}.`,
   ];
   for (const x of [p, q]) {
     const e = name(x.entity);
