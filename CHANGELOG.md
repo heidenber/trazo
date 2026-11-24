@@ -29,6 +29,7 @@ All notable changes to trazo are listed here. The format follows [Keep a Changel
 
 ### Fixed
 
+- Edge labels in workflows no longer sit on another edge's line. A label moved off a step or another label could land on the route of a different edge (in the expense approval workflow, the "approved" and "rejected" labels of the second decision sat on the Notify Rejection -> Rejected run); a label now also slides along its own route to the nearest spot clear of the other edges' lines, trying positions every 4 px, and the edge's own line is no obstacle. Labels already clear keep their place.
 - Edge labels in workflows no longer sit on a step. A label centred on a short run just below a decision, or on the far side of a self-loop, reached over the node it leaves and `make` warned `label of … overlaps node …`. A label that meets a step now slides along its own route to the nearest spot clear of the steps and the other labels; labels already clear keep their place, and the warning stays as a safety net.
 - Edge labels no longer overlap each other in workflows. In column lanes the label of a loop edge (for example "retry") could land on the label of a decision's branch ("passed") where the two edges cross; a label that meets an earlier one now slides along its own edge to the nearest free spot, clear of the steps. The same rule applies to row lanes and to workflows without lanes.
 

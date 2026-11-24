@@ -104,12 +104,37 @@ function labelOnRoute(points: Point[], lines: string[]): Box | undefined {
 }
 
 /** Step between the positions tried for a label that collides with another. */
-const NUDGE_STEP = 8;
+const NUDGE_STEP = 4;
 /** Air kept between two labels. */
 const LABEL_GAP = 2;
 
 const meets = (a: Box, b: Box, gap: number) =>
   a.x < b.x + b.w + gap && b.x < a.x + a.w + gap && a.y < b.y + b.h + gap && b.y < a.y + a.h + gap;
+
+/** Whether the segment runs through the inside of the box (Liang-Barsky). */
+function segmentCrosses(a: Point, b: Point, box: Box): boolean {
+  let t0 = 0;
+  let t1 = 1;
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const sides: [number, number][] = [
+    [-dx, a.x - box.x],
+    [dx, box.x + box.w - a.x],
+    [-dy, a.y - box.y],
+    [dy, box.y + box.h - a.y],
+  ];
+  for (const [p, q] of sides) {
+    if (p === 0) {
+      if (q <= 0) return false;
+      continue;
+    }
+    const t = q / p;
+    if (p < 0) t0 = Math.max(t0, t);
+    else t1 = Math.min(t1, t);
+    if (t0 >= t1) return false;
+  }
+  return true;
+}
 
 const span = (a: Point, b: Point) => Math.abs(b.x - a.x) + Math.abs(b.y - a.y);
 
@@ -117,9 +142,11 @@ const span = (a: Point, b: Point) => Math.abs(b.x - a.x) + Math.abs(b.y - a.y);
  * Edge labels are centred on their edge, so two edges that cross can put their
  * labels on the same spot, and one centred on a short run or on a loop's far
  * side can reach over the step it leaves. A label that meets an earlier one, or
- * a step, slides along its own route, longest segment first, nearest position first, to the first spot
- * clear of every placed label and of the steps; failing that, the first spot
- * clear of the labels, else it stays. Order and steps are fixed, so the result
+ * a step, or sits on the line of another edge, slides along its own route,
+ * longest segment first, nearest position first, to the first spot clear of
+ * every placed label, of the steps and of the other edges' routes; failing
+ * that, the first spot clear of labels and steps, then of labels only, else it
+ * stays. Its own route is no obstacle. Order and steps are fixed, so the result
  * is deterministic.
  */
 function separateLabels(
@@ -132,8 +159,12 @@ function separateLabels(
     if (!initial) return undefined;
     const clearOfLabels = (b: Box) => placed.every((o) => !meets(b, o, LABEL_GAP));
     const clearOfSteps = (b: Box) => steps.every((n) => !meets(b, n, 0));
+    const clearOfLines = (b: Box) =>
+      routes.every(
+        (r, j) => j === i || r.every((p, k) => k === 0 || !segmentCrosses(r[k - 1]!, p, b)),
+      );
     let chosen = initial;
-    if (!clearOfLabels(initial) || !clearOfSteps(initial)) {
+    if (!clearOfLabels(initial) || !clearOfSteps(initial) || !clearOfLines(initial)) {
       const points = routes[i]!;
       const segments = points
         .slice(1)
@@ -156,7 +187,12 @@ function separateLabels(
         }
       }
       const free = spots.filter(clearOfLabels);
-      chosen = free.find(clearOfSteps) ?? (clearOfLabels(initial) ? initial : free[0]) ?? initial;
+      const clearOfBoth = (b: Box) => clearOfSteps(b) && clearOfLines(b);
+      chosen =
+        free.find(clearOfBoth) ??
+        free.find(clearOfSteps) ??
+        (clearOfLabels(initial) ? initial : free[0]) ??
+        initial;
     }
     placed.push(chosen);
     return chosen;
