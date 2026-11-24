@@ -115,8 +115,9 @@ const span = (a: Point, b: Point) => Math.abs(b.x - a.x) + Math.abs(b.y - a.y);
 
 /**
  * Edge labels are centred on their edge, so two edges that cross can put their
- * labels on the same spot. A label that meets an earlier one slides along its
- * own route, longest segment first, nearest position first, to the first spot
+ * labels on the same spot, and one centred on a short run or on a loop's far
+ * side can reach over the step it leaves. A label that meets an earlier one, or
+ * a step, slides along its own route, longest segment first, nearest position first, to the first spot
  * clear of every placed label and of the steps; failing that, the first spot
  * clear of the labels, else it stays. Order and steps are fixed, so the result
  * is deterministic.
@@ -130,8 +131,9 @@ function separateLabels(
   return labels.map((initial, i) => {
     if (!initial) return undefined;
     const clearOfLabels = (b: Box) => placed.every((o) => !meets(b, o, LABEL_GAP));
+    const clearOfSteps = (b: Box) => steps.every((n) => !meets(b, n, 0));
     let chosen = initial;
-    if (!clearOfLabels(initial)) {
+    if (!clearOfLabels(initial) || !clearOfSteps(initial)) {
       const points = routes[i]!;
       const segments = points
         .slice(1)
@@ -154,7 +156,7 @@ function separateLabels(
         }
       }
       const free = spots.filter(clearOfLabels);
-      chosen = free.find((b) => steps.every((n) => !meets(b, n, 0))) ?? free[0] ?? initial;
+      chosen = free.find(clearOfSteps) ?? (clearOfLabels(initial) ? initial : free[0]) ?? initial;
     }
     placed.push(chosen);
     return chosen;
