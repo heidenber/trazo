@@ -16,7 +16,6 @@ for a suggested fix.
 | `chen/no-partial-key` | Warning | A weak entity has no `partial` key attribute. |
 | `chen/partial-key` | Error | A `partial` key attribute sits on an entity that is not weak. |
 | `chen/participants` | Error | A relationship has fewer than 2 participants. |
-| `chen/render-unavailable` | Error | `trazo make` was asked for a `chen` diagram, which cannot be rendered yet (validation with `check` works). |
 | `chen/ternary` | Error | A relationship has 3 or more participants; ternary relationships are not supported yet. |
 | `chen/weak-not-identified` | Error | A weak entity is in no identifying relationship where it takes part with `total` participation. |
 | `column/duplicate` | Error | Two columns in the same table have the same name. |

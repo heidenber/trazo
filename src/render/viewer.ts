@@ -254,7 +254,8 @@ export const VIEWER_SCRIPT = String.raw`(function () {
     }
     list($("d-in"), ins);
     list($("d-out"), outs);
-    card.classList.toggle("is-row", !node);
+    // A chen diagram has no direction, so its card shows the text only.
+    card.classList.toggle("is-row", !node || svg.classList.contains("t-chen"));
   };
   var showCard = function (g, pinned) {
     fill(g);

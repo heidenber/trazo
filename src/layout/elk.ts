@@ -38,6 +38,8 @@ export interface LayoutOptions {
   layerSpacing?: number;
   /** Minimum horizontal run between a box and the first bend of an edge in the gap next to it. */
   edgeNodeSpacing?: number;
+  /** Minimum gap between parallel edge runs in the gap between two layers. */
+  edgeSpacing?: number;
 }
 
 export interface LayoutEdge {
@@ -161,6 +163,10 @@ export async function layoutElk(
     root.layoutOptions!["elk.layered.spacing.edgeNodeBetweenLayers"] = String(
       options.edgeNodeSpacing,
     );
+  }
+
+  if (options.edgeSpacing !== undefined) {
+    root.layoutOptions!["elk.layered.spacing.edgeEdgeBetweenLayers"] = String(options.edgeSpacing);
   }
 
   if (options.interactive) {

@@ -81,7 +81,7 @@ Números y método: [bench/README.md](bench/README.md). En el mismo benchmark (C
 
 Lo que no hace:
 
-- Solo cuatro tipos: arquitectura, workflow, ERD y secuencia. Mermaid, PlantUML y D2 cubren muchos más.
+- Solo cinco tipos: arquitectura, workflow, ERD, secuencia y Chen. Mermaid, PlantUML y D2 cubren muchos más.
 - No se renderiza dentro de Markdown. GitHub, GitLab y muchos editores muestran bloques de Mermaid directamente; con trazo abres el HTML o exportas SVG o PNG desde ahí.
 - No se edita en la salida: cambias el JSON y vuelves a ejecutar `make`.
 - No importa Mermaid, no trae íconos de nube ni de marcas, no genera páginas explicativas ni revisa el resultado en un navegador.
@@ -135,7 +135,7 @@ trazo example erd | trazo make - -o erd.html
 - `workflow`: pasos y decisiones, opcionalmente en carriles. `trazo example workflow`
 - `erd`: tablas, columnas y claves foráneas, con terminaciones de pata de gallo; los ERD de varias tablas agregan un overview con índice de tablas. `trazo example erd`
 - `sequence`: mensajes entre participantes, con notas y fragmentos `alt`, `opt` y `loop`. `trazo example sequence`
-- `chen`: diagramas entidad-relación de Chen para enseñar: entidades y entidades débiles, atributos (clave, clave parcial, multivaluado, derivado, compuesto), relaciones binarias con cardinalidad 1, N y M y participación total o parcial. Las relaciones ternarias se rechazan por ahora. `trazo check` lo valida y `trazo example chen` imprime el ejemplo Universidad; `trazo make` aún no lo dibuja y termina con código 1 y `chen diagrams cannot be rendered yet`. `trazo example chen`
+- `chen`: diagramas entidad-relación de Chen para enseñar: entidades y entidades débiles, atributos (clave, clave parcial, multivaluado, derivado, compuesto), relaciones binarias con cardinalidad 1, N y M y participación total o parcial. Las relaciones ternarias se rechazan por ahora. Los atributos de cada entidad van en una columna a su lado, cada línea termina exactamente sobre el contorno de sus figuras y debajo del diagrama se dibuja una leyenda de la notación (en inglés). Como el ERD, no tiene animación de flujo. `trazo example chen` imprime el ejemplo Universidad.
 
 `trazo schema <type>` imprime los campos de cada tipo en unas 40 líneas.
 

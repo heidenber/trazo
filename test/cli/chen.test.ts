@@ -60,32 +60,19 @@ describe("chen CLI", () => {
     });
   });
 
-  it("make fails cleanly until rendering lands: exit 1, no file", () => {
+  it("make draws the example: exit 0 and a html file", () => {
     const out = join(dir, "u.html");
-    expect(run(["make", examplePath, "-o", out])).toEqual({
-      code: 1,
-      stdout: "",
-      stderr:
-        'error  $: chen diagrams cannot be rendered yet \u2192 "trazo check" validates them already; rendering arrives in a later release\n',
-    });
-    expect(existsSync(out)).toBe(false);
+    const r = run(["make", examplePath, "-o", out]);
+    expect(r.code).toBe(0);
+    expect(r.stderr).toBe("");
+    expect(existsSync(out)).toBe(true);
+    expect(readFileSync(out, "utf8")).toContain('class="diagram t-chen"');
   });
 
-  it("make --json reports the same error", () => {
-    const r = run(["make", examplePath, "--json", "-o", join(dir, "u.html")]);
-    expect(r.code).toBe(1);
-    expect(JSON.parse(r.stdout)).toEqual({
-      ok: false,
-      issues: [
-        {
-          severity: "error",
-          code: "chen/render-unavailable",
-          path: "$",
-          message: "chen diagrams cannot be rendered yet",
-          hint: '"trazo check" validates them already; rendering arrives in a later release',
-        },
-      ],
-    });
+  it("make --json reports ok", () => {
+    const r = run(["make", examplePath, "--json", "-o", join(dir, "j.html")]);
+    expect(r.code).toBe(0);
+    expect(JSON.parse(r.stdout)).toMatchObject({ ok: true, issues: [] });
   });
 
   it("make still reports validation errors first", () => {

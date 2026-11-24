@@ -139,6 +139,24 @@ export const OVERVIEW_CSS = `
 .t-overview-control[aria-expanded="false"] .t-overview-chevron { transform: rotate(-90deg); transform-box: fill-box; transform-origin: center; }
 `;
 
+/**
+ * Appended only to Chen diagrams. Every color is a theme variable with its light fallback;
+ * links have butt ends because the layout placed them exactly on the outlines.
+ */
+export const CHEN_CSS = `
+.t-chen .t-node-box { stroke-width: 1.8; }
+.t-chen .t-node-inner { fill: none; }
+.t-chen .t-shape-attribute .t-node-box, .t-chen .t-shape-multivalued .t-node-box { stroke-width: 1.5; }
+.t-chen .t-shape-relationship .t-node-box, .t-chen .t-shape-identifying .t-node-box { stroke-linejoin: miter; }
+.t-derived .t-node-box { stroke-dasharray: 5.5 3.5; }
+.t-chen-link, .t-chen-attr { fill: none; stroke-linecap: butt; stroke-linejoin: miter; }
+.t-chen-link { stroke: var(--t-text, ${B.text}); stroke-width: 1.7; }
+.t-chen-attr { stroke: var(--t-muted, ${B.muted}); stroke-width: 1.25; }
+.t-chen-underline { stroke: var(--t-text, ${B.text}); stroke-width: 1.5; stroke-linecap: butt; }
+.t-u-partial { stroke-dasharray: 3.5 2.5; }
+.t-chen-card { fill: var(--t-text, ${B.text}); paint-order: stroke; stroke: var(--t-bg, ${B.bg}); stroke-width: 4px; stroke-linejoin: round; }
+`;
+
 /** Appended only to scenes with a legend. */
 export const LEGEND_CSS = `
 .t-legend-label { fill: var(--t-muted, ${B.muted}); }

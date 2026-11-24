@@ -16,6 +16,7 @@ import type {
 import { INDEX_ROW, MAX_RELATIONS, overviewMetrics } from "../layout/overview.js";
 import { lineHeight } from "../text/measure.js";
 import { CHIP_PAD, CHIP_RADIUS, CHIP_SIZE, GLYPH_SIZE } from "./card.js";
+import { chenCard, chenEdge, glyph, underline } from "./chen.js";
 import { ICONS } from "./generated/icons.js";
 import { familyOf, type Family } from "./families.js";
 import {
@@ -29,6 +30,7 @@ import {
   shapeMarkup,
 } from "./shapes.js";
 import {
+  CHEN_CSS,
   GROUPED_TABLE_CSS,
   LEGEND_CSS,
   NOTE_CSS,
@@ -174,10 +176,14 @@ function legend(items: SceneLegendItem[]): string {
   const entries = items.map((item) => {
     const s = item.swatch;
     const mid = s.y + s.h / 2;
-    const mark = item.family
-      ? rect(s, "t-legend-swatch", LEGEND_SWATCH_RADIUS)
-      : `<line class="t-legend-line t-legend-${item.style}" x1="${num(s.x)}" y1="${num(mid)}" x2="${num(s.x + s.w)}" y2="${num(mid)}"/>`;
-    const cls = item.family ? `t-legend-item t-fam-${item.family}` : "t-legend-item";
+    const mark = item.glyph
+      ? glyph(item.glyph, s)
+      : item.family
+        ? rect(s, "t-legend-swatch", LEGEND_SWATCH_RADIUS)
+        : `<line class="t-legend-line t-legend-${item.style}" x1="${num(s.x)}" y1="${num(mid)}" x2="${num(s.x + s.w)}" y2="${num(mid)}"/>`;
+    const cls = item.family
+      ? `t-legend-item t-fam-${item.family}${item.glyph ? " t-tint" : ""}`
+      : "t-legend-item";
     return `<g class="${cls}">${mark}${text(item.label, "t-legend-label")}</g>`;
   });
   return `<g class="t-legend">${entries.join("")}</g>`;
@@ -220,8 +226,9 @@ function node(n: SceneNode, family: Family | undefined): string {
     family && `t-fam-${family}`,
     n.shape !== "box" && `t-shape-${n.shape}`,
     tint && "t-tint",
+    n.mark === "derived" && "t-derived",
   ];
-  return `<g class="${cls.filter(Boolean).join(" ")}" data-id="${escapeXml(n.id)}" data-kind="${escapeXml(n.kind)}"${n.source ? ` data-source="${escapeXml(n.source)}"` : ""} tabindex="0">${desc}${shapeMarkup(n.shape, n)}${n.shape === "table" ? tableBody(n) : chip(n)}${text(n.label, "t-node-label")}${n.subtitle ? text(n.subtitle, "t-node-note") : ""}</g>`;
+  return `<g class="${cls.filter(Boolean).join(" ")}" data-id="${escapeXml(n.id)}" data-kind="${escapeXml(n.kind)}"${n.source ? ` data-source="${escapeXml(n.source)}"` : ""} tabindex="0">${desc}${shapeMarkup(n.shape, n)}${n.shape === "table" ? tableBody(n) : chip(n)}${text(n.label, "t-node-label")}${n.mark === "key" || n.mark === "partial" ? underline(n.mark, n.label.x, n.label.y, n.label.lines[0]!, n.label.size, n.label.weight) : ""}${n.subtitle ? text(n.subtitle, "t-node-note") : ""}</g>`;
 }
 
 function short(text: string, max: number): string {
@@ -408,7 +415,7 @@ export function renderSvg(scene: Scene): string {
   // Sequence async and reply messages use the open head; ERD edges with crow's-foot ends use none.
   const isOpen = (e: SceneEdge) => seq && OPEN_STYLES.includes(e.style);
   const heads = STYLES.flatMap((style) => {
-    const own = scene.edges.filter((e) => !e.ends && e.style === style);
+    const own = scene.edges.filter((e) => !e.ends && !e.chen && e.style === style);
     const filled = own.some((e) => !isOpen(e))
       ? `<marker id="${markerId(style, false)}" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path class="${arrowClass(style)}" d="M1.8 1.8L8.4 5L1.8 8.2z"/></marker>`
       : "";
@@ -436,12 +443,13 @@ export function renderSvg(scene: Scene): string {
     (scene.overview ? OVERVIEW_CSS : "") +
     (scene.legend ? LEGEND_CSS : "") +
     (scene.groups.some((g) => g.note) ? LANE_NOTE_CSS : "") +
+    (scene.type === "chen" ? CHEN_CSS : "") +
     (needsTableCss(scene) ? TABLE_CSS : "") +
     (scene.nodes.some((n) => n.shape === "table" && n.family) ? GROUPED_TABLE_CSS : "") +
     (scene.nodes.some((n) => n.subtitle) ? NOTE_CSS : "") +
     (seq ? SEQUENCE_CSS : "");
   const parts = [
-    `<svg xmlns="http://www.w3.org/2000/svg" class="${seq ? "diagram t-seq" : "diagram"}" viewBox="0 0 ${num(scene.width)} ${num(scene.height)}" role="img" aria-labelledby="${labelled}">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" class="${seq ? "diagram t-seq" : scene.type === "chen" ? "diagram t-chen" : "diagram"}" viewBox="0 0 ${num(scene.width)} ${num(scene.height)}" role="img" aria-labelledby="${labelled}">`,
     `<title id="t-title">${escapeXml(scene.title)}</title>`,
     desc,
     `<defs>${heads.join("")}${ends ? endMarkers() : ""}${shadowed ? shadowFilter() : ""}</defs>`,
@@ -450,8 +458,8 @@ export function renderSvg(scene: Scene): string {
     ...lanes(scene.groups),
     ...scene.groups.map(group),
     ...scene.groups.map(fragment),
-    ...scene.edges.map((e) => edge(e, seq)),
-    ...scene.edges.map(edgeLabel),
+    ...scene.edges.map((e) => (e.chen ? chenEdge(e) : edge(e, seq))),
+    ...scene.edges.map((e) => (e.chen ? chenCard(e) : edgeLabel(e))),
     ...scene.nodes.map((n, i) => node(n, families[i])),
     ...(scene.legend ? [legend(scene.legend)] : []),
     overview(scene),

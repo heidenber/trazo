@@ -25,7 +25,24 @@ export interface TextBlock {
   anchor: "start" | "middle";
 }
 
-export type NodeShape = "box" | "pill" | "end" | "diamond" | "subprocess" | "table" | "note";
+export type NodeShape =
+  | "box"
+  | "pill"
+  | "end"
+  | "diamond"
+  | "subprocess"
+  | "table"
+  | "note"
+  // Chen notation: the box is the outer border, which connectors meet.
+  | "entity"
+  | "weak-entity"
+  | "relationship"
+  | "identifying"
+  | "attribute"
+  | "multivalued";
+
+/** Chen attribute marks drawn on the label or the outline. */
+export type ChenMark = "key" | "partial" | "derived";
 
 export type EdgeEnd = "one" | "zero-or-one" | "many" | "zero-or-many";
 
@@ -55,6 +72,8 @@ export interface SceneNode extends Box {
   source?: string;
   /** Id of the group or lane that directly contains the node. */
   parent?: string;
+  /** Chen attributes only: underline (key, partial) or dashed outline (derived). */
+  mark?: ChenMark;
   /** Optional family tint chosen by a layout (ERD table groups). */
   family?: string;
   /** Table nodes only. */
@@ -82,6 +101,16 @@ export interface SceneGroup extends Box {
   dividers?: { y: number; guard: TextBlock }[];
 }
 
+/** What a Chen connector adds to a plain edge. */
+export interface SceneChenLink {
+  /** "link" joins an entity to a relationship; "attribute" joins an oval to its owner. */
+  role: "link" | "attribute";
+  /** Second line of a total participation: the double line. Both lines end on the borders. */
+  second?: Point[];
+  /** Cardinality (1, N, M) drawn next to the entity end, with a halo. */
+  card?: TextBlock;
+}
+
 export interface SceneEdge {
   id: string;
   from: string;
@@ -91,6 +120,7 @@ export interface SceneEdge {
   label?: { box: Box; text: TextBlock };
   /** Crow's foot symbols; an edge with ends has no arrowhead. */
   ends?: { from: EdgeEnd; to: EdgeEnd };
+  chen?: SceneChenLink;
 }
 
 export interface SceneLifeline {
@@ -102,6 +132,8 @@ export interface SceneLifeline {
 
 export interface SceneLegendItem {
   family?: string;
+  /** Chen notation symbol drawn inside the swatch box instead of a plain swatch. */
+  glyph?: string;
   style?: SceneEdge["style"];
   swatch: Box;
   label: TextBlock;

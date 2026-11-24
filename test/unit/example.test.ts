@@ -100,11 +100,25 @@ describe("examples/sequence.json", () => {
   });
 });
 
+const chenText = readFileSync(new URL("../../examples/chen.json", import.meta.url), "utf8");
+
 describe("examples/chen.json", () => {
   it("validates with no issues", () => {
-    const { issues } = validateDiagram(
-      JSON.parse(readFileSync(new URL("../../examples/chen.json", import.meta.url), "utf8")),
-    );
+    const { issues } = validateDiagram(JSON.parse(chenText));
     expect(issues).toEqual([]);
+  });
+
+  it("renders the expected SVG", async () => {
+    const { diagram } = validateDiagram(JSON.parse(chenText));
+    const svg = renderSvg(await layoutDiagram(diagram!));
+    await expect(svg).toMatchFileSnapshot("../__snapshots__/chen.svg");
+  });
+
+  it("makes byte-identical html twice and stays small", async () => {
+    const first = await make(chenText);
+    const second = await make(chenText);
+    expect(first.ok).toBe(true);
+    expect(first.html).toBe(second.html);
+    expect(Buffer.byteLength(first.html!)).toBeLessThan(300 * 1024);
   });
 });
