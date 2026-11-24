@@ -75,6 +75,8 @@ export interface ChromeInput {
   height: number;
   /** Output of embeddedSource. */
   source?: string;
+  /** Inert JSON {nodeId: detail} for the detail card; viewer only, never in the svg. */
+  detail?: string;
   /** The diagram's svg markup. */
   svg: string;
 }
@@ -167,5 +169,9 @@ ${c.svg}
     c.source === undefined
       ? ""
       : `\n<script type="application/json" id="trazo-source">${c.source}</script>`
+  }${
+    c.detail === undefined
+      ? ""
+      : `\n<script type="application/json" id="trazo-detail">${c.detail}</script>`
   }`;
 }

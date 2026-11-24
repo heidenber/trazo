@@ -32,6 +32,7 @@ import {
   NOTE_CSS,
   SEQUENCE_CSS,
   SHADOW_CSS,
+  LANE_NOTE_CSS,
   SHAPE_CSS,
   SVG_CSS,
   TABLE_CSS,
@@ -184,7 +185,11 @@ function lanes(groups: SceneGroup[]): string[] {
   return groups
     .filter((g) => g.variant === "lane")
     .map((g) =>
-      laneMarkup({ ...g, id: escapeXml(g.id) }, i++ % 2 === 1, text(g.label, "t-lane-title")),
+      laneMarkup(
+        { ...g, id: escapeXml(g.id) },
+        i++ % 2 === 1,
+        text(g.label, "t-lane-title") + (g.note ? text(g.note, "t-lane-note") : ""),
+      ),
     );
 }
 
@@ -249,6 +254,7 @@ export function renderSvg(scene: Scene): string {
       ...(scene.legend ?? []).flatMap((i) => (i.family ? [i.family as Family] : [])),
     ]) +
     (scene.legend ? LEGEND_CSS : "") +
+    (scene.groups.some((g) => g.note) ? LANE_NOTE_CSS : "") +
     (needsTableCss(scene) ? TABLE_CSS : "") +
     (scene.nodes.some((n) => n.subtitle) ? NOTE_CSS : "") +
     (seq ? SEQUENCE_CSS : "");

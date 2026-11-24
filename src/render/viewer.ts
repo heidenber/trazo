@@ -185,6 +185,9 @@ export const VIEWER_SCRIPT = String.raw`(function () {
       ul.append(none);
     }
   };
+  var details = {};
+  var detailEl = $("trazo-detail");
+  if (detailEl) try { details = JSON.parse(detailEl.textContent); } catch (e) {}
   var fill = function (g) {
     var node = g.classList.contains("t-node");
     var desc = g.firstElementChild && g.firstElementChild.localName === "desc" ? g.firstElementChild.textContent : "";
@@ -193,7 +196,7 @@ export const VIEWER_SCRIPT = String.raw`(function () {
     set($("d-title"), node ? nodeName(g) : textOf(g.querySelector("text")));
     set($("d-kind"), node ? g.dataset.kind || "node" : "column");
     $("d-sw").setAttribute("class", "sw " + (node ? fams(g) : ""));
-    set($("d-note"), desc);
+    set($("d-note"), details[g.dataset.id] || desc);
     $("d-srcp").hidden = !src;
     set($("d-src"), src);
     var ins = [];

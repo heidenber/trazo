@@ -57,5 +57,6 @@ for a suggested fix.
 | `workflow/decision-label` | Warning | An edge leaving a decision step has no label. |
 | `workflow/decision-outputs` | Error | A decision step has fewer than two outgoing edges. |
 | `workflow/end-outgoing` | Error | An end step has an outgoing edge. |
+| `workflow/many-lanes` | Warning | A workflow has more than 6 lanes. |
 | `workflow/start-incoming` | Error | A start step has an incoming edge. |
 | `workflow/unreachable` | Warning | A step cannot be reached from any start step. |

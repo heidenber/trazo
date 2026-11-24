@@ -92,6 +92,10 @@ export const SHAPE_CSS = `
 .t-lane-title { fill: var(--t-muted, ${B.muted}); }
 `;
 
+/** Appended only when a lane has a role line, so other diagrams keep their CSS byte for byte. */
+export const LANE_NOTE_CSS = `.t-lane-note { fill: var(--t-muted, ${B.muted}); }
+`;
+
 /** Appended only when a scene has table nodes or edges with crow's foot ends. */
 export const TABLE_CSS = `
 .t-table { fill: var(--t-card, ${B.card}); stroke: var(--t-card-stroke, ${B["card-stroke"]}); stroke-width: 1; }

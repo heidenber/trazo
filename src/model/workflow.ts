@@ -24,12 +24,15 @@ export interface WorkflowStep {
   label: string;
   kind: StepKind;
   note?: string;
+  /** Longer text for the viewer's detail card only; never drawn in the SVG. */
+  detail?: string;
   source?: string;
 }
 
 export interface WorkflowLane {
   id: string;
   label: string;
+  note?: string;
   steps: string[];
 }
 
@@ -63,6 +66,7 @@ export const workflowSchema = z.strictObject({
       z.strictObject({
         id: idSchema,
         label: textSchema.optional(),
+        note: textSchema.optional(),
         steps: z.array(idSchema).min(1),
       }),
     )
@@ -74,6 +78,7 @@ export const workflowSchema = z.strictObject({
         label: textSchema.optional(),
         kind: z.enum(STEP_KINDS).optional(),
         note: textSchema.optional(),
+        detail: textSchema.optional(),
         source: textSchema.optional(),
       }),
     )
@@ -84,6 +89,7 @@ export const workflowSchema = z.strictObject({
 type Parsed = z.output<typeof workflowSchema>;
 
 const LARGE_WORKFLOW = 40;
+const MAX_LANES = 6;
 
 export function buildWorkflow(input: Parsed): { diagram?: Workflow; issues: Issue[] } {
   const issues: Issue[] = [];
@@ -169,6 +175,17 @@ export function buildWorkflow(input: Parsed): { diagram?: Workflow; issues: Issu
     );
   }
 
+  if (lanes.length > MAX_LANES) {
+    issues.push(
+      warning(
+        "workflow/many-lanes",
+        "lanes",
+        `${lanes.length} lanes`,
+        `workflows read best with ${MAX_LANES} lanes or fewer; consider splitting the process`,
+      ),
+    );
+  }
+
   const direction = input.direction ?? (lanes.length > 0 ? "auto" : "down");
 
   if (issues.some((issue) => issue.severity === "error")) return { issues };
@@ -178,12 +195,17 @@ export function buildWorkflow(input: Parsed): { diagram?: Workflow; issues: Issu
     title: input.title,
     theme: input.theme ?? "light",
     direction,
-    lanes: lanes.map((lane) => ({ id: lane.id, label: lane.label ?? lane.id, steps: lane.steps })),
+    lanes: lanes.map((lane) => {
+      const out: WorkflowLane = { id: lane.id, label: lane.label ?? lane.id, steps: lane.steps };
+      if (lane.note !== undefined) out.note = lane.note;
+      return out;
+    }),
     steps: input.steps.map((step) => {
       const kind = step.kind ?? "task";
       const fallback = kind === "start" ? "Start" : kind === "end" ? "End" : step.id;
       const out: WorkflowStep = { id: step.id, label: step.label ?? fallback, kind };
       if (step.note !== undefined) out.note = step.note;
+      if (step.detail !== undefined) out.detail = step.detail;
       if (step.source !== undefined) out.source = step.source;
       return out;
     }),

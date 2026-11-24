@@ -6,6 +6,9 @@ All notable changes to trazo are listed here. The format follows [Keep a Changel
 
 ### Added
 
+- Optional JSON fields: `detail` on workflow steps and ERD tables (longer text for the viewer's detail card, which falls back to `note`; it is never drawn in the SVG, so exports do not carry it), `note` on workflow lanes (a muted role line under the lane name, clipped with "…" to the header width) and `group` on ERD tables (stored and validated; rendered later). The on-canvas note keeps its 3-line cap. Wrong types are rejected with the usual `schema/type` error.
+- A workflow with more than 6 lanes gets the `workflow/many-lanes` warning (non-fatal).
+
 - The trazo logo in the viewer header (the reversed logo on the dark and dusk themes) and an SVG favicon that switches to the light mark in a dark browser. The READMEs show the logo, with a reversed version in dark mode.
 
 - Two new themes, `lagoon` (light, teal) and `dusk` (dark, violet), next to `light` and `dark`: accepted by the JSON `theme` field of every diagram type, by `--theme` and by `make(…, { theme })`. `light` and `dark` keep their names and take new palettes. All four reach WCAG AA (4.5:1 for text on its fill, 3:1 for strokes and edges). The in-page toggle flips light and dark, and lagoon and dusk. A bad `--theme` now reads `invalid --theme "x" (use light, dark, lagoon or dusk)`.

@@ -217,6 +217,7 @@ export async function layoutErd(d: Erd): Promise<Scene> {
       };
     }
     if (t.note !== undefined) node.note = t.note;
+    if (t.detail !== undefined) node.detail = t.detail;
     if (t.source !== undefined) node.source = t.source;
     return node;
   });

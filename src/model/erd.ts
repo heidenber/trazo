@@ -30,6 +30,10 @@ export interface ErdTable {
   id: string;
   label: string;
   note?: string;
+  /** Longer text for the viewer's detail card only; never drawn in the SVG. */
+  detail?: string;
+  /** Family name used by the overview to group tables (rendered from T23.3). */
+  group?: string;
   source?: string;
   columns: ErdColumn[];
 }
@@ -243,6 +247,8 @@ export const erdSchema = z.strictObject({
         id: idSchema,
         label: textSchema.optional(),
         note: textSchema.optional(),
+        detail: textSchema.optional(),
+        group: textSchema.optional(),
         source: textSchema.optional(),
         columns: z.array(columnSchema).min(1),
       }),
@@ -415,6 +421,8 @@ export function buildErd(input: Parsed): { diagram?: Erd; issues: Issue[] } {
         }),
       };
       if (table.note !== undefined) out.note = table.note;
+      if (table.detail !== undefined) out.detail = table.detail;
+      if (table.group !== undefined) out.group = table.group;
       if (table.source !== undefined) out.source = table.source;
       return out;
     }),

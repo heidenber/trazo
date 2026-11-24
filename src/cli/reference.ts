@@ -64,11 +64,13 @@ step
   label?        shown text; defaults to id ("Start" or "End" for those kinds)
   kind?         task | start | end | decision | wait | subprocess
   note?         shown under the label in task, wait and subprocess boxes, up to 3 lines; whole on hover
+  detail?       longer text for the viewer's detail card only (not in the SVG); the card falls back to note
   source?       "path/file.ts:line", shown on hover
 
 lane
   id            unique among steps and lanes
   label?        shown text; defaults to id
+  note?         role line under the lane name, one line, clipped with "…"
   steps         ids of steps, at least 1
 
 edge
@@ -101,6 +103,8 @@ table
   id            unique; letters, digits, _ . -; may contain dots (public.users)
   label?        shown text; defaults to id
   note?         shown under the title, up to 3 lines; whole on hover
+  detail?       longer text for the viewer's detail card only (not in the SVG); the card falls back to note
+  group?        name that groups related tables (stored for now; the overview uses it later)
   source?       "path/file.ts:line", shown on hover
   columns       column[], at least 1
 
