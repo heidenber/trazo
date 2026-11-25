@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="diagram t-state" viewBox="0 0 1295 498.1" role="img" aria-labelledby="t-title t-desc">
+<title id="t-title">Purchase order</title>
+<desc id="t-desc">Lifecycle of a purchase order: the happy path runs from Draft to Delivered; rejected and cancelled orders leave it.</desc>
+<defs><marker id="t-arrowhead" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow" d="M1.8 1.8L8.4 5L1.8 8.2z"/></marker><marker id="t-arrowhead-exception" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow t-arrow-exception" d="M1.8 1.8L8.4 5L1.8 8.2z"/></marker></defs>
+<style>
+.t-text { font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; font-kerning: none; font-variant-ligatures: none; font-feature-settings: "kern" 0, "liga" 0, "calt" 0; fill: var(--t-text, #151a2b); }
+.t-group-title { fill: var(--t-muted, #5a6379); }
+.t-group-box { fill: var(--t-group-fill, #edf0f9); stroke: var(--t-group-stroke, #d3d9ea); stroke-width: 1; }
+.t-node-box { fill: var(--t-card, #ffffff); stroke: var(--t-card-stroke, #dde2ee); stroke-width: 1; stroke-linejoin: round; }
+.t-tint .t-node-box { fill: var(--t-f-fill, #ffffff); stroke: var(--t-f-stroke, #818694); stroke-width: 1.5; }
+.t-tint .t-node-rule { stroke: var(--t-f-stroke, #818694); }
+.t-chip { fill: var(--t-f-fill, #edf0f9); stroke: var(--t-f-stroke, #818694); stroke-opacity: 0.35; stroke-width: 1; }
+.t-node:focus { outline: none; }
+.t-node:focus-visible .t-node-box { stroke: var(--t-accent, #4457e8); stroke-width: 2.5; }
+.t-icon { color: var(--t-f-stroke, var(--t-icon, #5a6379)); }
+.t-edge { fill: none; stroke: var(--t-edge, #1b5eda); stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+.t-edge-async { stroke: var(--t-edge-async, #803bce); }
+.t-edge-data { stroke: var(--t-edge-data, #1a9386); }
+.t-edge-reply { stroke: var(--t-edge-reply, #606e80); }
+.t-edge-async { stroke-dasharray: 6 5; }
+.t-edge-data { stroke-dasharray: 0.1 5.2; stroke-width: 2.4; }
+.t-arrow { fill: var(--t-edge, #1b5eda); stroke: var(--t-edge, #1b5eda); stroke-width: 1.4; stroke-linejoin: round; }
+.t-arrow-async { fill: var(--t-edge-async, #803bce); stroke: var(--t-edge-async, #803bce); }
+.t-arrow-data { fill: var(--t-edge-data, #1a9386); stroke: var(--t-edge-data, #1a9386); }
+.t-arrow-reply { fill: var(--t-edge-reply, #606e80); stroke: var(--t-edge-reply, #606e80); }
+.t-label-bg { fill: var(--t-label-bg, #ffffff); stroke: var(--t-border, #dde2ee); stroke-width: 1; }
+.t-label { fill: var(--t-muted, #5a6379); }
+
+.t-node-inner { fill: none; }
+.t-node-rule { stroke: var(--t-node-stroke, #818694); stroke-width: 1.25; }
+.t-lane-band { fill: var(--t-lane-fill, transparent); stroke: none; }
+.t-lane-odd .t-lane-band { fill: var(--t-lane-fill-odd, #edf0f9); }
+.t-lane-header { fill: var(--t-lane-header, #e9edf5); stroke: none; }
+.t-lane-rule { stroke: var(--t-group-stroke, #d3d9ea); stroke-width: 1; }
+.t-lane-title { fill: var(--t-muted, #5a6379); }
+.t-fam-end { --t-f-fill: var(--t-fam-end-fill, #f9e7e6); --t-f-stroke: var(--t-fam-end-stroke, #be362d); }
+.t-fam-end .t-node-inner { fill: none; }
+.t-fam-task { --t-f-fill: var(--t-fam-task-fill, #e6eef9); --t-f-stroke: var(--t-fam-task-stroke, #2d6cbe); }
+
+.t-legend-label { fill: var(--t-muted, #5a6379); }
+.t-legend-item .t-legend-swatch { fill: var(--t-f-fill, #edf0f9); stroke: var(--t-f-stroke, #818694); stroke-width: 1.25; }
+.t-legend-line { fill: none; stroke: var(--t-edge, #1b5eda); stroke-width: 1.7; stroke-linecap: round; }
+.t-legend-async { stroke: var(--t-edge-async, #803bce); }
+.t-legend-data { stroke: var(--t-edge-data, #1a9386); }
+.t-legend-reply { stroke: var(--t-edge-reply, #606e80); }
+.t-legend-async { stroke-dasharray: 6 5; }
+.t-legend-data { stroke-dasharray: 0.1 5.2; stroke-width: 2.4; }
+.t-legend-reply { stroke-dasharray: 5 4; }
+
+.t-st-main { stroke-width: 2.6; }
+.t-st-exc { stroke: var(--t-fam-end-stroke, #be362d); stroke-dasharray: 6 4.5; }
+.t-arrow-exception { fill: var(--t-fam-end-stroke, #be362d); stroke: var(--t-fam-end-stroke, #be362d); }
+.t-state .t-fam-end .t-node-box { stroke-dasharray: 5 4; }
+.t-state-initial, .t-state-dot { fill: var(--t-text, #151a2b); stroke: none; }
+.t-state-ring { fill: var(--t-card, #ffffff); stroke: var(--t-text, #151a2b); stroke-width: 1.8; }
+.t-state-ev { fill: var(--t-text, #151a2b); }
+</style>
+<path class="t-edge t-edge-sync t-st-main" data-from="start" data-to="draft" d="M48 172.1 L122 172.1" marker-end="url(#t-arrowhead)" data-edge="t0"/>
+<path class="t-edge t-edge-sync" data-from="draft" data-to="draft" d="M190 152.1 L190 136.1 Q190 126.1 200 126.1 L214 126.1 Q224 126.1 224 136.1 L224 152.1" marker-end="url(#t-arrowhead)" data-edge="t1"/>
+<path class="t-edge t-edge-sync t-st-main" data-from="draft" data-to="submitted" d="M234 172.1 L308 172.1" marker-end="url(#t-arrowhead)" data-edge="t2"/>
+<path class="t-edge t-edge-sync t-st-main" data-from="submitted" data-to="approved" d="M420 172.1 L495 172.1" marker-end="url(#t-arrowhead)" data-edge="t3"/>
+<path class="t-edge t-edge-sync t-st-exc" data-from="submitted" data-to="rejected" d="M364 152.1 L364 72.1" marker-end="url(#t-arrowhead-exception)" data-edge="t4"/>
+<path class="t-edge t-edge-sync t-st-exc" data-from="rejected" data-to="draft" d="M308 52.1 L165 52.1 Q155 52.1 155 62.1 L155 152.1" marker-end="url(#t-arrowhead-exception)" data-edge="t5"/>
+<path class="t-edge t-edge-sync t-st-main" data-from="approved" data-to="paid" d="M607 172.1 L681 172.1" marker-end="url(#t-arrowhead)" data-edge="t6"/>
+<path class="t-edge t-edge-sync t-st-main" data-from="paid" data-to="shipped" d="M793 172.1 L867 172.1" marker-end="url(#t-arrowhead)" data-edge="t7"/>
+<path class="t-edge t-edge-sync t-st-main" data-from="shipped" data-to="delivered" d="M979 172.1 L1053 172.1" marker-end="url(#t-arrowhead)" data-edge="t8"/>
+<path class="t-edge t-edge-sync t-st-main" data-from="delivered" data-to="end" d="M1165 172.1 L1239 172.1" marker-end="url(#t-arrowhead)" data-edge="t9"/>
+<path class="t-edge t-edge-sync t-st-exc" data-from="draft" data-to="cancelled" d="M178 192.1 L178 312.1 Q178 322.1 188 322.1 L308 322.1" marker-end="url(#t-arrowhead-exception)" data-edge="t10"/>
+<path class="t-edge t-edge-sync t-st-exc" data-from="submitted" data-to="cancelled" d="M364 192.1 L364 302.1" marker-end="url(#t-arrowhead-exception)" data-edge="t11"/>
+<path class="t-edge t-edge-sync t-st-exc" data-from="approved" data-to="cancelled" d="M551 192.1 L551 312.1 Q551 322.1 541 322.1 L420 322.1" marker-end="url(#t-arrowhead-exception)" data-edge="t12"/>
+<path class="t-edge t-edge-sync t-st-exc" data-from="cancelled" data-to="end" d="M364 342.1 L364 392.1 Q364 402.1 374 402.1 L1241 402.1 Q1251 402.1 1251 392.1 L1251 184.1" marker-end="url(#t-arrowhead-exception)" data-edge="t13"/>
+<g class="t-edge-label" data-edge="t0"><text class="t-text t-label t-state-ev" x="85" y="164.17" font-size="12" font-weight="400" text-anchor="middle"><tspan x="85" dy="0">create</tspan></text></g>
+<g class="t-edge-label" data-edge="t1"><text class="t-text t-label t-state-ev" x="207" y="118.17" font-size="12" font-weight="400" text-anchor="middle"><tspan x="207" dy="0">edit</tspan></text></g>
+<g class="t-edge-label" data-edge="t2"><text class="t-text t-label t-state-ev" x="271" y="164.17" font-size="12" font-weight="400" text-anchor="middle"><tspan x="271" dy="0">submit</tspan></text></g>
+<g class="t-edge-label" data-edge="t3"><text class="t-text t-label t-state-ev" x="457.5" y="164.17" font-size="12" font-weight="400" text-anchor="middle"><tspan x="457.5" dy="0">approve</tspan></text></g>
+<g class="t-edge-label" data-edge="t4"><text class="t-text t-label t-state-ev" x="388.1" y="116.47" font-size="12" font-weight="400" text-anchor="middle"><tspan x="388.1" dy="0">reject</tspan></text></g>
+<g class="t-edge-label" data-edge="t5"><text class="t-text t-label t-state-ev" x="231.5" y="44.17" font-size="12" font-weight="400" text-anchor="middle"><tspan x="231.5" dy="0">revise</tspan></text></g>
+<g class="t-edge-label" data-edge="t6"><text class="t-text t-label t-state-ev" x="644" y="164.17" font-size="12" font-weight="400" text-anchor="middle"><tspan x="644" dy="0">pay</tspan></text></g>
+<g class="t-edge-label" data-edge="t7"><text class="t-text t-label t-state-ev" x="830" y="164.17" font-size="12" font-weight="400" text-anchor="middle"><tspan x="830" dy="0">ship</tspan></text></g>
+<g class="t-edge-label" data-edge="t8"><text class="t-text t-label t-state-ev" x="1016" y="164.17" font-size="12" font-weight="400" text-anchor="middle"><tspan x="1016" dy="0">deliver</tspan></text></g>
+<g class="t-edge-label" data-edge="t9"><text class="t-text t-label t-state-ev" x="1202" y="164.17" font-size="12" font-weight="400" text-anchor="middle"><tspan x="1202" dy="0">close</tspan></text></g>
+<g class="t-edge-label" data-edge="t10"><text class="t-text t-label t-state-ev" x="243" y="314.17" font-size="12" font-weight="400" text-anchor="middle"><tspan x="243" dy="0">cancel</tspan></text></g>
+<g class="t-edge-label" data-edge="t11"><text class="t-text t-label t-state-ev" x="390.72" y="251.47" font-size="12" font-weight="400" text-anchor="middle"><tspan x="390.72" dy="0">cancel</tspan></text></g>
+<g class="t-edge-label" data-edge="t12"><text class="t-text t-label t-state-ev" x="485.5" y="314.17" font-size="12" font-weight="400" text-anchor="middle"><tspan x="485.5" dy="0">cancel</tspan></text></g>
+<g class="t-edge-label" data-edge="t13"><text class="t-text t-label t-state-ev" x="807.5" y="394.17" font-size="12" font-weight="400" text-anchor="middle"><tspan x="807.5" dy="0">close</tspan></text></g>
+<g class="t-node t-shape-initial" data-id="start" data-kind="initial" tabindex="0"><circle class="t-state-initial" cx="40" cy="172.1" r="8"/></g>
+<g class="t-node t-fam-task t-shape-state t-tint" data-id="draft" data-kind="state" tabindex="0"><rect class="t-node-box" x="122" y="152.1" width="112" height="40" rx="10"/><text class="t-text t-node-label" x="178" y="176.83" font-size="13" font-weight="600" text-anchor="middle"><tspan x="178" dy="0">Draft</tspan></text></g>
+<g class="t-node t-fam-task t-shape-state t-tint" data-id="submitted" data-kind="state" tabindex="0"><rect class="t-node-box" x="308" y="152.1" width="112" height="40" rx="10"/><text class="t-text t-node-label" x="364" y="176.83" font-size="13" font-weight="600" text-anchor="middle"><tspan x="364" dy="0">Submitted</tspan></text></g>
+<g class="t-node t-fam-task t-shape-state t-tint" data-id="approved" data-kind="state" tabindex="0"><rect class="t-node-box" x="495" y="152.1" width="112" height="40" rx="10"/><text class="t-text t-node-label" x="551" y="176.83" font-size="13" font-weight="600" text-anchor="middle"><tspan x="551" dy="0">Approved</tspan></text></g>
+<g class="t-node t-fam-task t-shape-state t-tint" data-id="paid" data-kind="state" tabindex="0"><rect class="t-node-box" x="681" y="152.1" width="112" height="40" rx="10"/><text class="t-text t-node-label" x="737" y="176.83" font-size="13" font-weight="600" text-anchor="middle"><tspan x="737" dy="0">Paid</tspan></text></g>
+<g class="t-node t-fam-task t-shape-state t-tint" data-id="shipped" data-kind="state" tabindex="0"><rect class="t-node-box" x="867" y="152.1" width="112" height="40" rx="10"/><text class="t-text t-node-label" x="923" y="176.83" font-size="13" font-weight="600" text-anchor="middle"><tspan x="923" dy="0">Shipped</tspan></text></g>
+<g class="t-node t-fam-task t-shape-state t-tint" data-id="delivered" data-kind="state" tabindex="0"><rect class="t-node-box" x="1053" y="152.1" width="112" height="40" rx="10"/><text class="t-text t-node-label" x="1109" y="176.83" font-size="13" font-weight="600" text-anchor="middle"><tspan x="1109" dy="0">Delivered</tspan></text></g>
+<g class="t-node t-fam-end t-shape-state t-tint" data-id="rejected" data-kind="exception" tabindex="0"><rect class="t-node-box" x="308" y="32.1" width="112" height="40" rx="10"/><text class="t-text t-node-label" x="364" y="56.83" font-size="13" font-weight="600" text-anchor="middle"><tspan x="364" dy="0">Rejected</tspan></text></g>
+<g class="t-node t-fam-end t-shape-state t-tint" data-id="cancelled" data-kind="exception" tabindex="0"><rect class="t-node-box" x="308" y="302.1" width="112" height="40" rx="10"/><text class="t-text t-node-label" x="364" y="326.83" font-size="13" font-weight="600" text-anchor="middle"><tspan x="364" dy="0">Cancelled</tspan></text></g>
+<g class="t-node t-shape-final" data-id="end" data-kind="final" tabindex="0"><circle class="t-state-ring" cx="1251" cy="172.1" r="12"/><circle class="t-state-dot" cx="1251" cy="172.1" r="6.5"/></g>
+<g class="t-legend"><g class="t-legend-item"><circle class="t-state-initial" cx="54" cy="444.1" r="8"/><text class="t-text t-legend-label" x="84" y="448.47" font-size="12" font-weight="400"><tspan x="84" dy="0">Initial state</tspan></text></g><g class="t-legend-item"><circle class="t-state-ring" cx="190.99" cy="444.1" r="10"/><circle class="t-state-dot" cx="190.99" cy="444.1" r="5.4"/><text class="t-text t-legend-label" x="220.99" y="448.47" font-size="12" font-weight="400"><tspan x="220.99" dy="0">Final state</tspan></text></g><g class="t-legend-item t-fam-task t-tint"><rect class="t-node-box" x="303.01" y="433.1" width="44" height="22" rx="8"/><text class="t-text t-legend-label" x="355.01" y="448.47" font-size="12" font-weight="400"><tspan x="355.01" dy="0">State</tspan></text></g><g class="t-legend-item t-fam-end t-tint"><rect class="t-node-box" x="408.29" y="433.1" width="44" height="22" rx="8"/><text class="t-text t-legend-label" x="460.29" y="448.47" font-size="12" font-weight="400"><tspan x="460.29" dy="0">Exceptional state (dashed)</tspan></text></g><g class="t-legend-item"><path class="t-legend-line t-st-main" d="M635.3 444.1H670.8"/><polygon class="t-arrow" points="679.3,444.1 670.3,448.5 670.3,439.7"/><text class="t-text t-legend-label" x="687.3" y="448.47" font-size="12" font-weight="400"><tspan x="687.3" dy="0">Transition, event above the line</tspan></text></g><g class="t-legend-item"><path class="t-legend-line t-st-exc" d="M889.4 444.1H924.9"/><polygon class="t-arrow t-arrow-exception" points="933.4,444.1 924.4,448.5 924.4,439.7"/><text class="t-text t-legend-label" x="941.4" y="448.47" font-size="12" font-weight="400"><tspan x="941.4" dy="0">Exceptional transition (dashed)</tspan></text></g><g class="t-legend-item"><path class="t-legend-line" d="M45 479.1V464.1H63V470.6"/><polygon class="t-arrow" points="63,479.1 58.6,470.1 67.4,470.1"/><text class="t-text t-legend-label" x="84" y="476.47" font-size="12" font-weight="400"><tspan x="84" dy="0">Self-transition</tspan></text></g></g>
+</svg>
