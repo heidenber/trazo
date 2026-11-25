@@ -35,8 +35,8 @@ const MIN_WIDTH = 140;
 const VISIBILITY_INDENT = 12;
 /** A line end keeps this far from the corner of its side, so a marker never sits on the curve. */
 const END_INSET = 14;
-/** Closest two line ends may sit on one side: a multiplicity (14 px high) fits between two lines. */
-const END_STEP = 28;
+/** Closest two line ends may sit on one side: a multiplicity (14 px high) still fits between two lines. */
+const END_STEP = 22;
 /** Run between a class and the first bend of a line: room for the longest marker, a corner and a stretch of line. */
 const STUB = 50;
 const LOOP_RISE = 52;
@@ -55,6 +55,8 @@ interface Sized {
   node: ClassNode;
   w: number;
   h: number;
+  /** Height the members need; the box is taller only when its line ends need more room. */
+  base: number;
   head: number;
   attributes: ClassMember[];
   methods: ClassMember[];
@@ -85,13 +87,15 @@ function size(node: ClassNode, loops: number[]): Sized {
   );
   const rows = compartments.length === 0 ? 1 : compartments.reduce((n, c) => n + c.length, 0);
   const slots = loops.length * LOOP_SLOT + 8;
+  const h =
+    (stereotype === undefined ? HEAD : HEAD_STEREOTYPE) +
+    Math.max(1, compartments.length) * COMPARTMENT_PAD +
+    rows * ROW;
   return {
     node,
     w: Math.max(MIN_WIDTH, even(widest), loops.length > 0 ? slots : 0),
-    h:
-      (stereotype === undefined ? HEAD : HEAD_STEREOTYPE) +
-      Math.max(1, compartments.length) * COMPARTMENT_PAD +
-      rows * ROW,
+    h,
+    base: h,
     head: stereotype === undefined ? HEAD : HEAD_STEREOTYPE,
     attributes: node.attributes,
     methods: node.methods,
@@ -127,23 +131,26 @@ function sceneNode(s: Sized, x: number, y: number): SceneNode {
   }
   if (node.stereotype === "abstract") c.abstract = true;
   let top = y + s.head;
-  [s.attributes, s.methods]
-    .filter((comp) => comp.length > 0)
-    .forEach((comp, k) => {
-      if (k > 0) c.rules.push(top);
-      const method = comp === s.methods;
-      comp.forEach((m, j) => {
-        const rowTop = top + COMPARTMENT_PAD / 2 + j * ROW + (ROW - lineHeight(MEMBER_SIZE)) / 2;
-        const bodyX = x + 12 + (m.visibility === undefined ? 0 : VISIBILITY_INDENT);
-        c.members.push({
-          ...(m.visibility === undefined
-            ? {}
-            : { vis: text(m.visibility, MEMBER_SIZE, 600, x + 12, rowTop, "start") }),
-          text: text(memberText(m, method), MEMBER_SIZE, 400, bodyX, rowTop, "start"),
-        });
+  const filled = [s.attributes, s.methods].filter((comp) => comp.length > 0);
+  // A box grown for its line ends shares the extra height between its compartments and centres the
+  // rows in them, so it reads as a deliberately tall card, not as a box with an empty bottom.
+  const extra = (s.h - s.base) / Math.max(1, filled.length);
+  filled.forEach((comp, k) => {
+    if (k > 0) c.rules.push(top);
+    const method = comp === s.methods;
+    comp.forEach((m, j) => {
+      const rowTop =
+        top + COMPARTMENT_PAD / 2 + extra / 2 + j * ROW + (ROW - lineHeight(MEMBER_SIZE)) / 2;
+      const bodyX = x + 12 + (m.visibility === undefined ? 0 : VISIBILITY_INDENT);
+      c.members.push({
+        ...(m.visibility === undefined
+          ? {}
+          : { vis: text(m.visibility, MEMBER_SIZE, 600, x + 12, rowTop, "start") }),
+        text: text(memberText(m, method), MEMBER_SIZE, 400, bodyX, rowTop, "start"),
       });
-      top += COMPARTMENT_PAD + comp.length * ROW;
     });
+    top += COMPARTMENT_PAD + comp.length * ROW + extra;
+  });
   const out: SceneNode = {
     id: node.id,
     kind: node.stereotype ?? "class",
@@ -500,21 +507,46 @@ export async function layoutClass(d: ClassDiagram): Promise<Scene> {
     obstacles.push({ r: rectOf(box), gap: TEXT_GAP });
     return box;
   };
-  const firstFree = (candidates: Box[]) => take(candidates.find(free) ?? candidates[0]!);
+  /** How much of a box lies on obstacles: the measure of last resort when no candidate is free. */
+  const overlap = (box: Box) => {
+    const r = rectOf(box);
+    return obstacles.reduce((sum, o) => {
+      const w = Math.min(r.x1, o.r.x1 + o.gap) - Math.max(r.x0, o.r.x0 - o.gap);
+      const h = Math.min(r.y1, o.r.y1 + o.gap) - Math.max(r.y0, o.r.y0 - o.gap);
+      return w > 0 && h > 0 ? sum + w * h : sum;
+    }, 0);
+  };
+  // The first free candidate wins (nearest first); with none free, the one lying on the least.
+  const firstFree = (candidates: Box[]) =>
+    take(
+      candidates.find(free) ??
+        candidates.reduce((best, c) => (overlap(c) < overlap(best) ? c : best)),
+    );
 
   /** Candidate boxes for a multiplicity next to the end at p; u points along the line away from the class. */
-  const multCandidates = (w: number, h: number, p: Point, u: Point, half: number): Box[] => {
-    const gap = Math.max(half, 1.6) + 3;
+  const multCandidates = (
+    w: number,
+    h: number,
+    p: Point,
+    u: Point,
+    half: number,
+    len: number,
+  ): Box[] => {
+    const wide = Math.max(half, 1.6) + 3;
     const out: Box[] = [];
-    for (const along of [0, 14, 28, 42]) {
-      if (Math.abs(u.x) > 0.5) {
-        const x = u.x > 0 ? p.x + 4 + along : p.x - 4 - along - w;
-        out.push({ x, y: p.y - gap - h, w, h }, { x, y: p.y + gap, w, h });
-      } else {
-        const y = u.y < 0 ? p.y - 3 - along - h : p.y + 3 + along;
-        out.push({ x: p.x + gap, y, w, h }, { x: p.x - gap - w, y, w, h });
+    // Nearest first: along the leg, then farther from the line, on both sides.
+    for (const out2 of [0, 10, 20])
+      for (const along of [0, 14, 28, 42, 56, 70, 84]) {
+        // Past the marker the text may sit as close as to a plain line.
+        const gap = along + 4 >= len ? 4.6 : wide;
+        if (Math.abs(u.x) > 0.5) {
+          const x = u.x > 0 ? p.x + 4 + along : p.x - 4 - along - w;
+          out.push({ x, y: p.y - gap - out2 - h, w, h }, { x, y: p.y + gap + out2, w, h });
+        } else {
+          const y = u.y < 0 ? p.y - 3 - along - h : p.y + 3 + along;
+          out.push({ x: p.x + gap + out2, y, w, h }, { x: p.x - gap - out2 - w, y, w, h });
+        }
       }
-    }
     return out;
   };
 
@@ -529,7 +561,16 @@ export async function layoutClass(d: ClassDiagram): Promise<Scene> {
       if (value === undefined) continue;
       const w = textWidth(value, MULT_SIZE, 600);
       const h = lineHeight(MULT_SIZE);
-      const box = firstFree(multCandidates(w, h, p, dir(p, q), MARKER_HALF[r.rel.kind][end]));
+      const box = firstFree(
+        multCandidates(
+          w,
+          h,
+          p,
+          dir(p, q),
+          MARKER_HALF[r.rel.kind][end],
+          MARKER_LENGTH[r.rel.kind][end],
+        ),
+      );
       found[key] = placeText(value, MULT_SIZE, 600, box);
     }
     return found;
@@ -547,21 +588,22 @@ export async function layoutClass(d: ClassDiagram): Promise<Scene> {
           q.len - p.len,
       );
     const candidates: Box[] = [];
-    for (const f of [0.5, 0.3, 0.7, 0.15, 0.85])
-      for (const { a, b } of legs) {
-        const x = a.x + (b.x - a.x) * f;
-        const y = a.y + (b.y - a.y) * f;
-        if (Math.abs(a.y - b.y) < 1e-6)
-          candidates.push(
-            { x: x - w / 2, y: y - TEXT_GAP - h, w, h },
-            { x: x - w / 2, y: y + TEXT_GAP, w, h },
-          );
-        else
-          candidates.push(
-            { x: x + TEXT_GAP + 2, y: y - h / 2, w, h },
-            { x: x - TEXT_GAP - 2 - w, y: y - h / 2, w, h },
-          );
-      }
+    for (const out2 of [0, 12, 24])
+      for (const f of [0.5, 0.3, 0.7, 0.15, 0.85, 0.4, 0.6, 0.22, 0.78])
+        for (const { a, b } of legs) {
+          const x = a.x + (b.x - a.x) * f;
+          const y = a.y + (b.y - a.y) * f;
+          if (Math.abs(a.y - b.y) < 1e-6)
+            candidates.push(
+              { x: x - w / 2, y: y - TEXT_GAP - out2 - h, w, h },
+              { x: x - w / 2, y: y + TEXT_GAP + out2, w, h },
+            );
+          else
+            candidates.push(
+              { x: x + TEXT_GAP + 2 + out2, y: y - h / 2, w, h },
+              { x: x - TEXT_GAP - 2 - out2 - w, y: y - h / 2, w, h },
+            );
+        }
     return placeText(r.rel.label, LABEL_SIZE, 400, firstFree(candidates));
   });
 

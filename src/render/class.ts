@@ -156,7 +156,9 @@ export function classGlyph(name: string, s: Box): string {
   }
   if (name === "class-mult" || name === "class-vis") {
     const label = name === "class-mult" ? "1..*" : "+ -";
-    return `<text class="t-text t-class-text t-class-mult" x="${num(s.x + s.w / 2)}" y="${num(cy + 4)}" font-size="11" font-weight="600" text-anchor="middle">${label}</text>`;
+    // The visibility glyph wears the class of the marks in the boxes, so every theme mutes it alike.
+    const cls = name === "class-mult" ? "t-class-text t-class-mult" : "t-class-vis";
+    return `<text class="t-text ${cls}" x="${num(s.x + s.w / 2)}" y="${num(cy + 4)}" font-size="11" font-weight="600" text-anchor="middle">${label}</text>`;
   }
   const kind = name.slice("class-rel-".length) as RelationKind;
   const pts = [

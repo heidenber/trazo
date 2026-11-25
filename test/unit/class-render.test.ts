@@ -8,6 +8,7 @@ import { make } from "../../src/index.js";
 import { layoutDiagram } from "../../src/layout/index.js";
 import { validateDiagram } from "../../src/model/index.js";
 import { renderSvg } from "../../src/render/svg.js";
+import { MARKER_HALF } from "../../src/render/class.js";
 import type { Box, Point, Scene, SceneEdge, SceneNode } from "../../src/scene.js";
 
 const example = JSON.parse(readFileSync("examples/class.json", "utf8")) as {
@@ -79,6 +80,28 @@ function textBoxes(e: SceneEdge): Box[] {
   );
 }
 
+/** The box a marker fills at each end of a relation. */
+function markerBoxes(e: SceneEdge): Box[] {
+  const n = e.points.length;
+  return ([0, 1] as const).flatMap((end) => {
+    const len = LENGTH[e.rel!.kind]![end];
+    if (len === 0) return [];
+    const p = end === 0 ? e.points[0]! : e.points[n - 1]!;
+    const q = end === 0 ? e.points[1]! : e.points[n - 2]!;
+    const half = MARKER_HALF[e.rel!.kind][end];
+    return [
+      Math.abs(p.y - q.y) < 1e-6
+        ? { x: Math.min(p.x, p.x + Math.sign(q.x - p.x) * len), y: p.y - half, w: len, h: 2 * half }
+        : {
+            x: p.x - half,
+            y: Math.min(p.y, p.y + Math.sign(q.y - p.y) * len),
+            w: 2 * half,
+            h: len,
+          },
+    ];
+  });
+}
+
 /** Everything the layout promises about any class scene. */
 function expectClean(scene: Scene, name: string): void {
   expect(checkGeometry(scene), name).toEqual([]);
@@ -131,6 +154,14 @@ function expectClean(scene: Scene, name: string): void {
         ).toBe(false);
       });
   }
+  // ... and of every marker.
+  for (const { e, box } of all)
+    for (const f of scene.edges)
+      for (const m of markerBoxes(f))
+        expect(
+          overlaps(box, m, 1),
+          `${name}: text of ${e.from}->${e.to} on a marker of ${f.from}->${f.to}`,
+        ).toBe(false);
   for (let i = 0; i < all.length; i++)
     for (let j = i + 1; j < all.length; j++)
       expect(overlaps(all[i]!.box, all[j]!.box, 2), `${name}: texts ${i} and ${j}`).toBe(false);
@@ -292,6 +323,66 @@ describe("class layout, any valid diagram", () => {
     expectClean(s, "hub");
   });
 
+  it("a hub with many named relations with multiplicities on one side keeps every text clear", async () => {
+    const kinds = ["--", "*--", "o--", "-->", "--|>", "..>"];
+    for (const count of [6, 12, 16]) {
+      const names = Array.from({ length: count }, (_, i) => `K${i}`);
+      const rels = names.map((n, i) => {
+        const op = kinds[i % kinds.length]!;
+        const bare = op === "--|>" || op === "..>";
+        return bare
+          ? `Hub ${op} ${n} : a rather long role name ${i}`
+          : `Hub 1..* ${op} 0..* ${n} : a rather long relation name ${i}`;
+      });
+      const s = await sceneOf(
+        diagram(
+          [
+            cls("Hub", { attributes: ["+ id: int", "+ name: String"] }),
+            ...names.map((n) => cls(n)),
+          ],
+          rels,
+        ),
+      );
+      expectClean(s, `crowded hub ${count}`);
+    }
+  });
+
+  it("a hub does not grow taller than its members when its ends fit", async () => {
+    const hub = {
+      attributes: ["+ a: int", "+ b: int", "+ c: int", "+ d: int"],
+      methods: ["+ f(): void", "+ g(): void"],
+    };
+    const heightWith = async (count: number) => {
+      const names = Array.from({ length: count }, (_, i) => `K${i}`);
+      const s = await sceneOf(
+        diagram(
+          [cls("Hub", hub), ...names.map((n) => cls(n))],
+          names.map((n) => `Hub 1 -- * ${n}`),
+        ),
+      );
+      expectClean(s, `hub ${count}`);
+      return node(s, "Hub").h;
+    };
+    const natural = await heightWith(1);
+    expect(await heightWith(6)).toBe(natural);
+  });
+
+  it("when a hub must grow, its members sit centred in their compartment (no hole below)", async () => {
+    const names = Array.from({ length: 10 }, (_, i) => `K${i}`);
+    const s = await sceneOf(
+      diagram(
+        [cls("Hub", { attributes: ["+ a: int"] }), ...names.map((n) => cls(n))],
+        names.map((n) => `Hub 1 -- * ${n}`),
+      ),
+    );
+    const hub = node(s, "Hub");
+    const row = hub.class!.members[0]!.text;
+    const above = row.y - hub.class!.rules[0]!;
+    const below = hub.y + hub.h - row.y;
+    expect(hub.h).toBeGreaterThan(140);
+    expect(Math.abs(above - below)).toBeLessThan(10);
+  });
+
   it("long names and long members widen the box and stay inside it", async () => {
     const s = await sceneOf(
       diagram(
@@ -419,6 +510,14 @@ describe("class svg", () => {
       "Class",
       "Generalization (extends)",
     ]);
+  });
+
+  it("draws the legend visibility glyph in the muted color of the marks in the boxes", async () => {
+    const svg = renderSvg(await sceneOf(example));
+    const glyph = /<text class="([^"]*)"[^>]*>\+ -<\/text>/.exec(svg)!;
+    expect(glyph[1]).toContain("t-class-vis");
+    expect(glyph[1]).not.toContain("t-class-text");
+    expect(svg).toMatch(/\.t-class-vis \{ fill: var\(--t-muted,/);
   });
 
   it("works in the black-and-white export: every color is a theme variable", async () => {
