@@ -17,6 +17,7 @@ import { INDEX_ROW, MAX_RELATIONS, overviewMetrics } from "../layout/overview.js
 import { lineHeight } from "../text/measure.js";
 import { CHIP_PAD, CHIP_RADIUS, CHIP_SIZE, GLYPH_SIZE } from "./card.js";
 import { chenCard, chenEdge, glyph, underline } from "./chen.js";
+import { stateGlyph } from "./state.js";
 import { ICONS } from "./generated/icons.js";
 import { familyOf, type Family } from "./families.js";
 import {
@@ -31,6 +32,7 @@ import {
 } from "./shapes.js";
 import {
   CHEN_CSS,
+  STATE_CSS,
   GROUPED_TABLE_CSS,
   LEGEND_CSS,
   NOTE_CSS,
@@ -117,15 +119,21 @@ const STYLES: SceneEdge["style"][] = ["sync", "async", "data", "reply"];
 const markerId = (style: SceneEdge["style"], open: boolean) =>
   open ? `t-arrowhead-open-${style}` : style === "sync" ? "t-arrowhead" : `t-arrowhead-${style}`;
 
+const EXCEPTION_HEAD = "t-arrowhead-exception";
+
 const arrowClass = (style: SceneEdge["style"]) =>
   style === "sync" ? "t-arrow" : `t-arrow t-arrow-${style}`;
 
 function edge(e: SceneEdge, seq: boolean): string {
   const d = pathData(e.points, undefined, e.ends !== undefined);
   const id = `data-edge="${escapeXml(e.id)}"`;
-  const attrs = `class="t-edge t-edge-${e.style}" data-from="${escapeXml(e.from)}" data-to="${escapeXml(e.to)}" d="${d}"`;
-  if (!e.ends)
-    return `<path ${attrs} marker-end="url(#${markerId(e.style, seq && OPEN_STYLES.includes(e.style))})" ${id}/>`;
+  const weight = e.weight === undefined ? "" : ` t-st-${e.weight === "main" ? "main" : "exc"}`;
+  const head =
+    e.weight === "exception"
+      ? EXCEPTION_HEAD
+      : markerId(e.style, seq && OPEN_STYLES.includes(e.style));
+  const attrs = `class="t-edge t-edge-${e.style}${weight}" data-from="${escapeXml(e.from)}" data-to="${escapeXml(e.to)}" d="${d}"`;
+  if (!e.ends) return `<path ${attrs} marker-end="url(#${head})" ${id}/>`;
   const halo = EDGE_HALO ? `<path class="t-edge-halo" d="${d}" ${id}/>` : "";
   return `${halo}<path ${attrs} marker-start="url(#t-end-${e.ends.from})" marker-end="url(#t-end-${e.ends.to})" ${id}/>`;
 }
@@ -153,8 +161,11 @@ const endMarkers = () =>
 const shadowFilter = () =>
   `<filter id="${SHADOW_ID}" x="-30%" y="-40%" width="160%" height="220%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="1" stdDeviation="1" class="t-shadow-near"/><feDropShadow dx="0" dy="6" stdDeviation="8" class="t-shadow-far"/></filter>`;
 
-function edgeLabel(e: SceneEdge): string {
+function edgeLabel(e: SceneEdge, plain: boolean): string {
   if (!e.label) return "";
+  // A state event is plain text on the line's side: it never sits on the line, so it needs no pill.
+  if (plain)
+    return `<g class="t-edge-label" data-edge="${escapeXml(e.id)}">${text(e.label.text, "t-label t-state-ev")}</g>`;
   return `<g class="t-edge-label" data-edge="${escapeXml(e.id)}">${rect(e.label.box, "t-label-bg", Math.min(e.label.box.h / 2, LABEL_RADIUS))}${text(e.label.text, "t-label")}</g>`;
 }
 
@@ -177,7 +188,9 @@ function legend(items: SceneLegendItem[]): string {
     const s = item.swatch;
     const mid = s.y + s.h / 2;
     const mark = item.glyph
-      ? glyph(item.glyph, s)
+      ? item.glyph.startsWith("state-")
+        ? stateGlyph(item.glyph, s)
+        : glyph(item.glyph, s)
       : item.family
         ? rect(s, "t-legend-swatch", LEGEND_SWATCH_RADIUS)
         : `<line class="t-legend-line t-legend-${item.style}" x1="${num(s.x)}" y1="${num(mid)}" x2="${num(s.x + s.w)}" y2="${num(mid)}"/>`;
@@ -228,7 +241,7 @@ function node(n: SceneNode, family: Family | undefined): string {
     tint && "t-tint",
     n.mark === "derived" && "t-derived",
   ];
-  return `<g class="${cls.filter(Boolean).join(" ")}" data-id="${escapeXml(n.id)}" data-kind="${escapeXml(n.kind)}"${n.source ? ` data-source="${escapeXml(n.source)}"` : ""} tabindex="0">${desc}${shapeMarkup(n.shape, n)}${n.shape === "table" ? tableBody(n) : chip(n)}${text(n.label, "t-node-label")}${n.mark === "key" || n.mark === "partial" ? underline(n.mark, n.label.x, n.label.y, n.label.lines[0]!, n.label.size, n.label.weight) : ""}${n.subtitle ? text(n.subtitle, "t-node-note") : ""}</g>`;
+  return `<g class="${cls.filter(Boolean).join(" ")}" data-id="${escapeXml(n.id)}" data-kind="${escapeXml(n.kind)}"${n.source ? ` data-source="${escapeXml(n.source)}"` : ""} tabindex="0">${desc}${shapeMarkup(n.shape, n)}${n.shape === "table" ? tableBody(n) : chip(n)}${n.label.lines.length > 0 ? text(n.label, "t-node-label") : ""}${n.mark === "key" || n.mark === "partial" ? underline(n.mark, n.label.x, n.label.y, n.label.lines[0]!, n.label.size, n.label.weight) : ""}${n.subtitle ? text(n.subtitle, "t-node-note") : ""}</g>`;
 }
 
 function short(text: string, max: number): string {
@@ -415,7 +428,9 @@ export function renderSvg(scene: Scene): string {
   // Sequence async and reply messages use the open head; ERD edges with crow's-foot ends use none.
   const isOpen = (e: SceneEdge) => seq && OPEN_STYLES.includes(e.style);
   const heads = STYLES.flatMap((style) => {
-    const own = scene.edges.filter((e) => !e.ends && !e.chen && e.style === style);
+    const own = scene.edges.filter(
+      (e) => !e.ends && !e.chen && e.weight !== "exception" && e.style === style,
+    );
     const filled = own.some((e) => !isOpen(e))
       ? `<marker id="${markerId(style, false)}" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path class="${arrowClass(style)}" d="M1.8 1.8L8.4 5L1.8 8.2z"/></marker>`
       : "";
@@ -424,6 +439,9 @@ export function renderSvg(scene: Scene): string {
       : "";
     return [filled, open];
   });
+  const exceptionHead = scene.edges.some((e) => e.weight === "exception")
+    ? `<marker id="${EXCEPTION_HEAD}" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path class="t-arrow t-arrow-exception" d="M1.8 1.8L8.4 5L1.8 8.2z"/></marker>`
+    : "";
   const families = scene.nodes.map((n) => familyOf(scene, n));
   const shadowed = scene.nodes.some((n) => SHADOWED.includes(n.shape));
   const overviewGroups = [
@@ -444,22 +462,23 @@ export function renderSvg(scene: Scene): string {
     (scene.legend ? LEGEND_CSS : "") +
     (scene.groups.some((g) => g.note) ? LANE_NOTE_CSS : "") +
     (scene.type === "chen" ? CHEN_CSS : "") +
+    (scene.type === "state" ? STATE_CSS : "") +
     (needsTableCss(scene) ? TABLE_CSS : "") +
     (scene.nodes.some((n) => n.shape === "table" && n.family) ? GROUPED_TABLE_CSS : "") +
     (scene.nodes.some((n) => n.subtitle) ? NOTE_CSS : "") +
     (seq ? SEQUENCE_CSS : "");
   const parts = [
-    `<svg xmlns="http://www.w3.org/2000/svg" class="${seq ? "diagram t-seq" : scene.type === "chen" ? "diagram t-chen" : "diagram"}" viewBox="0 0 ${num(scene.width)} ${num(scene.height)}" role="img" aria-labelledby="${labelled}">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" class="${seq ? "diagram t-seq" : scene.type === "chen" || scene.type === "state" ? `diagram t-${scene.type}` : "diagram"}" viewBox="0 0 ${num(scene.width)} ${num(scene.height)}" role="img" aria-labelledby="${labelled}">`,
     `<title id="t-title">${escapeXml(scene.title)}</title>`,
     desc,
-    `<defs>${heads.join("")}${ends ? endMarkers() : ""}${shadowed ? shadowFilter() : ""}</defs>`,
+    `<defs>${heads.join("")}${exceptionHead}${ends ? endMarkers() : ""}${shadowed ? shadowFilter() : ""}</defs>`,
     `<style>${css}</style>`,
     ...(scene.lifelines ?? []).map(lifeline),
     ...lanes(scene.groups),
     ...scene.groups.map(group),
     ...scene.groups.map(fragment),
     ...scene.edges.map((e) => (e.chen ? chenEdge(e) : edge(e, seq))),
-    ...scene.edges.map((e) => (e.chen ? chenCard(e) : edgeLabel(e))),
+    ...scene.edges.map((e) => (e.chen ? chenCard(e) : edgeLabel(e, scene.type === "state"))),
     ...scene.nodes.map((n, i) => node(n, families[i])),
     ...(scene.legend ? [legend(scene.legend)] : []),
     overview(scene),

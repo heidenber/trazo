@@ -55,6 +55,8 @@ export function familyOf(scene: Scene, node: SceneNode): Family | undefined {
   switch (scene.type) {
     case "chen":
       return CHEN[node.shape];
+    case "state":
+      return node.kind === "exception" ? "end" : node.kind === "state" ? "task" : undefined;
     case "workflow":
       return WORKFLOW[node.kind] ?? "task";
     case "sequence":

@@ -71,7 +71,6 @@ for a suggested fix.
 | `state/initial-incoming` | Error | A transition enters the initial state. |
 | `state/initial-outgoing` | Error | The initial state does not have exactly one outgoing transition. |
 | `state/no-event` | Warning | A transition (other than the one leaving the initial state) has no event label. |
-| `state/render-unavailable` | Error | `trazo make` was asked for a `state` diagram, which cannot be rendered yet (validation with `check` works). |
 | `state/unreachable` | Warning | A state cannot be reached from the initial state. |
 | `state/unsupported` | Error | A history, decision (choice) or composite state, or a nested `children`, `states`, `regions` or `parent` field; only the basic notation is supported. |
 | `table/no-pk` | Warning | A table has no primary key. |
@@ -82,3 +81,5 @@ for a suggested fix.
 | `workflow/many-lanes` | Warning | A workflow has more than 6 lanes. |
 | `workflow/start-incoming` | Error | A start step has an incoming edge. |
 | `workflow/unreachable` | Warning | A step cannot be reached from any start step. |
+
+Removed: `state/render-unavailable` was only reported while `state` diagrams could not be drawn; `trazo make` now draws them, so it no longer appears.

@@ -39,7 +39,11 @@ export type NodeShape =
   | "relationship"
   | "identifying"
   | "attribute"
-  | "multivalued";
+  | "multivalued"
+  // State diagrams: rounded state, initial dot, final ring.
+  | "state"
+  | "initial"
+  | "final";
 
 /** Chen attribute marks drawn on the label or the outline. */
 export type ChenMark = "key" | "partial" | "derived";
@@ -121,6 +125,8 @@ export interface SceneEdge {
   /** Crow's foot symbols; an edge with ends has no arrowhead. */
   ends?: { from: EdgeEnd; to: EdgeEnd };
   chen?: SceneChenLink;
+  /** State transitions: the happy path is drawn thick, transitions into or out of an exception state dashed. */
+  weight?: "main" | "exception";
 }
 
 export interface SceneLifeline {

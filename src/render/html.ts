@@ -47,7 +47,7 @@ export function renderHtml(scene: Scene, options: HtmlOptions = {}): string {
     theme: scene.theme,
     width: scene.width,
     height: scene.height,
-    flow: scene.type !== "erd" && scene.type !== "chen",
+    flow: scene.type !== "erd" && scene.type !== "chen" && scene.type !== "state",
     svg: renderSvg(scene),
     ...(source === undefined ? {} : { source }),
     ...(detail === undefined ? {} : { detail }),

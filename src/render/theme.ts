@@ -157,6 +157,20 @@ export const CHEN_CSS = `
 .t-chen-card { fill: var(--t-text, ${B.text}); paint-order: stroke; stroke: var(--t-bg, ${B.bg}); stroke-width: 4px; stroke-linejoin: round; }
 `;
 
+/**
+ * Appended only to state diagrams, after the legend rules. The happy path is thick and
+ * exceptional transitions and states are dashed in the "end" family color.
+ */
+export const STATE_CSS = `
+.t-st-main { stroke-width: 2.6; }
+.t-st-exc { stroke: var(--t-fam-end-stroke, ${FALLBACK.fam.end[0]}); stroke-dasharray: 6 4.5; }
+.t-arrow-exception { fill: var(--t-fam-end-stroke, ${FALLBACK.fam.end[0]}); stroke: var(--t-fam-end-stroke, ${FALLBACK.fam.end[0]}); }
+.t-state .t-fam-end .t-node-box { stroke-dasharray: 5 4; }
+.t-state-initial, .t-state-dot { fill: var(--t-text, ${B.text}); stroke: none; }
+.t-state-ring { fill: var(--t-card, ${B.card}); stroke: var(--t-text, ${B.text}); stroke-width: 1.8; }
+.t-state-ev { fill: var(--t-text, ${B.text}); }
+`;
+
 /** Appended only to scenes with a legend. */
 export const LEGEND_CSS = `
 .t-legend-label { fill: var(--t-muted, ${B.muted}); }

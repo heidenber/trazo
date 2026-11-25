@@ -123,11 +123,25 @@ describe("examples/chen.json", () => {
   });
 });
 
+const stateText = readFileSync(new URL("../../examples/state.json", import.meta.url), "utf8");
+
 describe("examples/state.json", () => {
   it("validates with no issues", () => {
-    const { issues } = validateDiagram(
-      JSON.parse(readFileSync(new URL("../../examples/state.json", import.meta.url), "utf8")),
-    );
+    const { issues } = validateDiagram(JSON.parse(stateText));
     expect(issues).toEqual([]);
+  });
+
+  it("renders the expected SVG", async () => {
+    const { diagram } = validateDiagram(JSON.parse(stateText));
+    const svg = renderSvg(await layoutDiagram(diagram!));
+    await expect(svg).toMatchFileSnapshot("../__snapshots__/state.svg");
+  });
+
+  it("makes byte-identical html twice and stays small", async () => {
+    const first = await make(stateText);
+    const second = await make(stateText);
+    expect(first.ok).toBe(true);
+    expect(first.html).toBe(second.html);
+    expect(Buffer.byteLength(first.html!)).toBeLessThan(300 * 1024);
   });
 });

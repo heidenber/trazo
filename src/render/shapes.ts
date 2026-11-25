@@ -19,6 +19,10 @@ export const DOUBLE_GAP = 5;
 const ENTITY_RADIUS = 3;
 const NOTE_FOLD = 10;
 
+/** Corner radius of a state; the layout keeps line ends on the flat part of a side. */
+export const STATE_RADIUS = 10;
+const FINAL_DOT = 6.5;
+
 export const num = (n: number) => String(Math.round(n * 100) / 100);
 
 export const rect = (b: Box, cls: string, rx = CORNER, extra = "") =>
@@ -65,6 +69,9 @@ export function pathData(points: Point[], radius = EDGE_RADIUS, ends = false): s
 const line = (x1: number, y1: number, x2: number, y2: number, cls: string) =>
   `<line class="${cls}" x1="${num(x1)}" y1="${num(y1)}" x2="${num(x2)}" y2="${num(y2)}"/>`;
 
+const circle = (b: Box, cls: string, r = b.w / 2) =>
+  `<circle class="${cls}" cx="${num(b.x + b.w / 2)}" cy="${num(b.y + b.h / 2)}" r="${num(r)}"/>`;
+
 const ellipse = (b: Box, cls: string) =>
   `<ellipse class="${cls}" cx="${num(b.x + b.w / 2)}" cy="${num(b.y + b.h / 2)}" rx="${num(b.w / 2)}" ry="${num(b.h / 2)}"/>`;
 
@@ -107,6 +114,12 @@ export function shapeMarkup(shape: NodeShape, b: Box): string {
       return diamond(b, cls);
     case "identifying":
       return diamond(b, cls) + diamond(innerDiamond(b), inner);
+    case "state":
+      return rect(b, cls, STATE_RADIUS);
+    case "initial":
+      return circle(b, "t-state-initial");
+    case "final":
+      return circle(b, "t-state-ring") + circle(b, "t-state-dot", FINAL_DOT);
     case "attribute":
       return ellipse(b, cls);
     case "multivalued":
