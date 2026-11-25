@@ -18,6 +18,15 @@ for a suggested fix.
 | `chen/participants` | Error | A relationship has fewer than 2 participants. |
 | `chen/ternary` | Error | A relationship has 3 or more participants; ternary relationships are not supported yet. |
 | `chen/weak-not-identified` | Error | A weak entity is in no identifying relationship where it takes part with `total` participation. |
+| `class/duplicate-member` | Warning | The same attribute or method string is listed twice in a class. |
+| `class/enum-methods` | Error | An `enum` class has `methods`; list its constants in `attributes`. |
+| `class/generalization-cycle` | Error | A generalization (`--|>`) would make a class inherit from itself, directly or through its parents. |
+| `class/member-syntax` | Error | An attribute, method or enum constant string cannot be read (`"+ id: UUID"`, `"- total(): Money"`, `"PLACED"`). |
+| `class/multiplicity` | Error | A multiplicity has its lower bound above its upper bound or starts at `*`, or sits on a generalization, realization or dependency. |
+| `class/realization-target` | Error | The right side of a realization (`..|>`) is not an `interface`. |
+| `class/relation-syntax` | Error | A relation string cannot be read (`"Order 1 *-- 1..* OrderLine : has"`). |
+| `class/render-unavailable` | Error | `trazo make` was asked for a `class` diagram, which cannot be rendered yet (validation with `check` works). |
+| `class/unused` | Warning | A class is in no relation, in a diagram that has relations. |
 | `column/duplicate` | Error | Two columns in the same table have the same name. |
 | `column/fk-target` | Error | A foreign key lacks a valid `table.column` target. |
 | `column/no-type` | Error | A column declaration has no type. |
@@ -42,6 +51,7 @@ for a suggested fix.
 | `lane/missing` | Error | A workflow with lanes has a step outside all lanes. |
 | `lane/multiple-lanes` | Error | A workflow step is listed in more than one lane. |
 | `ref/duplicate-id` | Error | An identifier is declared more than once. |
+| `ref/unknown-class` | Error | A relation names a class that is not declared. |
 | `ref/unknown-column` | Error | A foreign key refers to a column that does not exist. |
 | `ref/unknown-entity` | Error | A participant names an entity that is not declared (relationship ids do not count). |
 | `ref/unknown-node` | Error | A reference names an undeclared architecture node or group. |

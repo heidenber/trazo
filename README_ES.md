@@ -35,7 +35,7 @@ Necesitas un agente que pueda ejecutar comandos, como Claude Code, Codex o Pi.
 
    Abre el archivo HTML en el navegador. Para cambiar el diagrama, vuelve a pedírselo al agente.
 
-Los otros tipos son `workflow`, `erd`, `sequence`, `chen` y `state` (ver [Tipos de diagrama](#tipos-de-diagrama)).
+Los otros tipos son `workflow`, `erd`, `sequence`, `chen`, `state` y `class` (ver [Tipos de diagrama](#tipos-de-diagrama)).
 
 ## Demo
 
@@ -117,7 +117,7 @@ npm i -g .
 | `trazo schema <type>` | Imprime la referencia compacta de campos de un tipo de diagrama. |
 | `trazo example <type>` | Imprime un diagrama de ejemplo completo, entrada válida para `make`. |
 
-`<input>` es un archivo JSON, o `-` para leer de stdin. `<type>` es `architecture`, `workflow`, `erd`, `sequence`, `chen` o `state`. Sin `-o`, `make` escribe `<input>` con extensión `.html`; con `-o -`, o cuando `<input>` es `-` y no hay `-o`, escribe el HTML en stdout. `--json` imprime una línea JSON en lugar de texto plano y cubre los resultados (`make`, `check`); los errores de uso (salida 2) son siempre texto plano en stderr.
+`<input>` es un archivo JSON, o `-` para leer de stdin. `<type>` es `architecture`, `workflow`, `erd`, `sequence`, `chen`, `state` o `class`. Sin `-o`, `make` escribe `<input>` con extensión `.html`; con `-o -`, o cuando `<input>` es `-` y no hay `-o`, escribe el HTML en stdout. `--json` imprime una línea JSON en lugar de texto plano y cubre los resultados (`make`, `check`); los errores de uso (salida 2) son siempre texto plano en stderr.
 
 Cuatro temas: `light` y `dark`, más `lagoon` (claro, turquesa) y `dusk` (oscuro, violeta). Se eligen con el campo JSON `theme` o con `--theme`; el botón de la página alterna entre el tema claro y el oscuro de cada par.
 
@@ -137,6 +137,7 @@ trazo example erd | trazo make - -o erd.html
 - `sequence`: mensajes entre participantes, con notas y fragmentos `alt`, `opt` y `loop`. `trazo example sequence`
 - `chen`: diagramas entidad-relación de Chen para enseñar: entidades y entidades débiles, atributos (clave, clave parcial, multivaluado, derivado, compuesto), relaciones binarias con cardinalidad 1, N y M y participación total o parcial. Las relaciones ternarias se rechazan por ahora. Los atributos de cada entidad van en una columna a su lado, cada línea termina exactamente sobre el contorno de sus figuras y debajo del diagrama se dibuja una leyenda de la notación (en inglés). Como el ERD, no tiene animación de flujo. `trazo example chen` imprime el ejemplo Universidad.
 - `state`: diagramas de estados UML, notación básica: estados, un estado inicial y uno final, y transiciones con la etiqueta de un evento (también autotransiciones). Los estados compuestos, los pseudoestados de historia y de decisión y las regiones se rechazan por ahora. `trazo check` lo valida y `trazo example state` imprime un pedido de compra. `trazo make` lo dibuja como un riel: el camino feliz (la cadena más larga de estados ordinarios desde el inicial) es una fila gruesa de izquierda a derecha, las transiciones que vuelven a él van por arriba y las de cancelación y fallo por abajo, punteadas, con los estados de excepción teñidos del color de fallo; el nombre del evento va sobre la línea y una autotransición es un lazo sobre su estado. Debajo del diagrama se dibuja una leyenda (en inglés) de los elementos usados, y el visor no tiene el interruptor Flow.
+- `class`: diagramas de clases UML, notación básica: clases con atributos y métodos escritos como cadenas UML (`"+ id: UUID"`, `"- total(): Money"`), los estereotipos `abstract`, `interface` y `enum`, y relaciones escritas en una línea (`"Order 1 *-- 1..* OrderLine : has"`): asociación, asociación dirigida, composición, agregación, generalización, realización y dependencia, con multiplicidades y etiqueta opcionales. No admite paquetes, genéricos ni clases anidadas. `trazo check` lo valida y `trazo example class` imprime una tienda en línea; `trazo make` aún no lo dibuja y sale con 1 y `class diagrams cannot be rendered yet`.
 
 `trazo schema <type>` imprime los campos de cada tipo en unas 40 líneas.
 

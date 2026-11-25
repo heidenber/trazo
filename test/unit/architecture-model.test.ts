@@ -117,7 +117,7 @@ describe("architecture: document level", () => {
       code: "schema/required",
       path: "type",
       message: "missing",
-      hint: "use one of: architecture, workflow, erd, sequence, chen, state",
+      hint: "use one of: architecture, workflow, erd, sequence, chen, state, class",
     });
   });
 

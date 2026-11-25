@@ -6,11 +6,12 @@ import { architectureSchema, buildArchitecture, type Architecture } from "./arch
 import { describe, error_, fromZod } from "./common.js";
 import { buildChen, chenSchema, type Chen } from "./chen.js";
 import { buildErd, erdSchema, type Erd } from "./erd.js";
+import { buildClass, classSchema, type ClassDiagram } from "./class.js";
 import { buildState, checkUnsupported, stateSchema, type State } from "./state.js";
 import { buildSequence, sequenceSchema, type Sequence } from "./sequence.js";
 import { buildWorkflow, workflowSchema, type Workflow } from "./workflow.js";
 
-export type Diagram = Architecture | Workflow | Erd | Sequence | Chen | State;
+export type Diagram = Architecture | Workflow | Erd | Sequence | Chen | State | ClassDiagram;
 
 export const DIAGRAM_TYPES = [
   "architecture",
@@ -19,6 +20,7 @@ export const DIAGRAM_TYPES = [
   "sequence",
   "chen",
   "state",
+  "class",
 ] as const;
 
 export interface ValidationResult {
@@ -57,6 +59,11 @@ export function validateDiagram(raw: unknown): ValidationResult {
     const parsed = stateSchema.safeParse(raw, { reportInput: true });
     if (!parsed.success) return { issues: withStartHint(fromZod(parsed.error, stateSchema), type) };
     return buildState(parsed.data);
+  }
+  if (type === "class") {
+    const parsed = classSchema.safeParse(raw, { reportInput: true });
+    if (!parsed.success) return { issues: withStartHint(fromZod(parsed.error, classSchema), type) };
+    return buildClass(parsed.data);
   }
   if (type === "chen") {
     const parsed = chenSchema.safeParse(raw, { reportInput: true });

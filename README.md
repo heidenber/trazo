@@ -35,7 +35,7 @@ You need an agent that can run commands, such as Claude Code, Codex or Pi.
 
    Open the HTML file in your browser. To change the diagram, ask the agent again.
 
-The other types are `workflow`, `erd`, `sequence`, `chen` and `state` (see [Diagram types](#diagram-types)).
+The other types are `workflow`, `erd`, `sequence`, `chen`, `state` and `class` (see [Diagram types](#diagram-types)).
 
 ## Demo
 
@@ -117,7 +117,7 @@ npm i -g .
 | `trazo schema <type>` | Print the compact field reference for a diagram type. |
 | `trazo example <type>` | Print a complete example diagram, valid input for `make`. |
 
-`<input>` is a JSON file, or `-` to read stdin. `<type>` is `architecture`, `workflow`, `erd`, `sequence`, `chen` or `state`. Without `-o`, `make` writes `<input>` with a `.html` extension; with `-o -`, or when `<input>` is `-` and there is no `-o`, it writes the HTML to stdout. `--json` prints one JSON line instead of plain text and covers results (`make`, `check`); usage errors (exit 2) are always plain text on stderr.
+`<input>` is a JSON file, or `-` to read stdin. `<type>` is `architecture`, `workflow`, `erd`, `sequence`, `chen`, `state` or `class`. Without `-o`, `make` writes `<input>` with a `.html` extension; with `-o -`, or when `<input>` is `-` and there is no `-o`, it writes the HTML to stdout. `--json` prints one JSON line instead of plain text and covers results (`make`, `check`); usage errors (exit 2) are always plain text on stderr.
 
 Four themes: `light` and `dark`, plus `lagoon` (light, teal) and `dusk` (dark, violet). Set one with the JSON `theme` field or `--theme`; the toggle in the page flips between the light and the dark member of each pair.
 
@@ -137,6 +137,7 @@ trazo example erd | trazo make - -o erd.html
 - `sequence`: messages between participants, with notes and `alt`, `opt` and `loop` fragments. `trazo example sequence`
 - `chen`: Chen entity-relationship diagrams for teaching: entities and weak entities, attributes (key, partial key, multivalued, derived, composite), binary relationships with 1, N and M cardinality and total or partial participation. Ternary relationships are rejected for now. Each entity's attributes sit in a column beside it, every line ends exactly on the outline of its shapes, and a notation legend (in English) is drawn below the diagram. Like the ERD it has no Flow animation. `trazo example chen` prints the University example.
 - `state`: UML state diagrams, basic notation: states, an initial and a final state, and transitions labelled with an event (self-transitions included). Composite states, history and decision pseudostates and regions are rejected for now. `trazo check` validates it and `trazo example state` prints a purchase order. `trazo make` draws it as a rail: the happy path (the longest chain of ordinary states from the initial one) is one thick row from left to right, transitions that lead back to it run above, and cancel and failure transitions run below, dashed, with exception states tinted in the failure color; event names sit above the lines and a self-transition is a loop over its state. A legend of the elements used is drawn below the diagram, and the viewer has no Flow toggle.
+- `class`: UML class diagrams, basic notation: classes with attributes and methods written as UML strings (`"+ id: UUID"`, `"- total(): Money"`), the stereotypes `abstract`, `interface` and `enum`, and relations written on one line (`"Order 1 *-- 1..* OrderLine : has"`): association, directed association, composition, aggregation, generalization, realization and dependency, with optional multiplicities and label. Packages, generics and nested classes are not supported. `trazo check` validates it and `trazo example class` prints an online store; `trazo make` does not draw it yet and exits 1 with `class diagrams cannot be rendered yet`.
 
 `trazo schema <type>` prints the fields of each type in about 40 lines.
 
