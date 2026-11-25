@@ -1,0 +1,62 @@
+{
+  "type": "class",
+  "title": "Online store",
+  "description": "Customers place orders made of order lines for products, paid by card or PayPal.",
+  "classes": [
+    {
+      "id": "Person",
+      "stereotype": "abstract",
+      "attributes": ["+ name: String", "+ email: String"],
+      "methods": ["+ displayName(): String"]
+    },
+    {
+      "id": "Customer",
+      "attributes": ["+ id: UUID", "- points: int"],
+      "methods": ["+ placeOrder(): Order"]
+    },
+    {
+      "id": "Order",
+      "attributes": ["+ id: UUID", "- status: OrderStatus", "+ placedAt: Date"],
+      "methods": ["+ total(): Money", "+ cancel(): void"]
+    },
+    {
+      "id": "OrderLine",
+      "attributes": ["+ quantity: int", "+ unitPrice: Money"],
+      "methods": ["+ subtotal(): Money"]
+    },
+    {
+      "id": "Product",
+      "attributes": ["+ sku: String", "+ name: String", "+ price: Money"]
+    },
+    {
+      "id": "Payment",
+      "stereotype": "interface",
+      "methods": ["+ pay(amount: Money): Receipt", "+ refund(): void"]
+    },
+    {
+      "id": "CardPayment",
+      "attributes": ["- cardNumber: String"],
+      "methods": ["+ pay(amount: Money): Receipt"]
+    },
+    {
+      "id": "PayPalPayment",
+      "attributes": ["- account: String"],
+      "methods": ["+ pay(amount: Money): Receipt"]
+    },
+    {
+      "id": "OrderStatus",
+      "stereotype": "enum",
+      "attributes": ["PLACED", "PAID", "SHIPPED", "CANCELLED"]
+    }
+  ],
+  "relations": [
+    "Customer --|> Person",
+    "CardPayment ..|> Payment",
+    "PayPalPayment ..|> Payment",
+    "Customer 1 -- 0..* Order : places",
+    "Order 1 *-- 1..* OrderLine",
+    "OrderLine * --> 1 Product : of",
+    "Order 1 o-- 0..* Payment : paid with",
+    "Order ..> OrderStatus"
+  ]
+}

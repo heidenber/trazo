@@ -251,6 +251,44 @@ rules
   texts must not be empty
 `;
 
+const classDiagram = `class: UML class diagram, basic notation: classes with members, and relations.
+
+Top level
+  type         "class"
+  title        text
+  description? text
+  theme?       light | dark | lagoon | dusk
+  classes      class[], at least 1
+  relations?   string[]
+
+class
+  id           unique; letters, digits, _ . -
+  stereotype?  abstract | interface | enum
+  attributes?  string[]: "+ id: UUID"; an enum lists its constants: "PLACED"
+  methods?     string[]: "- total(): Money"; not allowed on an enum
+  note?        hover text
+  detail?      longer text for the viewer's detail card only
+  source?      "path/file.ts:line"
+
+member: [visibility] name[: Type] or [visibility] name(params)[: Type]
+  visibility   + public, - private, # protected, ~ package; optional
+
+relation: "A [m] op [m] B [: label]"
+  op           --  association        -->  directed association
+               *-- composition (A is the whole)   o--  aggregation (A is the whole)
+               --|> generalization (A inherits B)  ..|> realization (A implements B)
+               ..> dependency
+  m            1, 0..1, *, 1..*, 0..*, n..m; not on --|>, ..|> or ..>
+  example      "Order 1 *-- 1..* OrderLine : has"
+
+defaults: theme light; no stereotype = plain class
+
+rules
+  relations name existing classes; no packages, generics or nested classes
+  a realization targets an interface; generalizations cannot form a cycle
+  texts must not be empty
+`;
+
 export const REFERENCE: Record<(typeof DIAGRAM_TYPES)[number], string> = {
   architecture,
   workflow,
@@ -258,4 +296,5 @@ export const REFERENCE: Record<(typeof DIAGRAM_TYPES)[number], string> = {
   sequence,
   chen,
   state,
+  class: classDiagram,
 };

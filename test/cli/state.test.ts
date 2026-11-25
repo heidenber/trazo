@@ -100,7 +100,7 @@ describe("state CLI", () => {
 
   it("an unknown type lists state", () => {
     expect(run(["check", "-"], '{"type":"zzzzzz","title":"T"}').stderr).toContain(
-      "use one of: architecture, workflow, erd, sequence, chen, state",
+      "use one of: architecture, workflow, erd, sequence, chen, state, class",
     );
   });
 });
