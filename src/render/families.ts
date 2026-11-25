@@ -48,6 +48,14 @@ const CHEN: Partial<Record<SceneNode["shape"], Family>> = {
   multivalued: "data",
 };
 
+// Class diagrams: the whole box takes the color of its kind.
+const CLASS: Record<string, Family> = {
+  class: "compute",
+  abstract: "decision",
+  interface: "messaging",
+  enum: "data",
+};
+
 /** Color family of a node; notes and ERD tables have none. */
 export function familyOf(scene: Scene, node: SceneNode): Family | undefined {
   if ((FAMILIES as readonly string[]).includes(node.family ?? "")) return node.family as Family;
@@ -55,6 +63,8 @@ export function familyOf(scene: Scene, node: SceneNode): Family | undefined {
   switch (scene.type) {
     case "chen":
       return CHEN[node.shape];
+    case "class":
+      return CLASS[node.kind];
     case "state":
       return node.kind === "exception" ? "end" : node.kind === "state" ? "task" : undefined;
     case "workflow":

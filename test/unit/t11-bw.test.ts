@@ -12,7 +12,7 @@ import { VIEWER_SCRIPT, bwCss } from "../../src/render/viewer.js";
 
 const INK = "#000000";
 const PAPER = "#ffffff";
-const examples = ["chen", "state", "architecture", "workflow", "erd", "sequence"];
+const examples = ["chen", "state", "class", "architecture", "workflow", "erd", "sequence"];
 
 async function svgOf(name: string): Promise<{ svg: string; html: string }> {
   const input = JSON.parse(readFileSync(`examples/${name}.json`, "utf8")) as unknown;

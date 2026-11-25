@@ -25,7 +25,6 @@ for a suggested fix.
 | `class/multiplicity` | Error | A multiplicity has its lower bound above its upper bound or starts at `*`, or sits on a generalization, realization or dependency. |
 | `class/realization-target` | Error | The right side of a realization (`..|>`) is not an `interface`. |
 | `class/relation-syntax` | Error | A relation string cannot be read (`"Order 1 *-- 1..* OrderLine : has"`). |
-| `class/render-unavailable` | Error | `trazo make` was asked for a `class` diagram, which cannot be rendered yet (validation with `check` works). |
 | `class/unused` | Warning | A class is in no relation, in a diagram that has relations. |
 | `column/duplicate` | Error | Two columns in the same table have the same name. |
 | `column/fk-target` | Error | A foreign key lacks a valid `table.column` target. |
@@ -92,4 +91,4 @@ for a suggested fix.
 | `workflow/start-incoming` | Error | A start step has an incoming edge. |
 | `workflow/unreachable` | Warning | A step cannot be reached from any start step. |
 
-Removed: `state/render-unavailable` was only reported while `state` diagrams could not be drawn; `trazo make` now draws them, so it no longer appears.
+Removed: `state/render-unavailable` and `class/render-unavailable` were only reported while `state` and `class` diagrams could not be drawn; `trazo make` now draws them, so they no longer appear.

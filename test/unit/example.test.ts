@@ -146,11 +146,27 @@ describe("examples/state.json", () => {
   });
 });
 
+const classText = readFileSync(new URL("../../examples/class.json", import.meta.url), "utf8");
+
 describe("examples/class.json", () => {
   it("validates with no issues", () => {
     const { issues } = validateDiagram(
       JSON.parse(readFileSync(new URL("../../examples/class.json", import.meta.url), "utf8")),
     );
     expect(issues).toEqual([]);
+  });
+
+  it("renders the expected SVG", async () => {
+    const { diagram } = validateDiagram(JSON.parse(classText));
+    const svg = renderSvg(await layoutDiagram(diagram!));
+    await expect(svg).toMatchFileSnapshot("../__snapshots__/class.svg");
+  });
+
+  it("makes byte-identical html twice and stays small", async () => {
+    const first = await make(classText);
+    const second = await make(classText);
+    expect(first.ok).toBe(true);
+    expect(first.html).toBe(second.html);
+    expect(Buffer.byteLength(first.html!)).toBeLessThan(300 * 1024);
   });
 });

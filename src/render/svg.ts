@@ -17,6 +17,7 @@ import { INDEX_ROW, MAX_RELATIONS, overviewMetrics } from "../layout/overview.js
 import { lineHeight } from "../text/measure.js";
 import { CHIP_PAD, CHIP_RADIUS, CHIP_SIZE, GLYPH_SIZE } from "./card.js";
 import { chenCard, chenEdge, glyph, underline } from "./chen.js";
+import { classBody, classEdge, classGlyph, relationMarkers, relationTexts } from "./class.js";
 import { stateGlyph } from "./state.js";
 import { ICONS } from "./generated/icons.js";
 import { familyOf, type Family } from "./families.js";
@@ -32,6 +33,7 @@ import {
 } from "./shapes.js";
 import {
   CHEN_CSS,
+  CLASS_CSS,
   STATE_CSS,
   GROUPED_TABLE_CSS,
   LEGEND_CSS,
@@ -62,7 +64,7 @@ export function escapeXml(text: string): string {
     .replace(/'/g, "&apos;");
 }
 
-function text(block: TextBlock, cls: string): string {
+export function text(block: TextBlock, cls: string): string {
   const step = lineHeight(block.size);
   const spans = block.lines
     .map(
@@ -190,7 +192,9 @@ function legend(items: SceneLegendItem[]): string {
     const mark = item.glyph
       ? item.glyph.startsWith("state-")
         ? stateGlyph(item.glyph, s)
-        : glyph(item.glyph, s)
+        : item.glyph.startsWith("class-")
+          ? classGlyph(item.glyph, s)
+          : glyph(item.glyph, s)
       : item.family
         ? rect(s, "t-legend-swatch", LEGEND_SWATCH_RADIUS)
         : `<line class="t-legend-line t-legend-${item.style}" x1="${num(s.x)}" y1="${num(mid)}" x2="${num(s.x + s.w)}" y2="${num(mid)}"/>`;
@@ -240,8 +244,9 @@ function node(n: SceneNode, family: Family | undefined): string {
     n.shape !== "box" && `t-shape-${n.shape}`,
     tint && "t-tint",
     n.mark === "derived" && "t-derived",
+    n.class?.abstract && "t-class-abstract",
   ];
-  return `<g class="${cls.filter(Boolean).join(" ")}" data-id="${escapeXml(n.id)}" data-kind="${escapeXml(n.kind)}"${n.source ? ` data-source="${escapeXml(n.source)}"` : ""} tabindex="0">${desc}${shapeMarkup(n.shape, n)}${n.shape === "table" ? tableBody(n) : chip(n)}${n.label.lines.length > 0 ? text(n.label, "t-node-label") : ""}${n.mark === "key" || n.mark === "partial" ? underline(n.mark, n.label.x, n.label.y, n.label.lines[0]!, n.label.size, n.label.weight) : ""}${n.subtitle ? text(n.subtitle, "t-node-note") : ""}</g>`;
+  return `<g class="${cls.filter(Boolean).join(" ")}" data-id="${escapeXml(n.id)}" data-kind="${escapeXml(n.kind)}"${n.source ? ` data-source="${escapeXml(n.source)}"` : ""} tabindex="0">${desc}${shapeMarkup(n.shape, n)}${n.shape === "table" ? tableBody(n) : chip(n)}${n.class ? classBody(n) : ""}${n.label.lines.length > 0 ? text(n.label, "t-node-label") : ""}${n.mark === "key" || n.mark === "partial" ? underline(n.mark, n.label.x, n.label.y, n.label.lines[0]!, n.label.size, n.label.weight) : ""}${n.subtitle ? text(n.subtitle, "t-node-note") : ""}</g>`;
 }
 
 function short(text: string, max: number): string {
@@ -429,7 +434,7 @@ export function renderSvg(scene: Scene): string {
   const isOpen = (e: SceneEdge) => seq && OPEN_STYLES.includes(e.style);
   const heads = STYLES.flatMap((style) => {
     const own = scene.edges.filter(
-      (e) => !e.ends && !e.chen && e.weight !== "exception" && e.style === style,
+      (e) => !e.ends && !e.chen && !e.rel && e.weight !== "exception" && e.style === style,
     );
     const filled = own.some((e) => !isOpen(e))
       ? `<marker id="${markerId(style, false)}" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path class="${arrowClass(style)}" d="M1.8 1.8L8.4 5L1.8 8.2z"/></marker>`
@@ -463,22 +468,31 @@ export function renderSvg(scene: Scene): string {
     (scene.groups.some((g) => g.note) ? LANE_NOTE_CSS : "") +
     (scene.type === "chen" ? CHEN_CSS : "") +
     (scene.type === "state" ? STATE_CSS : "") +
+    (scene.type === "class" ? CLASS_CSS : "") +
     (needsTableCss(scene) ? TABLE_CSS : "") +
     (scene.nodes.some((n) => n.shape === "table" && n.family) ? GROUPED_TABLE_CSS : "") +
     (scene.nodes.some((n) => n.subtitle) ? NOTE_CSS : "") +
     (seq ? SEQUENCE_CSS : "");
   const parts = [
-    `<svg xmlns="http://www.w3.org/2000/svg" class="${seq ? "diagram t-seq" : scene.type === "chen" || scene.type === "state" ? `diagram t-${scene.type}` : "diagram"}" viewBox="0 0 ${num(scene.width)} ${num(scene.height)}" role="img" aria-labelledby="${labelled}">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" class="${
+      seq
+        ? "diagram t-seq"
+        : scene.type === "chen" || scene.type === "state" || scene.type === "class"
+          ? `diagram t-${scene.type}`
+          : "diagram"
+    }" viewBox="0 0 ${num(scene.width)} ${num(scene.height)}" role="img" aria-labelledby="${labelled}">`,
     `<title id="t-title">${escapeXml(scene.title)}</title>`,
     desc,
-    `<defs>${heads.join("")}${exceptionHead}${ends ? endMarkers() : ""}${shadowed ? shadowFilter() : ""}</defs>`,
+    `<defs>${heads.join("")}${exceptionHead}${relationMarkers(scene)}${ends ? endMarkers() : ""}${shadowed ? shadowFilter() : ""}</defs>`,
     `<style>${css}</style>`,
     ...(scene.lifelines ?? []).map(lifeline),
     ...lanes(scene.groups),
     ...scene.groups.map(group),
     ...scene.groups.map(fragment),
-    ...scene.edges.map((e) => (e.chen ? chenEdge(e) : edge(e, seq))),
-    ...scene.edges.map((e) => (e.chen ? chenCard(e) : edgeLabel(e, scene.type === "state"))),
+    ...scene.edges.map((e) => (e.rel ? classEdge(e) : e.chen ? chenEdge(e) : edge(e, seq))),
+    ...scene.edges.map((e) =>
+      e.rel ? relationTexts(e) : e.chen ? chenCard(e) : edgeLabel(e, scene.type === "state"),
+    ),
     ...scene.nodes.map((n, i) => node(n, families[i])),
     ...(scene.legend ? [legend(scene.legend)] : []),
     overview(scene),
