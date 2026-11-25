@@ -318,7 +318,8 @@ describe("ordering", () => {
 });
 
 describe("examples", () => {
-  const files = readdirSync("examples").filter((f) => f.endsWith(".json"));
+  // state.json joins when its layout lands (T13.2): make does not render it yet.
+  const files = readdirSync("examples").filter((f) => f.endsWith(".json") && f !== "state.json");
 
   it("finds the five examples", () => {
     expect(files.sort()).toEqual([

@@ -11,6 +11,7 @@ import { layoutSequence } from "./sequence.js";
 import { layoutWorkflow } from "./workflow.js";
 
 async function layoutScene(diagram: Diagram): Promise<Scene> {
+  if (diagram.type === "state") throw new Error("state diagrams have no layout yet");
   if (diagram.type === "chen") return layoutChen(diagram);
   if (diagram.type === "sequence") return layoutSequence(diagram);
   if (diagram.type === "erd") return layoutErd(diagram);

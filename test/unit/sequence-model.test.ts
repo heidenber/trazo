@@ -585,7 +585,7 @@ describe("sequence model: other diagram types keep their behavior", () => {
       hint: 'did you mean "sequence"?',
     });
     expect(only({ type: "zzzzzz", title: "T" }).hint).toBe(
-      "use one of: architecture, workflow, erd, sequence, chen",
+      "use one of: architecture, workflow, erd, sequence, chen, state",
     );
   });
 });

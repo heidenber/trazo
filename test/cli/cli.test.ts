@@ -493,7 +493,7 @@ describe("sequence diagrams", () => {
   });
 });
 
-const TYPES = ["architecture", "workflow", "erd", "sequence", "chen"] as const;
+const TYPES = ["architecture", "workflow", "erd", "sequence", "chen", "state"] as const;
 
 describe("schema", () => {
   it.each(TYPES)("prints the reference for %s", (type) => {
@@ -509,7 +509,7 @@ describe("schema", () => {
     [["schema", "erdd"], 'unknown type "erdd" (did you mean "erd"?)'],
     [
       ["schema", "foo"],
-      'unknown type "foo" (use one of: architecture, workflow, erd, sequence, chen)',
+      'unknown type "foo" (use one of: architecture, workflow, erd, sequence, chen, state)',
     ],
   ])("rejects %j", (args, message) => {
     expect(run(args)).toEqual({ code: 2, stdout: "", stderr: usageError(message) });
@@ -529,7 +529,7 @@ describe("example", () => {
     [["example", "erd", "--json"], 'option "--json" only applies to make and check'],
     [
       ["example", "foo"],
-      'unknown type "foo" (use one of: architecture, workflow, erd, sequence, chen)',
+      'unknown type "foo" (use one of: architecture, workflow, erd, sequence, chen, state)',
     ],
   ])("rejects %j", (args, message) => {
     expect(run(args)).toEqual({ code: 2, stdout: "", stderr: usageError(message) });

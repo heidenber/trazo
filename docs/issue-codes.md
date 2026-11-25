@@ -46,6 +46,7 @@ for a suggested fix.
 | `ref/unknown-entity` | Error | A participant names an entity that is not declared (relationship ids do not count). |
 | `ref/unknown-node` | Error | A reference names an undeclared architecture node or group. |
 | `ref/unknown-participant` | Error | A sequence element references an undeclared participant. |
+| `ref/unknown-state` | Error | A transition names a state that is not declared. |
 | `ref/unknown-step` | Error | A workflow reference names an undeclared step. |
 | `ref/unknown-table` | Error | A foreign key refers to a table that does not exist. |
 | `schema/empty` | Error | A field that requires content is empty. |
@@ -64,6 +65,15 @@ for a suggested fix.
 | `sequence/self-reply` | Error | A participant sends a reply to itself. |
 | `sequence/unused-participant` | Warning | A declared participant never appears in a message or note. |
 | `size/large` | Warning | The diagram or table exceeds a recommended size. |
+| `state/dead-end` | Warning | A state that is not final has no outgoing transitions. |
+| `state/final-outgoing` | Error | A transition leaves a final state. |
+| `state/initial-count` | Error | A state diagram does not have exactly one initial state. |
+| `state/initial-incoming` | Error | A transition enters the initial state. |
+| `state/initial-outgoing` | Error | The initial state does not have exactly one outgoing transition. |
+| `state/no-event` | Warning | A transition (other than the one leaving the initial state) has no event label. |
+| `state/render-unavailable` | Error | `trazo make` was asked for a `state` diagram, which cannot be rendered yet (validation with `check` works). |
+| `state/unreachable` | Warning | A state cannot be reached from the initial state. |
+| `state/unsupported` | Error | A history, decision (choice) or composite state, or a nested `children`, `states`, `regions` or `parent` field; only the basic notation is supported. |
 | `table/no-pk` | Warning | A table has no primary key. |
 | `workflow/dead-end` | Warning | A non-end step has no outgoing edges in a workflow that has edges. |
 | `workflow/decision-label` | Warning | An edge leaving a decision step has no label. |
