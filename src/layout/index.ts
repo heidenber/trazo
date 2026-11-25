@@ -5,6 +5,7 @@ import type { Diagram } from "../model/index.js";
 import type { Scene } from "../scene.js";
 import { layoutArchitecture } from "./architecture.js";
 import { layoutChen } from "./chen.js";
+import { layoutClass } from "./class.js";
 import { layoutErd } from "./erd.js";
 import { addLegend } from "./legend.js";
 import { layoutSequence } from "./sequence.js";
@@ -12,7 +13,7 @@ import { layoutState } from "./state.js";
 import { layoutWorkflow } from "./workflow.js";
 
 async function layoutScene(diagram: Diagram): Promise<Scene> {
-  if (diagram.type === "class") throw new Error("class diagrams have no layout yet");
+  if (diagram.type === "class") return layoutClass(diagram);
   if (diagram.type === "state") return layoutState(diagram);
   if (diagram.type === "chen") return layoutChen(diagram);
   if (diagram.type === "sequence") return layoutSequence(diagram);

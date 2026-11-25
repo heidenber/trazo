@@ -43,7 +43,9 @@ export type NodeShape =
   // State diagrams: rounded state, initial dot, final ring.
   | "state"
   | "initial"
-  | "final";
+  | "final"
+  // Class diagrams: a box with a name header and attribute and method compartments.
+  | "class";
 
 /** Chen attribute marks drawn on the label or the outline. */
 export type ChenMark = "key" | "partial" | "derived";
@@ -59,6 +61,18 @@ export interface SceneRow {
   marks?: TextBlock;
   note?: string;
   key: boolean;
+}
+
+/** What a class box draws besides its outline and name. */
+export interface SceneClass {
+  /** Absolute y of the rules under the header and between the compartments. */
+  rules: number[];
+  /** "«interface»" line above the name. */
+  stereotype?: TextBlock;
+  /** The name is drawn in italics. */
+  abstract?: true;
+  /** Attributes then methods, one row each; `vis` is the visibility mark drawn before the text. */
+  members: { vis?: TextBlock; text: TextBlock }[];
 }
 
 export interface SceneNode extends Box {
@@ -80,6 +94,8 @@ export interface SceneNode extends Box {
   mark?: ChenMark;
   /** Optional family tint chosen by a layout (ERD table groups). */
   family?: string;
+  /** Class nodes only. */
+  class?: SceneClass;
   /** Table nodes only. */
   rows?: SceneRow[];
   /** Table header height. */
@@ -115,6 +131,21 @@ export interface SceneChenLink {
   card?: TextBlock;
 }
 
+/** What a class relation adds to a plain edge: its kind and the multiplicities at its ends. */
+export interface SceneRelation {
+  kind:
+    | "association"
+    | "directed"
+    | "composition"
+    | "aggregation"
+    | "generalization"
+    | "realization"
+    | "dependency";
+  /** Next to the `from` and `to` ends; `box` is the area the text covers. */
+  fromMult?: { box: Box; text: TextBlock };
+  toMult?: { box: Box; text: TextBlock };
+}
+
 export interface SceneEdge {
   id: string;
   from: string;
@@ -125,6 +156,8 @@ export interface SceneEdge {
   /** Crow's foot symbols; an edge with ends has no arrowhead. */
   ends?: { from: EdgeEnd; to: EdgeEnd };
   chen?: SceneChenLink;
+  /** Class relations: `points` run from the border of `from` to the border of `to`; the renderer trims them for the markers. */
+  rel?: SceneRelation;
   /** State transitions: the happy path is drawn thick, transitions into or out of an exception state dashed. */
   weight?: "main" | "exception";
 }
@@ -138,7 +171,7 @@ export interface SceneLifeline {
 
 export interface SceneLegendItem {
   family?: string;
-  /** Chen notation symbol drawn inside the swatch box instead of a plain swatch. */
+  /** Chen, state or class notation symbol drawn inside the swatch box instead of a plain swatch. */
   glyph?: string;
   style?: SceneEdge["style"];
   swatch: Box;

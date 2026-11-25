@@ -60,21 +60,31 @@ describe("class CLI", () => {
     });
   });
 
-  it("make fails with class/render-unavailable until the layout lands", () => {
+  it("make draws the example: exit 0, a html file and its path", () => {
     const out = join(dir, "c.html");
-    expect(run(["make", examplePath, "-o", out])).toEqual({
-      code: 1,
-      stdout: "",
-      stderr:
-        'error  $: class diagrams cannot be rendered yet \u2192 "trazo check" validates them already; rendering arrives in a later release\n',
-    });
-    expect(existsSync(out)).toBe(false);
+    const r = run(["make", examplePath, "-o", out]);
+    expect(r.code).toBe(0);
+    expect(r.stderr).toBe("");
+    expect(r.stdout.trim()).toBe(out);
+    const html = readFileSync(out, "utf8");
+    expect(html).toContain('class="diagram t-class"');
+    expect(html).toContain("Generalization (extends)");
   });
 
-  it("make --json reports the code", () => {
+  it("make --json reports ok", () => {
     const r = run(["make", examplePath, "--json", "-o", join(dir, "c.html")]);
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain('"ok":true');
+    expect(r.stdout).not.toContain("render-unavailable");
+  });
+
+  it("make still reports validation errors first and writes nothing", () => {
+    const out = join(dir, "bad.html");
+    const path = write((d) => d.relations.push("Order -- Ordr"));
+    const r = run(["make", path, "-o", out]);
     expect(r.code).toBe(1);
-    expect(r.stdout).toContain('"code":"class/render-unavailable"');
+    expect(r.stderr).toContain('unknown class "Ordr"');
+    expect(existsSync(out)).toBe(false);
   });
 
   it("an unknown type lists class", () => {

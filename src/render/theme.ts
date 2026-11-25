@@ -171,6 +171,28 @@ export const STATE_CSS = `
 .t-state-ev { fill: var(--t-text, ${B.text}); }
 `;
 
+/**
+ * Appended only to class diagrams, after the legend rules. Relation lines end exactly on the class
+ * borders (butt caps); markers are <marker> elements drawn in the same colors as their lines.
+ */
+export const CLASS_CSS = `
+.t-class-rule { fill: none; stroke: var(--t-f-stroke, ${B["node-stroke"]}); stroke-opacity: 0.55; stroke-width: 1; }
+.t-class-stereo { fill: var(--t-muted, ${B.muted}); }
+.t-class-vis { fill: var(--t-muted, ${B.muted}); font-weight: 600; }
+.t-class-member { fill: var(--t-text, ${B.text}); }
+.t-class-abstract .t-node-label { font-style: italic; }
+.t-class-text { fill: var(--t-text, ${B.text}); paint-order: stroke; stroke: var(--t-bg, ${B.bg}); stroke-width: 3px; stroke-linejoin: round; }
+.t-rel { fill: none; stroke-width: 1.6; stroke-linecap: butt; stroke-linejoin: round; }
+.t-rel-generalization, .t-rel-realization { stroke: var(--t-edge-async, ${EDGE_LIGHT.async}); }
+.t-rel-dependency { stroke: var(--t-edge-reply, ${EDGE_LIGHT.reply}); }
+.t-rel-realization, .t-rel-dependency { stroke-dasharray: 6 4; }
+.t-relm { fill: var(--t-bg, ${B.bg}); stroke: var(--t-edge, ${EDGE_LIGHT.sync}); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.t-relm-generalization, .t-relm-realization { stroke: var(--t-edge-async, ${EDGE_LIGHT.async}); }
+.t-relm-dependency { stroke: var(--t-edge-reply, ${EDGE_LIGHT.reply}); }
+.t-relm-composition { fill: var(--t-edge, ${EDGE_LIGHT.sync}); }
+.t-relm-directed, .t-relm-dependency { fill: none; }
+`;
+
 /** Appended only to scenes with a legend. */
 export const LEGEND_CSS = `
 .t-legend-label { fill: var(--t-muted, ${B.muted}); }

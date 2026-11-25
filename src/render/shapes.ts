@@ -23,6 +23,9 @@ const NOTE_FOLD = 10;
 export const STATE_RADIUS = 10;
 const FINAL_DOT = 6.5;
 
+/** Corner radius of a class box; the layout keeps line ends on the flat part of a side. */
+export const CLASS_RADIUS = 6;
+
 export const num = (n: number) => String(Math.round(n * 100) / 100);
 
 export const rect = (b: Box, cls: string, rx = CORNER, extra = "") =>
@@ -116,6 +119,8 @@ export function shapeMarkup(shape: NodeShape, b: Box): string {
       return diamond(b, cls) + diamond(innerDiamond(b), inner);
     case "state":
       return rect(b, cls, STATE_RADIUS);
+    case "class":
+      return rect(b, cls, CLASS_RADIUS);
     case "initial":
       return circle(b, "t-state-initial");
     case "final":

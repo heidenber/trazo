@@ -43,8 +43,14 @@ const STYLES: { style: SceneEdge["style"]; label: string }[] = [
  */
 export function addLegend(scene: Scene): Scene {
   // An ERD has no node kinds; the family of a table is its group color, explained by the overview.
-  // Chen and state diagrams draw their own notation legend.
-  if (scene.type === "erd" || scene.type === "chen" || scene.type === "state") return scene;
+  // Chen, state and class diagrams draw their own notation legend.
+  if (
+    scene.type === "erd" ||
+    scene.type === "chen" ||
+    scene.type === "state" ||
+    scene.type === "class"
+  )
+    return scene;
   const usedFamilies = new Set(scene.nodes.map((n) => familyOf(scene, n)));
   const usedStyles = new Set(scene.edges.map((e) => e.style));
   const families = FAMILIES.filter((f) => usedFamilies.has(f));
