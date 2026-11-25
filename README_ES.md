@@ -81,7 +81,7 @@ Números y método: [bench/README.md](bench/README.md). En el mismo benchmark (C
 
 Lo que no hace:
 
-- Solo cinco tipos: arquitectura, workflow, ERD, secuencia y Chen. Mermaid, PlantUML y D2 cubren muchos más.
+- Solo siete tipos: arquitectura, workflow, ERD, secuencia, Chen, state y class. Mermaid, PlantUML y D2 cubren muchos más.
 - No se renderiza dentro de Markdown. GitHub, GitLab y muchos editores muestran bloques de Mermaid directamente; con trazo abres el HTML o exportas SVG o PNG desde ahí.
 - No se edita en la salida: cambias el JSON y vuelves a ejecutar `make`.
 - No importa Mermaid, no trae íconos de nube ni de marcas, no genera páginas explicativas ni revisa el resultado en un navegador.

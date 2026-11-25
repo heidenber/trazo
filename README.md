@@ -81,7 +81,7 @@ Numbers and method: [bench/README.md](bench/README.md). Same bench (Codex, gpt-6
 
 What it does not do:
 
-- Only five types: architecture, workflow, ERD, sequence and Chen. Mermaid, PlantUML and D2 cover many more.
+- Only seven types: architecture, workflow, ERD, sequence, Chen, state and class. Mermaid, PlantUML and D2 cover many more.
 - No inline rendering in Markdown. GitHub, GitLab and many editors render Mermaid blocks directly; with trazo you open the HTML or export SVG or PNG from it.
 - No editing in the output: change the JSON and run `make` again.
 - No Mermaid import, no cloud or brand icons, no explainer pages, no browser check of the result.
