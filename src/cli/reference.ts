@@ -218,10 +218,44 @@ rules
   texts must not be empty
 `;
 
+const state = `state: UML state diagram, basic notation: states and transitions with an event.
+
+Top level
+  type         "state"
+  title        text
+  description? text
+  theme?       light | dark | lagoon | dusk
+  states       state[], at least 1
+  transitions? transition[]
+
+state
+  id       unique; letters, digits, _ . -
+  label?   shown text; defaults to id ("Initial state" and "Final state" for those kinds)
+  kind?    state | initial | final | exception
+  note?    hover text
+  detail?  longer text for the viewer's detail card only
+  source?  "path/file.ts:line"
+
+transition: a string or an object
+  "from -> to: event"   the only arrow is ->; ": event" is optional
+  {from, to, label?}    label = the event; from = to is a self-transition
+
+defaults: theme light; kind state
+
+rules
+  exactly 1 initial state, with exactly 1 outgoing and no incoming transition
+  a final state has no outgoing transition; there may be several
+  exception is a plain state drawn off the main path (rejected, cancelled)
+  transitions name existing states; a transition without an event warns
+  composite states, history, decision (choice) pseudostates and regions are not supported
+  texts must not be empty
+`;
+
 export const REFERENCE: Record<(typeof DIAGRAM_TYPES)[number], string> = {
   architecture,
   workflow,
   erd,
   sequence,
   chen,
+  state,
 };

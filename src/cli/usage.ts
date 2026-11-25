@@ -29,7 +29,7 @@ Options:
   -v, --version      print the version
 
 <input> is a JSON file, or "-" to read stdin.
-<type> is architecture, workflow, erd, sequence or chen.
+<type> is architecture, workflow, erd, sequence, chen or state.
 Exit codes: 0 ok, 1 invalid input, 2 usage error, 3 internal error.
 
 Find trazo useful? Star it on GitHub: https://github.com/heidenber/trazo

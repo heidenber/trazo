@@ -7,6 +7,7 @@ import { z } from "zod";
 import { REFERENCE } from "../../src/cli/reference.js";
 import { architectureSchema } from "../../src/model/architecture.js";
 import { chenSchema } from "../../src/model/chen.js";
+import { stateSchema } from "../../src/model/state.js";
 import { erdSchema } from "../../src/model/erd.js";
 import { DIAGRAM_TYPES, validateDiagram, type Diagram } from "../../src/model/index.js";
 import { sequenceSchema } from "../../src/model/sequence.js";
@@ -20,6 +21,7 @@ const SCHEMAS: Record<DiagramType, z.ZodType> = {
   erd: erdSchema,
   sequence: sequenceSchema,
   chen: chenSchema,
+  state: stateSchema,
 };
 
 // ---------------------------------------------------------------------------

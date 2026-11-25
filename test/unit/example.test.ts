@@ -122,3 +122,12 @@ describe("examples/chen.json", () => {
     expect(Buffer.byteLength(first.html!)).toBeLessThan(300 * 1024);
   });
 });
+
+describe("examples/state.json", () => {
+  it("validates with no issues", () => {
+    const { issues } = validateDiagram(
+      JSON.parse(readFileSync(new URL("../../examples/state.json", import.meta.url), "utf8")),
+    );
+    expect(issues).toEqual([]);
+  });
+});
