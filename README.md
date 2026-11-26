@@ -13,8 +13,6 @@ English | [Español](README_ES.md)
 
 <p align="center"><strong>Write JSON, get a finished diagram.</strong></p>
 
-<p align="center"><em>trazo</em> — Spanish: a stroke, a line drawn in one motion.</p>
-
 <p align="center">Ask an agent for a diagram and it places every box by hand: overlapping text, arrows through nodes.<br><strong>You say what's there; trazo decides where everything goes.</strong></p>
 
 <p align="center"><sub>Seven diagram types · One self-contained HTML file · No server, no network · PNG, SVG and PDF export</sub></p>
