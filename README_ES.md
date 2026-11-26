@@ -9,9 +9,13 @@
 
 [![CI](https://github.com/heidenber/trazo/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/heidenber/trazo/actions/workflows/ci.yml) [![npm](https://img.shields.io/npm/v/@heidenber/trazo)](https://www.npmjs.com/package/@heidenber/trazo)
 
-El agente dice qué hay en el sistema; trazo decide dónde va cada cosa.
+<p align="center"><img src="https://raw.githubusercontent.com/heidenber/trazo/main/docs/trazo-banner-es.gif" width="720" alt="Demo de trazo: un agente escribe platform.json, luego trazo acomoda el diagrama de arquitectura y el visor hace zoom y desplazamiento"></p>
 
-Escribes un diagrama como JSON semántico, sin coordenadas. trazo lo valida, lo acomoda y escribe un único archivo HTML autocontenido.
+<p align="center"><strong>Escribe JSON, obtén un diagrama listo.</strong></p>
+
+<p align="center">Pídele un diagrama a un agente y ubicará cada caja a mano: texto superpuesto, flechas que cruzan nodos.<br><strong>Tú dices qué hay; trazo decide dónde va cada cosa.</strong></p>
+
+<p align="center"><sub>Siete tipos de diagrama · Un único HTML autocontenido · Sin servidor ni red · Exporta PNG, SVG y PDF</sub></p>
 
 ![Diagrama entidad-relación generado por trazo, con tablas, columnas y claves foráneas](https://raw.githubusercontent.com/heidenber/trazo/main/docs/erd-light.png)
 
